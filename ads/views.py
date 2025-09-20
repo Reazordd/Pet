@@ -1,5 +1,6 @@
 # ads/views.py
 
+from rest_framework import generics
 from rest_framework import viewsets, permissions, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -7,8 +8,53 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
 from django.core.exceptions import PermissionDenied
 from django.db.models import Count
-from.models import Pet, Category
-from.serializers import PetSerializer, CategorySerializer
+from django.contrib.auth.models import User
+from.models import Pet, Category, User
+from.serializers import PetSerializer, CategorySerializer, UserSerializer, UserProfileSerializer
+from django.contrib.auth import get_user_model
+
+User = get_user_model()  # Добавляем эту строку в начало файла
+
+class UserCreateView(generics.CreateAPIView):
+    queryset = User.objects.all()  # Теперь используем правильную модель
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny]  # Возможно, нужно разрешить создание
+
+
+class UserProfileViewSet(viewsets.ViewSet):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def retrieve(self, request):
+        user = request.user
+        serializer = UserProfileSerializer(user)
+        return Response(serializer.data)
+
+    def update(self, request):
+        user = request.user
+        serializer = UserProfileSerializer(user, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=400)
+
+
+class UserCreateView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(
+            {
+                'message': 'Пользователь успешно зарегистрирован',
+                'data': serializer.data
+            },
+            status=status.HTTP_201_CREATED,
+            headers=headers
+        )
 
 class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.all()

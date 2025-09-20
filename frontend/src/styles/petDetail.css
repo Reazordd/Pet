@@ -1,0 +1,18 @@
+.pet-detail {
+    padding: 20px;
+}
+
+.pet-photo {
+    max-width: 100%;
+    height: auto;
+    margin-bottom: 20px;
+    border-radius: 8px;
+}
+
+.description {
+    margin-top: 20px;
+}
+
+.description p {
+    line-height: 1.6;
+}

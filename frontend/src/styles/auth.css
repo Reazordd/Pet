@@ -1,0 +1,22 @@
+.auth-form {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.auth-form h2 {
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+.auth-form .form-group {
+    margin-bottom: 15px;
+}
+
+.auth-form button {
+    width: 100%;
+    padding: 10px;
+    margin-top: 15px;
+}
