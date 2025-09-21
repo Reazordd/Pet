@@ -3,6 +3,7 @@ from django.contrib.auth.models import AbstractUser
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinLengthValidator, MinValueValidator
 from django.utils import timezone
+from django.utils.text import slugify
 
 class User(AbstractUser):
     avatar = models.ImageField(
@@ -81,6 +82,7 @@ class Category(models.Model):
         validators=[MinLengthValidator(3)],
         unique=True
     )
+    slug = models.SlugField(max_length=100, unique=True, blank=True)  # Добавили поле slug
     description = models.TextField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     icon = models.CharField(max_length=50, blank=True, default='🐾')
@@ -92,6 +94,11 @@ class Category(models.Model):
 
     def __str__(self):
         return self.name
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        super().save(*args, **kwargs)
 
 class Pet(models.Model):
     BREED_CHOICES = [
@@ -165,8 +172,3 @@ class Pet(models.Model):
                 defaults={'description': f'Объявления о {category_name.lower()}'}
             )
         super().save(*args, **kwargs)
-
-
-
-
-
