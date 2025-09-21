@@ -1,11 +1,15 @@
+// components/AuthForm.js
 import React, { useState } from 'react';
-import axios from 'axios';
+import api from '../utils/api';  // Импортируем наш api
+import jwt_decode from 'jwt-decode';
 
 function AuthForm({ type = 'login' }) {
     const [credentials, setCredentials] = useState({
         username: '',
-        password: ''
+        password: '',
+        email: ''
     });
+    const [error, setError] = useState('');
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -15,37 +19,60 @@ function AuthForm({ type = 'login' }) {
         });
     };
 
-    // Добавим обработку регистрации
-    handleSubmit = async (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+
         try {
             if (type === 'register') {
-                // При регистрации отправляем POST запрос на /api/users/
-                const response = await axios.post(
-                    '/api/users/',
-                    credentials
-                );
-                // Сохраняем токен после успешной регистрации
-                localStorage.setItem('access_token', response.data.token);
+                // Регистрация
+                await api.post('/users/', credentials);
+
+                // Автоматический вход после регистрации
+                const loginResponse = await api.post('/token/', {
+                    username: credentials.username,
+                    password: credentials.password
+                });
+
+                localStorage.setItem('access_token', loginResponse.data.access);
+                localStorage.setItem('refresh_token', loginResponse.data.refresh);
             } else {
-                // При входе в систему
-                const response = await axios.post(
-                    '/api/token/',
-                    credentials
-                );
+                // Вход
+                const response = await api.post('/token/', {
+                    username: credentials.username,
+                    password: credentials.password
+                });
+
                 localStorage.setItem('access_token', response.data.access);
                 localStorage.setItem('refresh_token', response.data.refresh);
             }
+
             window.location.href = '/';
         } catch (error) {
+            setError(error.response?.data?.detail || 'Произошла ошибка');
             console.error('Ошибка:', error);
         }
     };
 
-
     return (
         <form onSubmit={handleSubmit} className='auth-form'>
             <h2>{type === 'login' ? 'Вход' : 'Регистрация'}</h2>
+
+            {error && <div className='error'>{error}</div>}
+
+            {type === 'register' && (
+                <div className='form-group'>
+                    <label>Email</label>
+                    <input
+                        type='email'
+                        name='email'
+                        value={credentials.email}
+                        onChange={handleChange}
+                        required
+                    />
+                </div>
+            )}
+
             <div className='form-group'>
                 <label>Логин</label>
                 <input
@@ -56,6 +83,7 @@ function AuthForm({ type = 'login' }) {
                     required
                 />
             </div>
+
             <div className='form-group'>
                 <label>Пароль</label>
                 <input
@@ -66,6 +94,7 @@ function AuthForm({ type = 'login' }) {
                     required
                 />
             </div>
+
             <button type='submit'>
                 {type === 'login' ? 'Войти' : 'Зарегистрироваться'}
             </button>

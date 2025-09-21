@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'drf_spectacular',
 ]
 
+AUTH_USER_MODEL = 'ads.User'  # Укажите ваше приложение и модель
 # settings.py
 
 REST_FRAMEWORK = {
@@ -121,6 +122,12 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'pet_project.wsgi.application'
 
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+
+CORS_ALLOW_CREDENTIALS = True
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases

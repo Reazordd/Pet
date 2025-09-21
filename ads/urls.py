@@ -10,12 +10,14 @@ from rest_framework_simplejwt.views import (
 from .views import PetViewSet, CategoryViewSet
 from django.contrib.auth import views as auth_views
 from.views import UserProfileViewSet
-
+from . import views
 
 router = DefaultRouter()
 router.register(r'pets', PetViewSet)
 router.register(r'categories', CategoryViewSet)
 router.register('profile', UserProfileViewSet, basename='profile')
+router.register('notifications', views.NotificationViewSet)
+
 
 urlpatterns = [
     path('', include(router.urls)),
