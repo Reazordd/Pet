@@ -1,0 +1,53 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: petmarket
+      POSTGRES_USER: petuser
+      POSTGRES_PASSWORD: 5v1234567
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./backend
+    command: >
+      sh -c "python manage.py collectstatic --noinput &&
+             gunicorn pet_project.wsgi:application --bind 0.0.0.0:8000 --workers 3"
+    volumes:
+      - static_volume:/app/staticfiles  # Используем named volume
+      - media_volume:/app/media         # Используем named volume
+    environment:
+      - DATABASE_URL=postgresql://petuser:5v1234567@db:5432/petmarket
+      - SECRET_KEY=dy)ou&wwe7il8p_hyl=+f)2i28e*4_%*xpwfcjss9
+      - DEBUG=0
+      - ALLOWED_HOSTS=localhost,127.0.0.1
+    depends_on:
+      - db
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
+
+  nginx:
+    image: nginx:stable-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
+    depends_on:
+      - backend
+      - frontend
+
+
+volumes:
+  db_data:
+  static_volume:  # Добавляем named volume для статики
+  media_volume:   # Добавляем named volume для медиа
