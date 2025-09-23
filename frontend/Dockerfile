@@ -1,15 +1,18 @@
-# Stage 1: сборка фронта
+# Этап сборки React
 FROM node:20 AS build
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
+
+# Копируем package.json и ставим зависимости
+COPY package*.json ./
 RUN npm install
 
+# Копируем весь фронтенд и собираем билд
 COPY . .
 RUN npm run build
 
-# Stage 2: nginx для отдачи собранного фронта
+# Этап nginx для отдачи статики
 FROM nginx:stable-alpine
+
+# Копируем собранный билд React в папку nginx
 COPY --from=build /app/dist /usr/share/nginx/html
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
