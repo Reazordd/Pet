@@ -1,18 +1,30 @@
-# Этап сборки React
+# Stage 1: build React app
 FROM node:20 AS build
 
 WORKDIR /app
 
-# Копируем package.json и ставим зависимости
-COPY package*.json ./
-RUN npm install
+# Копируем только файлы зависимостей
+COPY package.json package-lock.json ./
 
-# Копируем весь фронтенд и собираем билд
+# Устанавливаем зависимости строго по package-lock.json
+RUN npm ci --legacy-peer-deps --registry=https://registry.npmjs.org/
+
+# Копируем весь код и собираем фронтенд
 COPY . .
 RUN npm run build
 
-# Этап nginx для отдачи статики
+# Stage 2: serve with Nginx
 FROM nginx:stable-alpine
 
-# Копируем собранный билд React в папку nginx
-COPY --from=build /app/dist /usr/share/nginx/html
+# Удаляем дефолтный конфиг
+RUN rm /etc/nginx/conf.d/default.conf
+
+# Копируем наш конфиг
+COPY nginx.conf /etc/nginx/conf.d/
+
+# Копируем собранный билд
+COPY --from=build /app/build /usr/share/nginx/html
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
