@@ -1,23 +1,27 @@
 FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
-WORKDIR /app
-
-# Устанавливаем системные зависимости для сборки некоторых пакетов (psycopg2 и т.п.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential libpq-dev gcc curl \
+# Устанавливаем зависимости для psycopg2 и сборки пакетов
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    libpq-dev \
+    gcc \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Копируем только requirements и ставим зависимости сначала
-COPY requirements.txt /app/requirements.txt
-RUN pip install --no-cache-dir -r /app/requirements.txt
+WORKDIR /app
 
-# Копируем весь проект
+# Копируем requirements
+COPY requirements.txt /app/
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Копируем проект
 COPY . /app
 
-# убедиться, что модуль проекта импортируется: добавим PYTHONPATH
-ENV PYTHONPATH=/app
+# Собираем статику (чтобы не забыть)
+RUN python manage.py collectstatic --noinput || true
 
-# Если ваш проект называется не Pet, поменяйте Pet.wsgi на <yourproject>.wsgi
-CMD ["gunicorn", "Pet.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "3", "--log-level", "info"]
+EXPOSE 8000
+
+CMD ["gunicorn", "pet_project.wsgi:application", "--bind", "0.0.0.0:8000"]
+

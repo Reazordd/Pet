@@ -1,41 +1,51 @@
-services:
-  db:
-    image: postgres:15
-    container_name: pet-db
-    environment:
-      POSTGRES_DB: petmarket
-      POSTGRES_USER: petuser
-      POSTGRES_PASSWORD: 5v1234567
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
 
-  backend:
-    build:
-      context: ./backend
-    container_name: pet-backend
-    command: gunicorn pet_project.wsgi:application --bind 0.0.0.0:8000
-    volumes:
-      - ./backend:/app
-    depends_on:
-      - db
-    environment:
-      - DB_NAME=petmarket
-      - DB_USER=petuser
-      - DB_PASSWORD=5v1234567
-      - DB_HOST=db
-    expose:
-      - "8000"
+  services:
+    db:
+      image: postgres:15
+      container_name: pet-db
+      restart: always
+      environment:
+        POSTGRES_DB: petmarket
+        POSTGRES_USER: petuser
+        POSTGRES_PASSWORD: 5v1234567
+      volumes:
+        - postgres_data:/var/lib/postgresql/data
+      ports:
+        - "5432:5432"
 
-  frontend:
-    build:
-      context: ./frontend
-    container_name: pet-frontend
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
+    backend:
+      build:
+        context: ./backend
+        dockerfile: Dockerfile
+      container_name: pet-backend
+      command: gunicorn pet_project.wsgi:application --bind 0.0.0.0:8000
+      volumes:
+        - ./backend:/app
+        - ./backend/staticfiles:/app/staticfiles
+        - ./backend/media:/app/media
+      environment:
+        - DJANGO_SETTINGS_MODULE=pet_project.settings
+        - POSTGRES_DB=petmarket
+        - POSTGRES_USER=petuser
+        - POSTGRES_PASSWORD=5v1234567
+        - POSTGRES_HOST=db
+        - POSTGRES_PORT=5432
+      depends_on:
+        - db
+      expose:
+        - "8000"
 
-volumes:
-  postgres_data:
+    frontend:
+      image: nginx:stable-alpine
+      container_name: pet-frontend
+      ports:
+        - "8080:80"
+      volumes:
+        - ./frontend/dist:/usr/share/nginx/html:ro
+        - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
+      depends_on:
+        - backend
+
+  volumes:
+    postgres_data:
+
