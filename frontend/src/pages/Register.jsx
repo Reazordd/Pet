@@ -47,10 +47,16 @@ function Register() {
 
         try {
             const { password_confirm, ...submitData } = formData;
-            const response = await api.post('/users/', submitData);
+            const response = await api.post('/register/', submitData);
 
-            localStorage.setItem('access_token', response.data.tokens.access);
-            localStorage.setItem('refresh_token', response.data.tokens.refresh);
+            // После регистрации получаем токены через отдельный login
+            const loginResponse = await api.post('/token/', {
+                username: submitData.username,
+                password: submitData.password
+            });
+
+            localStorage.setItem('access_token', loginResponse.data.access);
+            localStorage.setItem('refresh_token', loginResponse.data.refresh);
 
             toast.success('Регистрация прошла успешно!');
             navigate('/');
@@ -62,7 +68,7 @@ function Register() {
                     }
                 });
             } else {
-                toast.error('Ошибка регистрации');
+                toast.error('Ошибка регистрации. Проверьте соединение.');
             }
         } finally {
             setLoading(false);

@@ -1,27 +1,27 @@
-FROM python:3.11-slim
+# --- Stage 1: base Python ---
+FROM python:3.11-slim AS base
 
-# Устанавливаем зависимости для psycopg2 и сборки пакетов
+# Устанавливаем только необходимое для Django + PostgreSQL
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    libpq-dev \
     gcc \
-    curl \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
+# Рабочая директория
 WORKDIR /app
 
-# Копируем requirements
-COPY requirements.txt /app/
-
+# Устанавливаем зависимости Python
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копируем проект
-COPY . /app
+# --- Stage 2: prod image ---
+FROM python:3.11-slim
 
-# Собираем статику (чтобы не забыть)
-RUN python manage.py collectstatic --noinput || true
+# Копируем зависимости из base-слоя
+COPY --from=base /usr/local /usr/local
 
-EXPOSE 8000
+WORKDIR /app
+COPY . .
 
+# Запускаем gunicorn сервер
 CMD ["gunicorn", "pet_project.wsgi:application", "--bind", "0.0.0.0:8000"]
-

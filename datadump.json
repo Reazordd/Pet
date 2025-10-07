@@ -1,0 +1,123 @@
+﻿[
+{
+  "model": "sessions.session",
+  "pk": "2ldixoowb2sotsxwswqrui7cgyne338y",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQBe_iGllx_F1Kes5g7XptEkC2FCcV4u4QKQW0b2beS0Tc1iluPS9xZnEWSpx-N8L0yHUHfMd6azK1ui4zyV2RB-3y2jg_L4f7dzBhn741ogNWJWtSziAAoxoLjRi8LaDyaIwzlAOgRxusgsEmZtKsB3DkvRXvD_IRN94:1v0GC8:-YDJ9ApKRLWF6Qg_Yfq5nvlLC1N9TLIK5SmRWDq0Qw0",
+    "expire_date": "2025-10-05T09:17:20.399Z"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "ypi0j9gvu61lal7lfxkz8vv9jsogu4cb",
+  "fields": {
+    "session_data": ".eJxVjMsOwiAQRf-FtSFMgQFduu83kOExUjU0Ke3K-O_apAvd3nPOfYlA21rD1ssSpiwuAsTpd4uUHqXtIN-p3WaZ5rYuU5S7Ig_a5Tjn8rwe7t9BpV6_NQJpNyhk9h5LyUl5bxSTtkAYjStD0kxJO6-iYbAYIQMqPhNb0AnF-wPdgDfJ:1v04yn:tK_Hjj6PY9CrTLt6BahQgNWVIsj4dbIHptNOFCOKitU",
+    "expire_date": "2025-10-04T21:18:49.316Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 1,
+  "fields": {
+    "user": 1,
+    "jti": "ea5bfe0fb34f49548ebfd3423976b107",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTA2NzMyOCwiaWF0IjoxNzU4NDYyNTI4LCJqdGkiOiJlYTViZmUwZmIzNGY0OTU0OGViZmQzNDIzOTc2YjEwNyIsInVzZXJfaWQiOiIxIn0.rj9NE1ABmFna7qeivpePo_OOCdCQ7xlomQW-M-FBKTI",
+    "created_at": "2025-09-21T13:48:48.180Z",
+    "expires_at": "2025-09-28T13:48:48Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 2,
+  "fields": {
+    "user": 1,
+    "jti": "4f72c299c7094efaa05ab243e0aeebd5",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTA2NzM0MywiaWF0IjoxNzU4NDYyNTQzLCJqdGkiOiI0ZjcyYzI5OWM3MDk0ZWZhYTA1YWIyNDNlMGFlZWJkNSIsInVzZXJfaWQiOiIxIn0.1opi_cjceIRL_CWOZAs_S-f6i9RsyKZGlKVUDYyKJlE",
+    "created_at": "2025-09-21T13:49:03.614Z",
+    "expires_at": "2025-09-28T13:49:03Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 3,
+  "fields": {
+    "user": 1,
+    "jti": "efadf43a46674a7d99a0840b77f8f5f2",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTA2NzM1NCwiaWF0IjoxNzU4NDYyNTU0LCJqdGkiOiJlZmFkZjQzYTQ2Njc0YTdkOTlhMDg0MGI3N2Y4ZjVmMiIsInVzZXJfaWQiOiIxIn0.8quj2_c6ujO8jyK2oIQubR9T1YM4Ly720fyGRPAYZH8",
+    "created_at": "2025-09-21T13:49:14.694Z",
+    "expires_at": "2025-09-28T13:49:14Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 4,
+  "fields": {
+    "user": 1,
+    "jti": "48c49915b6ca4002ade8502c6c0ff3c9",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTA3NDIzMywiaWF0IjoxNzU4NDY5NDMzLCJqdGkiOiI0OGM0OTkxNWI2Y2E0MDAyYWRlODUwMmM2YzBmZjNjOSIsInVzZXJfaWQiOiIxIn0.iuTeKz6ZLAp_HUDzreY9x-jkyaLLb74xhuJompHFywk",
+    "created_at": "2025-09-21T15:43:53.554Z",
+    "expires_at": "2025-09-28T15:43:53Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 5,
+  "fields": {
+    "user": 1,
+    "jti": "ebec850eb3564029841d985e89074791",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTA3NDIzMywiaWF0IjoxNzU4NDY5NDMzLCJqdGkiOiJlYmVjODUwZWIzNTY0MDI5ODQxZDk4NWU4OTA3NDc5MSIsInVzZXJfaWQiOiIxIn0.CNunEAXnwyEoXQBp983JwyZEebma_pabM_n7qCfzDLc",
+    "created_at": "2025-09-21T15:43:53.552Z",
+    "expires_at": "2025-09-28T15:43:53Z"
+  }
+},
+{
+  "model": "token_blacklist.outstandingtoken",
+  "pk": 6,
+  "fields": {
+    "user": 1,
+    "jti": "374a5a8e0bd34317afc28f7045e22456",
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc1OTA3NDI0MCwiaWF0IjoxNzU4NDY5NDQwLCJqdGkiOiIzNzRhNWE4ZTBiZDM0MzE3YWZjMjhmNzA0NWUyMjQ1NiIsInVzZXJfaWQiOiIxIn0.syJsQ_seVZ_y2YUZu2AKvmTIgrlLGrqU44KWSmYZJ_0",
+    "created_at": "2025-09-21T15:44:00.478Z",
+    "expires_at": "2025-09-28T15:44:00Z"
+  }
+},
+{
+  "model": "token_blacklist.blacklistedtoken",
+  "pk": 1,
+  "fields": {
+    "token": 3,
+    "blacklisted_at": "2025-09-21T15:43:53.567Z"
+  }
+},
+{
+  "model": "ads.user",
+  "pk": 1,
+  "fields": {
+    "password": "pbkdf2_sha256$1000000$nUsKmXkOSfeeTyUfM9o99Q$3NbXDUueHeAadx/qFBvVkp3E7We4HBz+S0kgQOkBmUo=",
+    "last_login": "2025-09-21T15:44:00.617Z",
+    "is_superuser": true,
+    "username": "LimiT",
+    "first_name": "",
+    "last_name": "",
+    "email": "reazordd@gmail.com",
+    "is_staff": true,
+    "is_active": true,
+    "date_joined": "2025-09-20T21:18:12.759Z",
+    "avatar": "",
+    "phone": "",
+    "address": "",
+    "email_verified": false,
+    "phone_verified": false,
+    "groups": [],
+    "user_permissions": []
+  }
+},
+{
+  "model": "ads.category",
+  "pk": 1,
+  "fields": {
+    "name": "╤юсръш",
+    "slug": "",
+    "description": "╬с· тыхэш  ю яЁюфрцх ёюсръ",
+    "created_at": "2025-09-21T09:03:40.510Z",
+    "icon": 
