@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 
 function PetCard({ pet }) {
     const formatPrice = (price) => {
-        if (!price) return 'Цена не указана';
+        if (price === null || price === undefined || price === '') return 'Цена не указана';
         return new Intl.NumberFormat('ru-RU', {
             style: 'currency',
             currency: 'RUB'
@@ -20,7 +20,7 @@ function PetCard({ pet }) {
             reptile: 'Рептилия',
             other: 'Другое животное'
         };
-        return breedLabels[pet.breed] || pet.breed;
+        return breedLabels[breed] || breed;
     };
 
     return (
@@ -43,11 +43,11 @@ function PetCard({ pet }) {
                 <div className="pet-info">
                     <h3 className="pet-name">{pet.name}</h3>
                     <p className="pet-breed">{getBreedLabel(pet.breed)}</p>
-                    <p className="pet-age">{pet.age} лет</p>
+                    <p className="pet-age">{pet.age} {pet.age === 1 ? 'год' : 'лет'}</p>
                     <p className="pet-price">{formatPrice(pet.price)}</p>
 
                     <div className="pet-meta">
-                        <span className="pet-category">{pet.category_name}</span>
+                        <span className="pet-category">{pet.category?.name || ''}</span>
                         <span className="pet-views">👁️ {pet.views_count || 0}</span>
                     </div>
                 </div>

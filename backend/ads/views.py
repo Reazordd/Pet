@@ -1,9 +1,10 @@
-from rest_framework import viewsets, permissions, status
+from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from .models import Pet, Category, Favorite, Notification
-from .serializers import PetSerializer, CategorySerializer, FavoriteSerializer, NotificationSerializer
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from .models import Pet, Category
+from .serializers import PetSerializer, CategorySerializer
 from .filters import PetFilter
 from .pagination import StandardResultsSetPagination
 
@@ -15,56 +16,46 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class PetViewSet(viewsets.ModelViewSet):
-    queryset = Pet.objects.all()
+    queryset = Pet.objects.all().select_related('category', 'user')
     serializer_class = PetSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    filter_backends = [DjangoFilterBackend]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PetFilter
+    search_fields = ['name', 'description']
+    ordering_fields = ['created_at', 'price', 'views_count']
     pagination_class = StandardResultsSetPagination
 
-    def perform_create(self, serializer):
-        pet = serializer.save(user=self.request.user)
-        Notification.objects.create(
-            user=self.request.user,
-            message=f"Ваше объявление '{pet.name}' успешно опубликовано!",
-            notification_type='success'
-        )
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if self.request.user.is_authenticated:
+            return qs
+        return qs.filter(is_active=True)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
     def increment_views(self, request, pk=None):
         pet = self.get_object()
         pet.increment_views()
-        return Response({'views_count': pet.views_count})
+        return Response({'id': pet.id, 'views_count': pet.views_count}, status=status.HTTP_200_OK)
 
+    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    def my_pets(self, request):
+        qs = self.get_queryset().filter(user=request.user)
+        page = self.paginate_queryset(qs)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+        serializer = self.get_serializer(qs, many=True)
+        return Response(serializer.data)
 
-class FavoriteViewSet(viewsets.ModelViewSet):
-    serializer_class = FavoriteSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Favorite.objects.filter(user=self.request.user).select_related('pet')
-
-    @action(detail=False, methods=['post'], url_path='add/(?P<pet_id>[^/.]+)')
-    def add(self, request, pet_id=None):
-        pet = Pet.objects.filter(id=pet_id).first()
-        if not pet:
-            return Response({'error': 'Питомец не найден'}, status=status.HTTP_404_NOT_FOUND)
-        favorite, created = Favorite.objects.get_or_create(user=request.user, pet=pet)
-        if not created:
-            return Response({'detail': 'Уже в избранном'}, status=status.HTTP_200_OK)
-        return Response({'detail': 'Добавлено в избранное'}, status=status.HTTP_201_CREATED)
-
-    @action(detail=False, methods=['delete'], url_path='remove/(?P<pet_id>[^/.]+)')
-    def remove(self, request, pet_id=None):
-        deleted, _ = Favorite.objects.filter(user=request.user, pet_id=pet_id).delete()
-        if deleted:
-            return Response({'detail': 'Удалено из избранного'}, status=status.HTTP_204_NO_CONTENT)
-        return Response({'detail': 'Не найдено'}, status=status.HTTP_404_NOT_FOUND)
-
-
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = NotificationSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def toggle_active(self, request, pk=None):
+        pet = self.get_object()
+        if pet.user != request.user and not request.user.is_staff:
+            return Response({'detail': 'Нет доступа'}, status=status.HTTP_403_FORBIDDEN)
+        pet.is_active = not pet.is_active
+        pet.save(update_fields=['is_active'])
+        return Response({"id": pet.id, "is_active": pet.is_active, "message": "Статус изменён"}, status=status.HTTP_200_OK)

@@ -1,4 +1,3 @@
-// Работа с токенами
 export const checkToken = () => {
     return !!localStorage.getItem('access_token');
 };
@@ -10,9 +9,7 @@ export const logout = () => {
     window.location.href = '/login';
 };
 
-export const isAuthenticated = () => {
-    return checkToken();
-};
+export const isAuthenticated = () => checkToken();
 
 export const setTokens = ({ access, refresh }) => {
     localStorage.setItem('access_token', access);

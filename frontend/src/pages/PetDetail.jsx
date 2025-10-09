@@ -80,7 +80,7 @@ function PetDetail() {
     }
 
     const formatPrice = (price) => {
-        if (!price) return 'Цена не указана';
+        if (price === null || price === undefined || price === '') return 'Цена не указана';
         return new Intl.NumberFormat('ru-RU', {
             style: 'currency',
             currency: 'RUB'
@@ -127,8 +127,8 @@ function PetDetail() {
                         <div className="pet-meta">
                             <span className="pet-breed">{getBreedLabel(pet.breed)}</span>
                             <span className="pet-age">{pet.age} лет</span>
-                            {pet.category_name && (
-                                <span className="pet-category">{pet.category_name}</span>
+                            {pet.category?.name && (
+                                <span className="pet-category">{pet.category.name}</span>
                             )}
                         </div>
                     </div>

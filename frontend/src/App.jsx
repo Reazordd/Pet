@@ -20,14 +20,6 @@ import PasswordReset from './pages/PasswordReset';
 
 // Styles
 import './styles/global.css';
-import './styles/components.css';
-import './styles/auth.css';
-import './styles/pet-detail.css';
-import './styles/pages.css';
-import './styles/filters.css';
-import './styles/home.css';
-import './styles/buttons.css';
-import './styles/not-found.css';
 
 function App() {
     return (
@@ -41,7 +33,6 @@ function App() {
                     <Route path="/password-reset" element={<PasswordReset />} />
                     <Route path="/pets/:id" element={<PetDetail />} />
 
-                    {/* Protected Routes */}
                     <Route
                         path="/mypets"
                         element={
@@ -67,7 +58,6 @@ function App() {
                         }
                     />
 
-                    {/* 404 Handler */}
                     <Route path="*" element={<NotFound />} />
                 </Routes>
             </main>
