@@ -2,7 +2,8 @@ from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
+
 from .models import Pet, Category
 from .serializers import PetSerializer, CategorySerializer
 from .filters import PetFilter
@@ -18,7 +19,10 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
 class PetViewSet(viewsets.ModelViewSet):
     queryset = Pet.objects.all().select_related('category', 'user')
     serializer_class = PetSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
+
+    # IMPORTANT: enable multipart/form-data for uploads
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_class = PetFilter
@@ -41,7 +45,7 @@ class PetViewSet(viewsets.ModelViewSet):
         pet.increment_views()
         return Response({'id': pet.id, 'views_count': pet.views_count}, status=status.HTTP_200_OK)
 
-    @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
+    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
     def my_pets(self, request):
         qs = self.get_queryset().filter(user=request.user)
         page = self.paginate_queryset(qs)
@@ -51,7 +55,7 @@ class PetViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(qs, many=True)
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
     def toggle_active(self, request, pk=None):
         pet = self.get_object()
         if pet.user != request.user and not request.user.is_staff:

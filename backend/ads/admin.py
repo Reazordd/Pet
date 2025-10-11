@@ -1,37 +1,5 @@
 from django.contrib import admin
-from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
-from django.utils.translation import gettext_lazy as _
-from .models import User
-from ads.models import Pet, Category, Notification
-
-
-class NotificationInline(admin.TabularInline):
-    model = Notification
-    extra = 0
-    readonly_fields = ('message', 'notification_type', 'created_at')
-    can_delete = False
-    verbose_name = "Уведомление"
-    verbose_name_plural = "Уведомления"
-
-
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    list_display = ['username', 'email', 'phone', 'is_staff', 'is_active', 'date_joined']
-    list_filter = ['is_staff', 'is_active']
-    search_fields = ['username', 'email', 'phone']
-    ordering = ['-date_joined']
-    inlines = [NotificationInline]
-
-    fieldsets = (
-        (None, {'fields': ('username', 'password')}),
-        (_('Personal info'), {
-            'fields': ('first_name', 'last_name', 'email', 'phone', 'address', 'avatar'),
-        }),
-        (_('Permissions'), {
-            'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
-        }),
-        (_('Important dates'), {'fields': ('last_login', 'date_joined')}),
-    )
+from .models import Pet, Category, Notification
 
 
 @admin.register(Pet)
@@ -64,9 +32,3 @@ class NotificationAdmin(admin.ModelAdmin):
         return (obj.message[:50] + '...') if len(obj.message) > 50 else obj.message
 
     message_short.short_description = 'Сообщение'
-
-
-# Настройки интерфейса
-admin.site.site_header = 'PetMarket Administration'
-admin.site.site_title = 'PetMarket Admin'
-admin.site.index_title = 'Добро пожаловать в админку PetMarket'

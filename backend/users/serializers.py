@@ -11,12 +11,15 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'password_confirm', 'first_name', 'last_name', 'phone')
+        fields = (
+            'username', 'email', 'password', 'password_confirm',
+            'first_name', 'last_name', 'phone', 'bio', 'location'
+        )
 
     def validate(self, data):
-        if data.get('password') != data.get('password_confirm'):
+        if data['password'] != data['password_confirm']:
             raise serializers.ValidationError({"password_confirm": "Пароли не совпадают"})
-        validate_password(data.get('password'))
+        validate_password(data['password'])
         return data
 
     def create(self, validated_data):
@@ -35,6 +38,7 @@ class UserSerializer(serializers.ModelSerializer):
         model = User
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name',
-            'phone', 'address', 'avatar', 'email_verified', 'phone_verified'
+            'phone', 'bio', 'location', 'avatar',
+            'email_verified', 'phone_verified'
         )
         read_only_fields = ('email_verified', 'phone_verified')

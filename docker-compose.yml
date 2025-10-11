@@ -1,7 +1,7 @@
-version: '3.9'
+version: "3.9"
 
 services:
-  pet-db:
+  db:
     image: postgres:15
     container_name: pet-db
     restart: unless-stopped
@@ -13,31 +13,52 @@ services:
       - "5432:5432"
     volumes:
       - pet-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U petuser -d petmarket"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
 
-  pet-backend:
+  backend:
     build:
       context: ./backend
     container_name: pet-backend
-    command: gunicorn pet_project.wsgi:application --bind 0.0.0.0:8000
     restart: unless-stopped
     env_file:
       - ./backend/.env
     volumes:
       - ./backend:/app
+      - static_volume:/app/staticfiles
+      - media_volume:/app/media
     ports:
       - "8000:8000"
     depends_on:
-      - pet-db
+      db:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        echo "📦 Применяем миграции и собираем статику..."
+        python manage.py collectstatic --noinput
+        python manage.py migrate
+        echo "👤 Проверяем наличие суперпользователя..."
+        python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','admin123')"
+        echo "🚀 Запускаем Gunicorn..."
+        gunicorn pet_project.wsgi:application --bind 0.0.0.0:8000
 
-  pet-frontend:
+  frontend:
     build:
       context: ./frontend
     container_name: pet-frontend
     restart: unless-stopped
     ports:
-      - "80:80"
+      - "8080:80"
     depends_on:
-      - pet-backend
+      - backend
 
 volumes:
   pet-db-data:
+  static_volume:
+  media_volume:
