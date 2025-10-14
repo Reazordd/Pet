@@ -1,173 +1,121 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { toast } from 'react-toastify';
-import api from '../utils/api';
-import PetCard from '../components/PetCard';
-import Skeleton from 'react-loading-skeleton';
-import 'react-loading-skeleton/dist/skeleton.css';
+import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import { toast } from "react-toastify";
+import api from "../utils/api";
+import PetCard from "../components/PetCard";
+import Skeleton from "react-loading-skeleton";
+import "react-loading-skeleton/dist/skeleton.css";
+import "../styles/MyPets.css";
 
 function MyPets() {
-    const [pets, setPets] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [stats, setStats] = useState(null);
+  const [pets, setPets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
 
-    useEffect(() => {
-        fetchMyPets();
-        fetchStats();
-    }, []);
+  useEffect(() => {
+    fetchMyPets();
+    fetchStats();
+  }, []);
 
-    const fetchMyPets = async () => {
-        try {
-            setLoading(true);
-            const response = await api.get('/pets/my_pets/');
-            setPets(response.data.results || response.data);
-        } catch (error) {
-            toast.error('Ошибка при загрузке объявлений');
-        } finally {
-            setLoading(false);
-        }
-    };
+  const fetchMyPets = async () => {
+    try {
+      const response = await api.get("/pets/my_pets/");
+      setPets(response.data.results || response.data);
+    } catch {
+      toast.error("Ошибка при загрузке объявлений");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    const fetchStats = async () => {
-        try {
-            const response = await api.get('/profile/stats/');
-            setStats(response.data);
-        } catch (error) {
-            console.error('Error fetching stats:', error);
-        }
-    };
+  const fetchStats = async () => {
+    try {
+      const response = await api.get("/profile/stats/");
+      setStats(response.data);
+    } catch {
+      console.error("Error fetching stats");
+    }
+  };
 
-    const togglePetActive = async (petId, currentStatus) => {
-        try {
-            const response = await api.post(`/pets/${petId}/toggle_active/`);
-            setPets(prev => prev.map(pet =>
-                pet.id === petId ? { ...pet, is_active: response.data.is_active } : pet
-            ));
-            toast.success(response.data.message);
-        } catch (error) {
-            toast.error('Ошибка при изменении статуса');
-        }
-    };
+  const deletePet = async (id) => {
+    if (!window.confirm("Удалить это объявление?")) return;
+    try {
+      await api.delete(`/pets/${id}/`);
+      setPets((prev) => prev.filter((p) => p.id !== id));
+      toast.success("Объявление удалено");
+    } catch {
+      toast.error("Ошибка при удалении");
+    }
+  };
 
-    const deletePet = async (petId) => {
-        if (!window.confirm('Вы уверены, что хотите удалить это объявление?')) {
-            return;
-        }
+  return (
+    <div className="mypets-container">
+      <div className="mypets-header">
+        <h1>📋 Мои объявления</h1>
+        <Link to="/create" className="btn btn-primary">
+          ➕ Новое объявление
+        </Link>
+      </div>
 
-        try {
-            await api.delete(`/pets/${petId}/`);
-            setPets(prev => prev.filter(pet => pet.id !== petId));
-            toast.success('Объявление удалено');
-        } catch (error) {
-            toast.error('Ошибка при удалении объявления');
-        }
-    };
-
-    return (
-        <div className="my-pets">
-            <div className="page-header">
-                <h1>Мои объявления</h1>
-                <Link to="/create" className="btn btn-primary">
-                    📝 Создать новое объявление
-                </Link>
-            </div>
-
-            {stats && (
-                <div className="stats-grid">
-                    <div className="stat-card">
-                        <div className="stat-icon">📊</div>
-                        <div className="stat-info">
-                            <div className="stat-value">{stats.total_pets || 0}</div>
-                            <div className="stat-label">Всего объявлений</div>
-                        </div>
-                    </div>
-
-                    <div className="stat-card">
-                        <div className="stat-icon">👁️</div>
-                        <div className="stat-info">
-                            <div className="stat-value">{stats.total_views || 0}</div>
-                            <div className="stat-label">Всего просмотров</div>
-                        </div>
-                    </div>
-
-                    <div className="stat-card">
-                        <div className="stat-icon">✅</div>
-                        <div className="stat-info">
-                            <div className="stat-value">{stats.active_pets || 0}</div>
-                            <div className="stat-label">Активных объявлений</div>
-                        </div>
-                    </div>
-
-                    <div className="stat-card">
-                        <div className="stat-icon">💰</div>
-                        <div className="stat-info">
-                            <div className="stat-value">
-                                {stats.avg_price ? Math.round(stats.avg_price) : 0} ₽
-                            </div>
-                            <div className="stat-label">Средняя цена</div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            <div className="pets-section">
-                <h2>Мои животные</h2>
-
-                {loading ? (
-                    <div className="pets-grid">
-                        {Array.from({ length: 4 }).map((_, i) => (
-                            <div key={i} className="pet-card">
-                                <Skeleton height={200} />
-                                <Skeleton count={3} />
-                            </div>
-                        ))}
-                    </div>
-                ) : pets.length > 0 ? (
-                    <div className="pets-grid">
-                        {pets.map(pet => (
-                            <div key={pet.id} className="pet-card-with-actions">
-                                <PetCard pet={pet} />
-
-                                <div className="pet-actions">
-                                    <Link
-                                        to={`/pets/${pet.id}`}
-                                        className="btn btn-secondary btn-small"
-                                    >
-                                        👁️ Посмотреть
-                                    </Link>
-
-                                    <button
-                                        onClick={() => togglePetActive(pet.id, pet.is_active)}
-                                        className={`btn btn-small ${
-                                            pet.is_active ? 'btn-warning' : 'btn-success'
-                                        }`}
-                                    >
-                                        {pet.is_active ? '❌ Деактивировать' : '✅ Активировать'}
-                                    </button>
-
-                                    <button
-                                        onClick={() => deletePet(pet.id)}
-                                        className="btn btn-danger btn-small"
-                                    >
-                                        🗑️ Удалить
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="empty-state">
-                        <div className="empty-icon">🐾</div>
-                        <h3>У вас пока нет объявлений</h3>
-                        <p>Создайте первое объявление, чтобы начать продавать</p>
-                        <Link to="/create" className="btn btn-primary">
-                            Создать объявление
-                        </Link>
-                    </div>
-                )}
-            </div>
+      {stats && (
+        <div className="stats-cards">
+          <div className="stat">
+            <span>📦 {stats.total_pets}</span>
+            <p>Всего объявлений</p>
+          </div>
+          <div className="stat">
+            <span>👁️ {stats.total_views}</span>
+            <p>Просмотров</p>
+          </div>
+          <div className="stat">
+            <span>✅ {stats.active_pets}</span>
+            <p>Активных</p>
+          </div>
+          <div className="stat">
+            <span>💰 {Math.round(stats.avg_price)} ₽</span>
+            <p>Средняя цена</p>
+          </div>
         </div>
-    );
+      )}
+
+      <div className="mypets-grid">
+        {loading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="pet-skeleton">
+              <Skeleton height={200} />
+              <Skeleton count={3} />
+            </div>
+          ))
+        ) : pets.length ? (
+          pets.map((pet) => (
+            <div key={pet.id} className="mypet-card">
+              <PetCard pet={pet} />
+              <div className="mypet-actions">
+                <Link to={`/pets/${pet.id}`} className="btn btn-secondary">
+                  👁️ Смотреть
+                </Link>
+                <button
+                  onClick={() => deletePet(pet.id)}
+                  className="btn btn-danger"
+                >
+                  🗑️ Удалить
+                </button>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon">🐾</div>
+            <h3>У вас пока нет объявлений</h3>
+            <p>Создайте первое прямо сейчас</p>
+            <Link to="/create" className="btn btn-primary">
+              ➕ Создать
+            </Link>
+          </div>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default MyPets;

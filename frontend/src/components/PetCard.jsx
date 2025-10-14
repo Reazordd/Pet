@@ -1,58 +1,31 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import '../styles/PetCard.css';
 
 function PetCard({ pet }) {
     const formatPrice = (price) => {
-        if (price === null || price === undefined || price === '') return 'Цена не указана';
-        return new Intl.NumberFormat('ru-RU', {
-            style: 'currency',
-            currency: 'RUB'
-        }).format(price);
-    };
-
-    const getBreedLabel = (breed) => {
-        const breedLabels = {
-            dog: 'Собака',
-            cat: 'Кошка',
-            bird: 'Птица',
-            fish: 'Рыба',
-            rodent: 'Грызун',
-            reptile: 'Рептилия',
-            other: 'Другое животное'
-        };
-        return breedLabels[breed] || breed;
+        if (!price) return 'Цена не указана';
+        return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
     };
 
     return (
-        <div className="pet-card">
-            <Link to={`/pets/${pet.id}`} className="pet-card-link">
-                <div className="pet-image">
-                    {pet.photo ? (
-                        <img
-                            src={pet.photo}
-                            alt={pet.name}
-                            onError={(e) => {
-                                e.target.src = '/images/default-pet.jpg';
-                            }}
-                        />
-                    ) : (
-                        <div className="no-image">🐾</div>
-                    )}
+        <Link to={`/pets/${pet.id}`} className="pet-card">
+            <div className="pet-image">
+                {pet.photo ? (
+                    <img src={pet.photo} alt={pet.name} />
+                ) : (
+                    <div className="no-photo">🐾</div>
+                )}
+            </div>
+            <div className="pet-body">
+                <div className="pet-name">{pet.name}</div>
+                <div className="pet-price">{formatPrice(pet.price)}</div>
+                <div className="pet-meta">
+                    <span>{pet.category?.name || 'Без категории'}</span>
+                    <span className="views">👁 {pet.views_count || 0}</span>
                 </div>
-
-                <div className="pet-info">
-                    <h3 className="pet-name">{pet.name}</h3>
-                    <p className="pet-breed">{getBreedLabel(pet.breed)}</p>
-                    <p className="pet-age">{pet.age} {pet.age === 1 ? 'год' : 'лет'}</p>
-                    <p className="pet-price">{formatPrice(pet.price)}</p>
-
-                    <div className="pet-meta">
-                        <span className="pet-category">{pet.category?.name || ''}</span>
-                        <span className="pet-views">👁️ {pet.views_count || 0}</span>
-                    </div>
-                </div>
-            </Link>
-        </div>
+            </div>
+        </Link>
     );
 }
 

@@ -6,8 +6,8 @@ from .models import Pet, Category, Notification
 class PetAdmin(admin.ModelAdmin):
     list_display = ['name', 'breed', 'price', 'user', 'is_active', 'created_at']
     list_display_links = ['name']
-    list_filter = ['is_active', 'breed', 'category']
-    search_fields = ['name', 'description', 'user__username']
+    list_filter = ['is_active', 'category']
+    search_fields = ['name', 'description', 'user__username', 'breed']
     readonly_fields = ['views_count', 'created_at', 'updated_at']
     list_editable = ['price', 'is_active']
     ordering = ['-created_at']

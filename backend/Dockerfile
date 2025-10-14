@@ -9,6 +9,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python manage.py collectstatic --noinput
-
+# collectstatic запускается в entrypoint (docker-compose command), оставляем здесь, но не выполняем на билде
 CMD ["gunicorn", "pet_project.wsgi:application", "--bind", "0.0.0.0:8000"]

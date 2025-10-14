@@ -17,9 +17,12 @@ import MyPets from './pages/MyPets';
 import CreatePet from './pages/CreatePet';
 import Profile from './pages/Profile';
 import PasswordReset from './pages/PasswordReset';
+import Messages from "./pages/Messages";
+
 
 // Styles
 import './styles/global.css';
+import SellerProfile from "./pages/SellerProfile.jsx";
 
 function App() {
     return (
@@ -32,6 +35,9 @@ function App() {
                     <Route path="/register" element={<Register />} />
                     <Route path="/password-reset" element={<PasswordReset />} />
                     <Route path="/pets/:id" element={<PetDetail />} />
+                    <Route path="/messages" element={<Messages />} />
+                    <Route path="/messages/:chatId" element={<Messages />} />
+                    <Route path="/seller/:id" element={<SellerProfile />} />
 
                     <Route
                         path="/mypets"

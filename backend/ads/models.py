@@ -52,21 +52,13 @@ class Category(models.Model):
 
 
 class Pet(models.Model):
-    BREED_CHOICES = [
-        ('dog', 'Собаки'),
-        ('cat', 'Кошки'),
-        ('bird', 'Птицы'),
-        ('fish', 'Рыбы'),
-        ('rodent', 'Грызуны'),
-        ('reptile', 'Рептилии'),
-        ('other', 'Другие животные'),
-    ]
-
+    # breed — теперь свободная строка, пользователь вводит вручную
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    breed = models.CharField(max_length=20, choices=BREED_CHOICES)
+    breed = models.CharField(max_length=150)  # свободный ввод
     name = models.CharField(max_length=100)
-    age = models.PositiveIntegerField(validators=[MinValueValidator(0)])
+    # age — свободный текст (например "3 месяца", "2 года", "45 дней")
+    age = models.CharField(max_length=50, help_text="Укажите возраст: '3 месяца', '2 года', '45 дней' и т.д.")
     description = models.TextField()
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     photo = models.ImageField(upload_to='pets/', blank=True, null=True)
@@ -78,20 +70,6 @@ class Pet(models.Model):
     def increment_views(self):
         self.views_count += 1
         self.save(update_fields=['views_count'])
-
-    def save(self, *args, **kwargs):
-        if not self.category:
-            category_map = {
-                'dog': 'Собаки',
-                'cat': 'Кошки',
-                'bird': 'Птицы',
-                'fish': 'Рыбы',
-                'rodent': 'Грызуны',
-                'reptile': 'Рептилии',
-            }
-            category_name = category_map.get(self.breed, 'Другие животные')
-            self.category, _ = Category.objects.get_or_create(name=category_name)
-        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.breed})"

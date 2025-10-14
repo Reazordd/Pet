@@ -1,0 +1,141 @@
+.pets-page {
+  display: flex;
+  gap: 30px;
+  padding: 40px 20px;
+  background: #f5f6fa;
+  min-height: 100vh;
+}
+
+/* Левая панель фильтров */
+.filters-panel {
+  flex: 0 0 280px;
+  background: #fff;
+  border-radius: 16px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  height: fit-content;
+}
+
+.filters-panel h2 {
+  margin-bottom: 20px;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.filter-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-group label {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #333;
+}
+
+.filter-group input,
+.filter-group select {
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 1rem;
+  outline: none;
+  transition: border 0.2s;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  border-color: #0071f0;
+}
+
+.price-range {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-actions {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.w-full {
+  width: 100%;
+}
+
+/* Правая часть (результаты) */
+.results-panel {
+  flex: 1;
+}
+
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.results-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.results-count {
+  font-size: 1rem;
+  color: #777;
+}
+
+.pets-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 60px;
+  color: #666;
+  font-size: 1.1rem;
+}
+
+/* Buttons в стиле Avito */
+.btn {
+  border: none;
+  border-radius: 10px;
+  padding: 12px 18px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.btn-primary {
+  background: #0071f0;
+  color: white;
+}
+
+.btn-primary:hover {
+  background: #005ec7;
+}
+
+.btn-secondary {
+  background: #f0f2f5;
+  color: #333;
+}
+
+.btn-secondary:hover {
+  background: #e3e6ea;
+}
+
+/* Адаптив */
+@media (max-width: 1000px) {
+  .pets-page {
+    flex-direction: column;
+  }
+
+  .filters-panel {
+    width: 100%;
+  }
+}

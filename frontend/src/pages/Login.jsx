@@ -12,7 +12,6 @@ function Login() {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    // Если пользователь уже авторизован, перенаправляем на главную
     if (checkToken()) {
         navigate('/');
         return null;
@@ -32,7 +31,6 @@ function Login() {
 
         try {
             const response = await api.post('/token/', credentials);
-
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
 

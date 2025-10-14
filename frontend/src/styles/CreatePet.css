@@ -1,0 +1,119 @@
+.avito-form-container {
+  display: flex;
+  justify-content: center;
+  padding: 60px 20px;
+  background: #f5f6f8;
+  min-height: 100vh;
+}
+
+.avito-form-card {
+  background: #fff;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  max-width: 700px;
+}
+
+.avito-title {
+  text-align: center;
+  font-size: 2rem;
+  color: #222;
+  margin-bottom: 30px;
+  font-weight: 700;
+}
+
+.avito-form .form-row {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
+}
+
+.avito-form label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #333;
+}
+
+.avito-form input,
+.avito-form select,
+.avito-form textarea {
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.avito-form input:focus,
+.avito-form select:focus,
+.avito-form textarea:focus {
+  border-color: #0071f0;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 113, 240, 0.1);
+}
+
+.avito-form select {
+  background: white;
+}
+
+.avito-form textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.file-upload input[type="file"] {
+  padding: 8px;
+  cursor: pointer;
+}
+
+.preview-wrapper {
+  margin-top: 15px;
+  text-align: center;
+}
+
+.preview {
+  width: 100%;
+  max-width: 300px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Button */
+.avito-btn {
+  width: 100%;
+  background: #0071f0;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 20px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.avito-btn:hover {
+  background: #005ec7;
+}
+
+.avito-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .avito-form-card {
+    padding: 25px;
+  }
+
+  .avito-title {
+    font-size: 1.6rem;
+  }
+
+  .preview {
+    max-width: 100%;
+  }
+}

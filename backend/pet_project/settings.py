@@ -8,9 +8,6 @@ SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key")
 DEBUG = os.environ.get("DEBUG", "True") == "True"
 ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", "pet-backend"]
 
-# ---------------------------------------------------
-# APPS
-# ---------------------------------------------------
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -59,9 +56,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "pet_project.wsgi.application"
 
-# ---------------------------------------------------
-# DATABASE
-# ---------------------------------------------------
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -73,9 +67,6 @@ DATABASES = {
     }
 }
 
-# ---------------------------------------------------
-# AUTH & PASSWORDS
-# ---------------------------------------------------
 AUTH_USER_MODEL = "users.User"
 
 AUTH_PASSWORD_VALIDATORS = [
@@ -83,28 +74,22 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# ---------------------------------------------------
-# INTERNATIONALIZATION
-# ---------------------------------------------------
 LANGUAGE_CODE = "ru-RU"
 TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_TZ = True
 
-# ---------------------------------------------------
-# STATIC & MEDIA
-# ---------------------------------------------------
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
-# ---------------------------------------------------
-# DRF & JWT
-# ---------------------------------------------------
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # добавляем SessionAuthentication — полезно для CSRF при ajax с credentials
+        "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.AllowAny",
@@ -118,9 +103,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# ---------------------------------------------------
 # CORS / CSRF
-# ---------------------------------------------------
 CORS_ALLOW_ALL_ORIGINS = False
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
@@ -137,9 +120,6 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SAMESITE = 'Lax'
 
-# ---------------------------------------------------
-# SPECTACULAR
-# ---------------------------------------------------
 SPECTACULAR_SETTINGS = {
     "TITLE": "PetMarket API",
     "DESCRIPTION": "API для маркетплейса домашних животных",
@@ -147,4 +127,3 @@ SPECTACULAR_SETTINGS = {
 }
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
-STATICFILES_DIRS = []

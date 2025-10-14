@@ -30,6 +30,14 @@ function Register() {
         }));
     };
 
+    const ensureCsrf = async () => {
+        try {
+            await api.get('/csrf/'); // установит CSRF cookie если нужно
+        } catch (e) {
+            // не критично
+        }
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -46,27 +54,32 @@ function Register() {
         setLoading(true);
 
         try {
-            const { password_confirm, ...submitData } = formData;
-            const response = await api.post('/register/', submitData);
+            await ensureCsrf();
 
-            // После регистрации получаем токены через отдельный login
-            const loginResponse = await api.post('/token/', {
-                username: submitData.username,
-                password: submitData.password
-            });
+            // отправляем ВСЕ поля, включая password_confirm
+            const response = await api.post('/register/', formData);
 
-            localStorage.setItem('access_token', loginResponse.data.access);
-            localStorage.setItem('refresh_token', loginResponse.data.refresh);
+            // После регистрации — получаем токены которые вернул сервер
+            const { access, refresh } = response.data;
+            if (access && refresh) {
+                localStorage.setItem('access_token', access);
+                localStorage.setItem('refresh_token', refresh);
+            }
 
             toast.success('Регистрация прошла успешно!');
             navigate('/');
         } catch (error) {
             if (error.response?.data) {
-                Object.values(error.response.data).forEach(errors => {
-                    if (Array.isArray(errors)) {
-                        errors.forEach(err => toast.error(err));
-                    }
-                });
+                const data = error.response.data;
+                // Может быть объект полей или список ошибок
+                if (typeof data === 'object') {
+                    Object.entries(data).forEach(([key, val]) => {
+                        if (Array.isArray(val)) val.forEach(v => toast.error(`${key}: ${v}`));
+                        else toast.error(`${key}: ${val}`);
+                    });
+                } else {
+                    toast.error('Ошибка регистрации. Проверьте данные.');
+                }
             } else {
                 toast.error('Ошибка регистрации. Проверьте соединение.');
             }
