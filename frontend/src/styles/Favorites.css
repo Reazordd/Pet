@@ -1,0 +1,67 @@
+.favorites-page {
+  padding: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.favorites-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.favorites-header h1 {
+  font-size: 1.8rem;
+  font-weight: 700;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  color: #ff4444;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.clear-btn:hover {
+  text-decoration: underline;
+}
+
+.favorites-empty {
+  text-align: center;
+  margin-top: 100px;
+  color: #666;
+}
+
+.favorites-empty .btn {
+  margin-top: 20px;
+}
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+.favorite-item {
+  position: relative;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: #fff;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  color: #f44336;
+  font-weight: 700;
+  transition: background 0.2s;
+}
+
+.remove-btn:hover {
+  background: #ffeaea;
+}

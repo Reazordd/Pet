@@ -1,54 +1,74 @@
 .pet-card {
-    display: flex;
-    flex-direction: column;
-    background: #fff;
-    border: 1px solid #e6e6e6;
-    border-radius: 10px;
-    overflow: hidden;
-    text-decoration: none;
-    color: #222;
-    transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  text-decoration: none;
+  color: var(--text-color);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  position: relative;
 }
 
 .pet-card:hover {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-    transform: translateY(-3px);
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+}
+
+.pet-image {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  background: #f1f1f1;
 }
 
 .pet-image img {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
-.no-photo {
-    height: 200px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 3rem;
-    background: #f5f5f5;
+.favorite-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: transparent;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  transition: transform 0.2s;
 }
 
-.pet-body {
-    padding: 12px 15px;
+.favorite-btn.active {
+  color: #ff3b3b;
 }
 
-.pet-name {
-    font-weight: 600;
-    font-size: 1.1rem;
-    margin-bottom: 6px;
+.favorite-btn:hover {
+  transform: scale(1.2);
+}
+
+.pet-info {
+  padding: 14px 16px;
 }
 
 .pet-price {
-    font-weight: 700;
-    color: #0071f0;
-    margin-bottom: 8px;
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.2rem;
+  margin-bottom: 6px;
+}
+
+.pet-name {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .pet-meta {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.9rem;
-    color: #777;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.85rem;
+  color: #777;
 }

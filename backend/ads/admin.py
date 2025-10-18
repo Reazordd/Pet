@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Pet, Category, Notification
+from .models import Pet, Category
 
 
 @admin.register(Pet)
@@ -21,12 +21,12 @@ class CategoryAdmin(admin.ModelAdmin):
     ordering = ['name']
 
 
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ['user', 'message_short', 'notification_type', 'is_read', 'created_at']
-    list_filter = ['notification_type', 'is_read']
-    search_fields = ['message', 'user__username']
-    readonly_fields = ['created_at']
+# @admin.register(Notification)
+# class NotificationAdmin(admin.ModelAdmin):
+#     list_display = ['user', 'message_short', 'notification_type', 'is_read', 'created_at']
+#     list_filter = ['notification_type', 'is_read']
+#     search_fields = ['message', 'user__username']
+#     readonly_fields = ['created_at']
 
     def message_short(self, obj):
         return (obj.message[:50] + '...') if len(obj.message) > 50 else obj.message

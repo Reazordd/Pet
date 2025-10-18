@@ -1,3 +1,4 @@
+# backend/pet_project/settings.py
 import os
 from pathlib import Path
 from datetime import timedelta
@@ -15,14 +16,22 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+
+    # third-party
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "django_filters",
     "drf_spectacular",
+    "channels",
+
+    # local apps
     "ads",
     "users",
     "pets",
+    "channels",
+    "chat",
+    'forum',
 ]
 
 MIDDLEWARE = [
@@ -55,7 +64,16 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "pet_project.wsgi.application"
+ASGI_APPLICATION = "pet_project.asgi.application"
 
+# Для Channels (WebSocket)
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer"
+    }
+}
+
+# Database
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -74,21 +92,25 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
+# Internationalization
 LANGUAGE_CODE = "ru-RU"
 TIME_ZONE = "Europe/Moscow"
 USE_I18N = True
 USE_TZ = True
 
+# Static & media
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# DRF
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # добавляем SessionAuthentication — полезно для CSRF при ajax с credentials
         "rest_framework.authentication.SessionAuthentication",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
@@ -103,8 +125,20 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# CORS / CSRF
-CORS_ALLOW_ALL_ORIGINS = False
+# Channels (Redis)
+REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(REDIS_HOST, int(REDIS_PORT))],
+        },
+    },
+}
+
+# CORS & CSRF
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:8080",
     "http://127.0.0.1:8080",
@@ -117,13 +151,11 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SAMESITE = 'Lax'
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_SAMESITE = "Lax"
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "PetMarket API",
     "DESCRIPTION": "API для маркетплейса домашних животных",
     "VERSION": "1.0.0",
 }
-
-DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

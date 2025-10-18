@@ -5,48 +5,30 @@ import { checkToken, logout } from "../utils/auth";
 import "../styles/Profile.css";
 
 function Profile() {
-  const [userData, setUserData] = useState({
-    username: "",
-    email: "",
-    first_name: "",
-    last_name: "",
-    phone: "",
-    address: "",
-    avatar: null,
-  });
-  const [currentAvatar, setCurrentAvatar] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [userData, setUserData] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    if (!checkToken()) {
-      logout();
-      return;
-    }
+    if (!checkToken()) return logout();
     fetchProfile();
   }, []);
 
   const fetchProfile = async () => {
     try {
-      const response = await api.get("/profile/");
-      setUserData(response.data);
-      setCurrentAvatar(response.data.avatar);
-    } catch (error) {
-      toast.error("Ошибка при загрузке профиля");
-      if (error.response?.status === 401) logout();
+      const res = await api.get("/profile/");
+      setUserData(res.data);
+    } catch {
+      toast.error("Ошибка загрузки профиля");
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setUserData((prev) => ({ ...prev, [name]: value }));
-  };
+  const handleChange = (e) => setUserData({ ...userData, [e.target.name]: e.target.value });
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setUserData((prev) => ({ ...prev, avatar: file }));
-
+      setUserData({ ...userData, avatar: file });
       const reader = new FileReader();
       reader.onload = (ev) => setImagePreview(ev.target.result);
       reader.readAsDataURL(file);
@@ -57,21 +39,14 @@ function Profile() {
     e.preventDefault();
     setLoading(true);
     try {
-      const submitData = new FormData();
-      Object.keys(userData).forEach((key) => {
-        if (userData[key]) submitData.append(key, userData[key]);
-      });
-
-      const response = await api.put("/profile/", submitData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      setUserData(response.data);
-      setCurrentAvatar(response.data.avatar);
+      const data = new FormData();
+      Object.entries(userData).forEach(([k, v]) => v && data.append(k, v));
+      const res = await api.put("/profile/", data, { headers: { "Content-Type": "multipart/form-data" } });
+      setUserData(res.data);
       setImagePreview(null);
       toast.success("✅ Профиль обновлён");
     } catch {
-      toast.error("Ошибка при обновлении профиля");
+      toast.error("Ошибка обновления");
     } finally {
       setLoading(false);
     }
@@ -80,123 +55,26 @@ function Profile() {
   return (
     <div className="profile-container">
       <div className="profile-card">
-        <div className="profile-header">
-          <h1>👤 Мой профиль</h1>
-        </div>
-
+        <h1>👤 Мой профиль</h1>
         <div className="profile-avatar">
-          <div className="avatar-wrapper">
-            {imagePreview ? (
-              <img src={imagePreview} alt="Preview" />
-            ) : currentAvatar ? (
-              <img src={currentAvatar} alt="Avatar" />
-            ) : (
-              <div className="avatar-placeholder">
-                {userData.first_name?.[0] || userData.username?.[0] || "U"}
-              </div>
-            )}
-          </div>
-
-          <div className="avatar-actions">
-            <label htmlFor="avatar-upload" className="btn btn-secondary">
-              📸 Изменить
-            </label>
-            <input
-              type="file"
-              id="avatar-upload"
-              onChange={handleFileChange}
-              accept="image/*"
-              style={{ display: "none" }}
-            />
-
-            {currentAvatar && (
-              <button
-                className="btn btn-danger"
-                onClick={() => {
-                  setUserData((p) => ({ ...p, avatar: "" }));
-                  setCurrentAvatar("");
-                }}
-              >
-                🗑️ Удалить
-              </button>
-            )}
-          </div>
+          {imagePreview ? (
+            <img src={imagePreview} alt="Preview" />
+          ) : userData.avatar ? (
+            <img src={userData.avatar} alt="Avatar" />
+          ) : (
+            <div className="avatar-placeholder">{userData.username?.[0] || "U"}</div>
+          )}
+          <input type="file" accept="image/*" onChange={handleFileChange} />
         </div>
 
-        <form onSubmit={handleSubmit} className="profile-form">
-          <div className="form-group">
-            <label>Имя</label>
-            <input
-              name="first_name"
-              value={userData.first_name}
-              onChange={handleChange}
-              placeholder="Ваше имя"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Фамилия</label>
-            <input
-              name="last_name"
-              value={userData.last_name}
-              onChange={handleChange}
-              placeholder="Ваша фамилия"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Логин *</label>
-            <input
-              name="username"
-              value={userData.username}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Email *</label>
-            <input
-              type="email"
-              name="email"
-              value={userData.email}
-              onChange={handleChange}
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Телефон</label>
-            <input
-              name="phone"
-              value={userData.phone}
-              onChange={handleChange}
-              placeholder="+7 (999) 999-99-99"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Адрес</label>
-            <textarea
-              name="address"
-              value={userData.address}
-              onChange={handleChange}
-              placeholder="Введите ваш адрес"
-            />
-          </div>
-
-          <div className="profile-buttons">
-            <button type="submit" className="btn btn-primary" disabled={loading}>
-              💾 Сохранить
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={fetchProfile}
-            >
-              ⟳ Отменить
-            </button>
-          </div>
+        <form onSubmit={handleSubmit}>
+          <input name="first_name" value={userData.first_name || ""} onChange={handleChange} placeholder="Имя" />
+          <input name="last_name" value={userData.last_name || ""} onChange={handleChange} placeholder="Фамилия" />
+          <input name="username" value={userData.username || ""} onChange={handleChange} required />
+          <input name="email" type="email" value={userData.email || ""} onChange={handleChange} required />
+          <input name="phone" value={userData.phone || ""} onChange={handleChange} placeholder="+7 (999) ..." />
+          <textarea name="address" value={userData.address || ""} onChange={handleChange} placeholder="Адрес" />
+          <button type="submit" disabled={loading}>{loading ? "⏳ Сохраняем..." : "💾 Сохранить"}</button>
         </form>
       </div>
     </div>

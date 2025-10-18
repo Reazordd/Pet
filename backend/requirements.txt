@@ -44,6 +44,8 @@ python-dotenv==1.0.0
 dj-database-url==2.1.0
 psycopg2-binary==2.9.9
 gunicorn
+channels==4.0.0
+channels-redis==4.1.0
 
 
 

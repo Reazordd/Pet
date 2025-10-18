@@ -1,50 +1,26 @@
 from django.db import models
 from django.contrib.auth import get_user_model
-from django.core.validators import MinValueValidator, MinLengthValidator
 from django.utils.text import slugify
+from django.utils import timezone
 
 User = get_user_model()
 
 
-class Notification(models.Model):
-    NOTIFICATION_TYPES = [
-        ('info', 'Информация'),
-        ('success', 'Успех'),
-        ('warning', 'Предупреждение'),
-        ('error', 'Ошибка'),
-    ]
-
-    user = models.ForeignKey(User, related_name='notifications', on_delete=models.CASCADE)
-    message = models.TextField()
-    notification_type = models.CharField(max_length=10, choices=NOTIFICATION_TYPES, default='info')
-    is_read = models.BooleanField(default=False)
-    link = models.URLField(blank=True, null=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Уведомление'
-        verbose_name_plural = 'Уведомления'
-
-    def __str__(self):
-        return f"{self.user.username}: {self.message[:50]}"
-
-
 class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True, validators=[MinLengthValidator(3)])
-    slug = models.SlugField(max_length=100, unique=True, blank=True)
-    description = models.TextField(blank=True)
-    icon = models.CharField(max_length=50, blank=True, default='🐾')
+    name = models.CharField(max_length=100, unique=True, verbose_name="Название категории")
+    slug = models.SlugField(unique=True, blank=True)
+    description = models.TextField(blank=True, null=True, verbose_name="Описание")
+    icon = models.CharField(max_length=50, blank=True, null=True, verbose_name="Иконка (emoji)")
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['name']
-        verbose_name = 'Категория'
-        verbose_name_plural = 'Категории'
+        verbose_name = "Категория"
+        verbose_name_plural = "Категории"
 
     def save(self, *args, **kwargs):
         if not self.slug:
-            self.slug = slugify(self.name)
+            self.slug = slugify(self.name, allow_unicode=True)
         super().save(*args, **kwargs)
 
     def __str__(self):
@@ -52,39 +28,33 @@ class Category(models.Model):
 
 
 class Pet(models.Model):
-    # breed — теперь свободная строка, пользователь вводит вручную
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True)
-    breed = models.CharField(max_length=150)  # свободный ввод
-    name = models.CharField(max_length=100)
-    # age — свободный текст (например "3 месяца", "2 года", "45 дней")
-    age = models.CharField(max_length=50, help_text="Укажите возраст: '3 месяца', '2 года', '45 дней' и т.д.")
-    description = models.TextField()
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
-    photo = models.ImageField(upload_to='pets/', blank=True, null=True)
-    is_active = models.BooleanField(default=True)
-    views_count = models.PositiveIntegerField(default=0)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets', verbose_name="Владелец")
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Категория")
+
+    name = models.CharField(max_length=255, verbose_name="Имя питомца")
+    breed = models.CharField(max_length=255, blank=True, verbose_name="Порода")
+    age = models.CharField(max_length=100, blank=True, verbose_name="Возраст")
+    description = models.TextField(blank=True, verbose_name="Описание")
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Цена")
+    photo = models.ImageField(upload_to='pets/', null=True, blank=True, verbose_name="Фото")
+
+    is_active = models.BooleanField(default=True, verbose_name="Активное объявление")
+    views_count = models.PositiveIntegerField(default=0, verbose_name="Просмотры")
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    def increment_views(self):
-        self.views_count += 1
-        self.save(update_fields=['views_count'])
-
-    def __str__(self):
-        return f"{self.name} ({self.breed})"
-
-
-class Favorite(models.Model):
-    user = models.ForeignKey(User, related_name='favorites', on_delete=models.CASCADE)
-    pet = models.ForeignKey(Pet, related_name='favorites', on_delete=models.CASCADE)
-    created_at = models.DateTimeField(auto_now_add=True)
-
     class Meta:
-        unique_together = ('user', 'pet')
-        verbose_name = 'Избранное'
-        verbose_name_plural = 'Избранные'
         ordering = ['-created_at']
+        verbose_name = "Объявление"
+        verbose_name_plural = "Объявления"
+
+    def increment_views(self):
+        """ Увеличивает количество просмотров (при открытии карточки) """
+        self.views_count = models.F('views_count') + 1
+        self.save(update_fields=['views_count'])
+        # Принудительно обновляем объект в памяти
+        self.refresh_from_db()
 
     def __str__(self):
-        return f"{self.user.username} → {self.pet.name}"
+        return f"{self.name} ({self.category})"

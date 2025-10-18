@@ -28,6 +28,10 @@ urlpatterns = [
     # Основные приложения
     path("api/", include("ads.urls")),
     path("api/", include("pets.urls")),
+    path("api/", include("chat.urls")),
+    path("api/", include("forum.urls")),
+
+
 
     # CSRF cookie endpoint
     path("api/csrf/", set_csrf_token),

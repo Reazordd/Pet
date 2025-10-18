@@ -1,139 +1,92 @@
 import React, { useState } from 'react';
+import '../styles/Filters.css';
 
 function SearchFilters({ onFilter, loading }) {
-    const [filters, setFilters] = useState({
-        breed: '',
-        category: '',
-        minPrice: '',
-        maxPrice: '',
-        minAge: '',
-        maxAge: '',
-        search: ''
-    });
+  const [filters, setFilters] = useState({
+    search: '',
+    breed: '',
+    minPrice: '',
+    maxPrice: '',
+  });
 
-    const breedOptions = [
-        { value: '', label: 'Все виды' },
-        { value: 'dog', label: 'Собаки' },
-        { value: 'cat', label: 'Кошки' },
-        { value: 'bird', label: 'Птицы' },
-        { value: 'fish', label: 'Рыбы' },
-        { value: 'rodent', label: 'Грызуны' },
-        { value: 'reptile', label: 'Рептилии' },
-        { value: 'other', label: 'Другие' }
-    ];
+  const breedOptions = [
+    { value: '', label: 'Все животные' },
+    { value: 'dog', label: 'Собаки' },
+    { value: 'cat', label: 'Кошки' },
+    { value: 'bird', label: 'Птицы' },
+    { value: 'fish', label: 'Рыбы' },
+    { value: 'rodent', label: 'Грызуны' },
+    { value: 'reptile', label: 'Рептилии' },
+    { value: 'other', label: 'Другое' },
+  ];
 
-    const handleFilterChange = (field, value) => {
-        const newFilters = { ...filters, [field]: value };
-        setFilters(newFilters);
-        onFilter(newFilters);
-    };
+  const handleChange = (name, value) => {
+    const updated = { ...filters, [name]: value };
+    setFilters(updated);
+    onFilter(updated);
+  };
 
-    const clearFilters = () => {
-        const emptyFilters = {
-            breed: '',
-            category: '',
-            minPrice: '',
-            maxPrice: '',
-            minAge: '',
-            maxAge: '',
-            search: ''
-        };
-        setFilters(emptyFilters);
-        onFilter(emptyFilters);
-    };
+  const clearFilters = () => {
+    const reset = { search: '', breed: '', minPrice: '', maxPrice: '' };
+    setFilters(reset);
+    onFilter(reset);
+  };
 
-    return (
-        <div className="search-filters">
-            <div className="filters-header">
-                <h3>🔍 Фильтры поиска</h3>
-                <button
-                    onClick={clearFilters}
-                    className="btn btn-secondary btn-small"
-                    disabled={loading}
-                >
-                    ❌ Очистить
-                </button>
-            </div>
+  return (
+    <div className="filters-box">
+      <div className="filters-header">
+        <h3>Фильтр объявлений</h3>
+        <button onClick={clearFilters} disabled={loading} className="clear-btn">
+          Сбросить
+        </button>
+      </div>
 
-            <div className="filters-grid">
-                {/* Search Input */}
-                <div className="filter-group">
-                    <label>Поиск по названию</label>
-                    <input
-                        type="text"
-                        placeholder="Название животного..."
-                        value={filters.search}
-                        onChange={(e) => handleFilterChange('search', e.target.value)}
-                        disabled={loading}
-                    />
-                </div>
-
-                {/* Breed Filter */}
-                <div className="filter-group">
-                    <label>Вид животного</label>
-                    <select
-                        value={filters.breed}
-                        onChange={(e) => handleFilterChange('breed', e.target.value)}
-                        disabled={loading}
-                    >
-                        {breedOptions.map(option => (
-                            <option key={option.value} value={option.value}>
-                                {option.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Price Range */}
-                <div className="filter-group">
-                    <label>Цена (₽)</label>
-                    <div className="range-inputs">
-                        <input
-                            type="number"
-                            placeholder="От"
-                            value={filters.minPrice}
-                            onChange={(e) => handleFilterChange('minPrice', e.target.value)}
-                            disabled={loading}
-                            min="0"
-                        />
-                        <span>-</span>
-                        <input
-                            type="number"
-                            placeholder="До"
-                            value={filters.maxPrice}
-                            onChange={(e) => handleFilterChange('maxPrice', e.target.value)}
-                            disabled={loading}
-                            min="0"
-                        />
-                    </div>
-                </div>
-
-                {/* Age Range */}
-                <div className="filter-group">
-                    <label>Возраст (лет)</label>
-                    <div className="range-inputs">
-                        <input
-                            type="number"
-                            placeholder="От"
-                            value={filters.minAge}
-                            onChange={(e) => handleFilterChange('minAge', e.target.value)}
-                            disabled={loading}
-                            min="0"
-                        />
-                        <span>-</span>
-                        <input
-                            type="number"
-                            placeholder="До"
-                            value={filters.maxAge}
-                            onChange={(e) => handleFilterChange('maxAge', e.target.value)}
-                            disabled={loading}
-                            min="0"
-                        />
-                    </div>
-                </div>
-            </div>
+      <div className="filters-grid">
+        <div className="filter-item">
+          <label>Поиск</label>
+          <input
+            type="text"
+            placeholder="Введите имя или описание"
+            value={filters.search}
+            onChange={(e) => handleChange('search', e.target.value)}
+          />
         </div>
-    );
+
+        <div className="filter-item">
+          <label>Тип животного</label>
+          <select
+            value={filters.breed}
+            onChange={(e) => handleChange('breed', e.target.value)}
+          >
+            {breedOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="filter-item">
+          <label>Цена (₽)</label>
+          <div className="filter-range">
+            <input
+              type="number"
+              placeholder="от"
+              value={filters.minPrice}
+              onChange={(e) => handleChange('minPrice', e.target.value)}
+            />
+            <span>—</span>
+            <input
+              type="number"
+              placeholder="до"
+              value={filters.maxPrice}
+              onChange={(e) => handleChange('maxPrice', e.target.value)}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default SearchFilters;

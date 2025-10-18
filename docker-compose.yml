@@ -20,6 +20,14 @@ services:
       retries: 10
       start_period: 10s
 
+  redis:
+    image: redis:7-alpine
+    container_name: pet-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+
   backend:
     build:
       context: ./backend
@@ -36,13 +44,15 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     command:
       - sh
       - -c
       - |
         echo "📦 Применяем миграции и собираем статику..."
-        python manage.py collectstatic --noinput || true
-        python manage.py migrate --noinput
+        python manage.py collectstatic --noinput
+        python manage.py migrate
         echo "👤 Проверяем наличие суперпользователя..."
         python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','admin123')"
         echo "🚀 Запускаем Gunicorn..."

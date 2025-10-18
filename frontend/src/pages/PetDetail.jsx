@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import api from "../utils/api";
-import { checkToken } from "../utils/auth";
+import ChatButton from "../components/ChatButton";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import "../styles/PetDetail.css";
@@ -12,8 +12,11 @@ function PetDetail() {
   const navigate = useNavigate();
   const [pet, setPet] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const isAuthenticated = checkToken();
+  const [favorites, setFavorites] = useState(
+    JSON.parse(localStorage.getItem("favorites") || "[]")
+  );
+
+  const isFavorite = favorites.some((f) => f.id === parseInt(id));
 
   useEffect(() => {
     fetchPet();
@@ -21,142 +24,81 @@ function PetDetail() {
 
   const fetchPet = async () => {
     try {
-      setLoading(true);
-      const response = await api.get(`/pets/${id}/`);
-      setPet(response.data);
+      const res = await api.get(`/pets/${id}/`);
+      setPet(res.data);
+      await api.post(`/pets/${id}/increment_views/`).catch(() => {});
     } catch {
-      setError("Объявление не найдено");
-      toast.error("Не удалось загрузить объявление");
+      toast.error("Объявление не найдено");
+      navigate("/");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleContact = () => {
-    if (!isAuthenticated) {
-      toast.info("Войдите в систему, чтобы связаться с продавцом");
-      navigate("/login");
-      return;
-    }
-
-    if (pet.user_phone) {
-      window.open(`tel:${pet.user_phone}`, "_blank");
-    } else if (pet.user_email) {
-      window.open(`mailto:${pet.user_email}`, "_blank");
+  const toggleFavorite = () => {
+    let updated;
+    if (isFavorite) {
+      updated = favorites.filter((f) => f.id !== parseInt(id));
+      toast.info("Удалено из избранного");
     } else {
-      toast.info("Контактная информация не указана");
+      updated = [...favorites, pet];
+      toast.success("Добавлено в избранное ❤️");
     }
+    setFavorites(updated);
+    localStorage.setItem("favorites", JSON.stringify(updated));
   };
 
-  const formatPrice = (price) => {
-    if (!price) return "Цена не указана";
-    return new Intl.NumberFormat("ru-RU", {
-      style: "currency",
-      currency: "RUB",
-      maximumFractionDigits: 0,
-    }).format(price);
-  };
-
-  if (error) {
+  if (loading)
     return (
-      <div className="pet-detail-container">
-        <div className="error-state">
-          <h2>{error}</h2>
-          <Link to="/" className="btn btn-primary">
-            ← На главную
-          </Link>
-        </div>
+      <div className="pet-detail">
+        <Skeleton height={400} />
       </div>
     );
-  }
-
-  if (loading || !pet) {
-    return (
-      <div className="pet-detail-container">
-        <div className="pet-detail-card">
-          <div className="pet-image-skeleton">
-            <Skeleton height={400} />
-          </div>
-          <div className="pet-info">
-            <Skeleton height={40} width={200} />
-            <Skeleton count={6} />
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="pet-detail-container">
-      <div className="pet-detail-card">
-        {/* Фото питомца */}
+    <div className="pet-detail">
+      <div className="pet-detail-content">
         <div className="pet-image">
           {pet.photo ? (
-            <img
-              src={pet.photo}
-              alt={pet.name}
-              onError={(e) => (e.target.src = "/images/default-pet.jpg")}
-            />
+            <img src={pet.photo} alt={pet.name} />
           ) : (
-            <div className="no-image">
-              <span>🐾</span>
-              <p>Фото не добавлено</p>
-            </div>
+            <div className="no-photo">🐾</div>
           )}
+          <button
+            onClick={toggleFavorite}
+            className={`favorite-btn ${isFavorite ? "active" : ""}`}
+            title={isFavorite ? "Убрать из избранного" : "Добавить в избранное"}
+          >
+            {isFavorite ? "❤️" : "🤍"}
+          </button>
         </div>
 
-        {/* Информация */}
         <div className="pet-info">
-          <h1 className="pet-title">{pet.name}</h1>
+          <h1>{pet.name}</h1>
+          <p className="pet-price">
+            {pet.price
+              ? `${pet.price.toLocaleString("ru-RU")} ₽`
+              : "Цена не указана"}
+          </p>
+          <p>{pet.description}</p>
 
-          <div className="pet-meta">
-            <span>{pet.breed || "Не указано"}</span>
-            <span>{pet.age || "Возраст не указан"}</span>
-            {pet.category?.name && <span>{pet.category.name}</span>}
-          </div>
+          {pet.category?.name && <p>Категория: {pet.category.name}</p>}
 
-          <div className="pet-price">{formatPrice(pet.price)}</div>
-
-          <div className="pet-description">
-            <h3>Описание</h3>
-            <p>{pet.description || "Описание отсутствует"}</p>
-          </div>
+          <p>
+            Продавец:{" "}
+            <Link to={`/seller/${pet.user.id}`}>{pet.user.username}</Link>
+          </p>
 
           <div className="pet-actions">
-            <button onClick={handleContact} className="btn btn-primary">
-              📞 Связаться с продавцом
+            <ChatButton otherUserId={pet.user.id} />
+            <button onClick={toggleFavorite} className="btn btn-secondary">
+              {isFavorite ? "💔 Удалить из избранного" : "❤️ В избранное"}
             </button>
-
-            {pet.user_phone && (
-              <a href={`tel:${pet.user_phone}`} className="btn btn-secondary">
-                📱 {pet.user_phone}
-              </a>
-            )}
-
-            {pet.user_email && (
-              <a href={`mailto:${pet.user_email}`} className="btn btn-secondary">
-                ✉️ Написать продавцу
-              </a>
-            )}
-          </div>
-
-          <div className="pet-stats">
-            <div>
-              👁️ {pet.views_count || 0} просмотров
-            </div>
-            <div>
-              📅 Размещено:{" "}
-              {new Date(pet.created_at).toLocaleDateString("ru-RU")}
-            </div>
+            <button onClick={() => toast.info("Связь с продавцом")} className="btn btn-primary">
+              📞 Связаться
+            </button>
           </div>
         </div>
-      </div>
-
-      {/* Кнопка "Назад" */}
-      <div className="back-link">
-        <Link to="/" className="btn btn-secondary">
-          ← Вернуться к списку
-        </Link>
       </div>
     </div>
   );

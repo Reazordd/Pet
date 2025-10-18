@@ -1,0 +1,89 @@
+/* Navbar (modern clean) */
+.nav-wrap {
+  background: #ffffff;
+  border-bottom: 1px solid #e6e7ea;
+  position: sticky;
+  top: 0;
+  z-index: 60;
+}
+
+.nav-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.nav-brand {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+}
+
+.brand-logo {
+  font-weight: 700;
+  font-size: 20px;
+  color: #0b5ed7; /* Avito-ish blue */
+  background: linear-gradient(90deg, #0b5ed7 0%, #2ab0ff 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-link {
+  color: #2d3748;
+  text-decoration: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-weight: 500;
+  transition: background 0.12s, color 0.12s;
+}
+
+.nav-link:hover {
+  background: #f4f6f8;
+  color: #0b5ed7;
+}
+
+.nav-link.active {
+  background: #eef6ff;
+  color: #0b5ed7;
+  box-shadow: 0 1px 0 rgba(11, 94, 215, 0.08);
+}
+
+.nav-cta {
+  background: #0b5ed7;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.nav-logout {
+  background: transparent;
+  border: 1px solid #e6e7ea;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  color: #2d3748;
+}
+
+/* Responsive */
+@media (max-width: 880px) {
+  .nav-inner {
+    padding: 10px 14px;
+  }
+  .nav-links {
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+}

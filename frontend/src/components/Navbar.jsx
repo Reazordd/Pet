@@ -1,92 +1,95 @@
-import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { checkToken, logout } from '../utils/auth';
+import React from "react";
+import { Link, useLocation } from "react-router-dom";
+import { checkToken, logout } from "../utils/auth";
+import { useTheme } from "../context/ThemeContext";
+import "../styles/Navbar.css";
 
 function Navbar() {
-    const location = useLocation();
-    const isAuthenticated = checkToken();
+  const location = useLocation();
+  const isAuthenticated = checkToken();
+  const { theme, toggleTheme } = useTheme();
 
-    const handleLogout = () => {
-        logout();
-    };
+  const handleLogout = () => {
+    logout();
+    window.location.href = "/";
+  };
 
-    return (
-        <nav className="navbar">
-            <div className="nav-container">
-                <Link to="/" className="nav-brand">
-                    🐾 PetMarket
-                </Link>
+  return (
+    <header className="nav-wrap">
+      <div className="nav-inner">
+        <Link to="/" className="nav-brand">
+          <span className="brand-logo">🐾 PetMarket</span>
+        </Link>
 
-                <ul className="nav-links">
-                    <li>
-                        <Link
-                            to="/"
-                            className={`nav-link ${location.pathname === '/' ? 'active' : ''}`}
-                        >
-                            Главная
-                        </Link>
-                    </li>
+        <nav className="nav-links">
+          <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
+            Главная
+          </Link>
 
-                    {isAuthenticated ? (
-                        <>
-                            <li>
-                                <Link
-                                    to="/mypets"
-                                    className={`nav-link ${location.pathname === '/mypets' ? 'active' : ''}`}
-                                >
-                                    Мои объявления
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/create"
-                                    className={`nav-link ${location.pathname === '/create' ? 'active' : ''}`}
-                                >
-                                    Создать объявление
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/profile"
-                                    className={`nav-link ${location.pathname === '/profile' ? 'active' : ''}`}
-                                >
-                                    Профиль
-                                </Link>
-                            </li>
-                            <li>
-                                <button
-                                    onClick={handleLogout}
-                                    className="btn btn-secondary"
-                                    style={{ padding: '8px 16px', fontSize: '14px' }}
-                                >
-                                    Выйти
-                                </button>
-                            </li>
-                        </>
-                    ) : (
-                        <>
-                            <li>
-                                <Link
-                                    to="/login"
-                                    className={`nav-link ${location.pathname === '/login' ? 'active' : ''}`}
-                                >
-                                    Вход
-                                </Link>
-                            </li>
-                            <li>
-                                <Link
-                                    to="/register"
-                                    className={`nav-link ${location.pathname === '/register' ? 'active' : ''}`}
-                                >
-                                    Регистрация
-                                </Link>
-                            </li>
-                        </>
-                    )}
-                </ul>
-            </div>
+          <Link
+            className={`nav-link ${location.pathname.startsWith("/pets") ? "active" : ""}`}
+            to="/pets"
+          >
+            Объявления
+          </Link>
+
+          <Link
+            className={`nav-link ${location.pathname.startsWith("/forum") ? "active" : ""}`}
+            to="/forum"
+          >
+            Форум
+          </Link>
+
+          {isAuthenticated ? (
+            <>
+              <Link
+                className={`nav-link ${location.pathname === "/favorites" ? "active" : ""}`}
+                to="/favorites"
+              >
+                ❤️ Избранное
+              </Link>
+
+              <Link
+                className={`nav-link ${location.pathname === "/messages" ? "active" : ""}`}
+                to="/messages"
+              >
+                💬 Сообщения
+              </Link>
+
+              <Link
+                className={`nav-link ${location.pathname === "/profile" ? "active" : ""}`}
+                to="/profile"
+              >
+                👤 Профиль
+              </Link>
+
+              <button className="nav-logout" onClick={handleLogout}>
+                Выйти
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                className={`nav-link ${location.pathname === "/login" ? "active" : ""}`}
+                to="/login"
+              >
+                Вход
+              </Link>
+              <Link className="nav-cta" to="/register">
+                Регистрация
+              </Link>
+            </>
+          )}
         </nav>
-    );
+
+        <div className="theme-toggle">
+          <button onClick={toggleTheme}>
+            {theme === "light" ? "🌙" : "☀️"}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
 }
 
 export default Navbar;

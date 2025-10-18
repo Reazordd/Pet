@@ -25,10 +25,10 @@ function CreatePet() {
 
   const fetchCategories = async () => {
     try {
-      const response = await api.get("/categories/");
-      setCategories(response.data.results ?? response.data);
+      const res = await api.get("/categories/");
+      setCategories(res.data.results ?? res.data);
     } catch {
-      toast.error("Ошибка при загрузке категорий");
+      toast.error("Ошибка загрузки категорий 🐶");
     }
   };
 
@@ -52,23 +52,13 @@ function CreatePet() {
     setLoading(true);
     try {
       const data = new FormData();
-      data.append("name", formData.name);
-      data.append("breed", formData.breed);
-      data.append("age", formData.age);
-      data.append("description", formData.description);
-      if (formData.price) data.append("price", formData.price);
-      if (formData.photo) data.append("photo", formData.photo);
-      if (formData.category) data.append("category_id", formData.category);
-
-      await api.post("/pets/", data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-
-      toast.success("Объявление успешно создано!");
+      Object.entries(formData).forEach(([k, v]) => v && data.append(k === "category" ? "category_id" : k, v));
+      await api.post("/pets/", data, { headers: { "Content-Type": "multipart/form-data" } });
+      toast.success("🎉 Объявление создано!");
       navigate("/mypets");
-    } catch (error) {
-      toast.error("Ошибка при создании объявления");
-      console.error(error);
+    } catch (err) {
+      toast.error("Ошибка при создании объявления 😿");
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -79,93 +69,37 @@ function CreatePet() {
       <div className="avito-form-card">
         <h2 className="avito-title">Разместить объявление</h2>
         <form onSubmit={handleSubmit} className="avito-form">
-          <div className="form-row">
-            <label>Имя питомца *</label>
-            <input
-              type="text"
-              name="name"
-              placeholder="Барсик"
-              value={formData.name}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <label>Имя питомца *</label>
+          <input name="name" value={formData.name} onChange={handleChange} required />
 
-          <div className="form-row">
-            <label>Возраст *</label>
-            <input
-              type="text"
-              name="age"
-              placeholder="3 месяца / 2 года"
-              value={formData.age}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <label>Возраст *</label>
+          <input name="age" value={formData.age} onChange={handleChange} required />
 
-          <div className="form-row">
-            <label>Порода *</label>
-            <input
-              type="text"
-              name="breed"
-              placeholder="Мопс / Сфинкс / Попугай"
-              value={formData.breed}
-              onChange={handleChange}
-              required
-            />
-          </div>
+          <label>Порода *</label>
+          <input name="breed" value={formData.breed} onChange={handleChange} required />
 
-          <div className="form-row">
-            <label>Категория *</label>
-            <select
-              name="category"
-              value={formData.category}
-              onChange={handleChange}
-            >
-              <option value="">Выберите категорию</option>
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.icon} {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <label>Категория *</label>
+          <select name="category" value={formData.category} onChange={handleChange} required>
+            <option value="">Выберите категорию</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.icon} {c.name}
+              </option>
+            ))}
+          </select>
 
-          <div className="form-row">
-            <label>Описание *</label>
-            <textarea
-              name="description"
-              placeholder="Расскажите подробнее о питомце, его характере, особенностях и прививках..."
-              value={formData.description}
-              onChange={handleChange}
-              rows={5}
-              required
-            />
-          </div>
+          <label>Описание *</label>
+          <textarea name="description" value={formData.description} onChange={handleChange} required rows={4} />
 
-          <div className="form-row">
-            <label>Цена (₽)</label>
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              placeholder="Например: 5000"
-            />
-          </div>
+          <label>Цена (₽)</label>
+          <input type="number" name="price" value={formData.price} onChange={handleChange} placeholder="5000" />
 
-          <div className="form-row file-upload">
-            <label>Фото питомца</label>
-            <input type="file" accept="image/*" onChange={handleFileChange} />
-            {imagePreview && (
-              <div className="preview-wrapper">
-                <img src={imagePreview} alt="Preview" className="preview" />
-              </div>
-            )}
-          </div>
+          <label>Фото питомца</label>
+          <input type="file" accept="image/*" onChange={handleFileChange} />
+          {imagePreview && <img src={imagePreview} alt="Preview" className="preview" />}
 
           <button type="submit" className="avito-btn" disabled={loading}>
-            {loading ? "⏳ Создание..." : "📢 Опубликовать объявление"}
+            {loading ? "⏳ Создание..." : "📢 Опубликовать"}
           </button>
         </form>
       </div>
