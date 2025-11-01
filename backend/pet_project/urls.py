@@ -31,6 +31,9 @@ urlpatterns = [
     path("api/", include("chat.urls")),
     path("api/", include("forum.urls")),
 
+# admin api (moderation)
+    path("api/admin/", include("admin_api.urls")),
+
 
 
     # CSRF cookie endpoint

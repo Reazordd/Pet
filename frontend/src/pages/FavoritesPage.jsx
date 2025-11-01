@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { FavoritesContext } from "../context/FavoritesContext";
+import { FavoritesContext } from "../context/FavoritesContext.jsx";
 import PetCard from "../components/PetCard";
 import "../styles/Favorites.css";
 

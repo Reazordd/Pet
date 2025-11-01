@@ -27,6 +27,12 @@ services:
     ports:
       - "6379:6379"
     command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   backend:
     build:
@@ -35,6 +41,9 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      - REDIS_HOST=redis
+      - DB_HOST=db
     volumes:
       - ./backend:/app
       - static_volume:/app/staticfiles
@@ -46,17 +55,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-    command:
-      - sh
-      - -c
-      - |
-        echo "📦 Применяем миграции и собираем статику..."
-        python manage.py collectstatic --noinput
-        python manage.py migrate
-        echo "👤 Проверяем наличие суперпользователя..."
-        python manage.py shell -c "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.filter(username='admin').exists() or User.objects.create_superuser('admin','admin@example.com','admin123')"
-        echo "🚀 Запускаем Gunicorn..."
-        gunicorn pet_project.wsgi:application --bind 0.0.0.0:8000
 
   frontend:
     build:

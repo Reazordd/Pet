@@ -25,7 +25,12 @@ class ForumCommentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ForumComment
-        fields = ["id", "author", "text", "likes_count", "created_at"]
+        fields = [
+            "id", "author", "text",
+            "likes_count", "created_at",
+            "is_approved", "is_deleted", "moderator_comment",
+        ]
+        read_only_fields = ("is_approved", "is_deleted", "moderator_comment")
 
 
 class ForumTopicSerializer(serializers.ModelSerializer):
@@ -44,14 +49,9 @@ class ForumTopicSerializer(serializers.ModelSerializer):
     class Meta:
         model = ForumTopic
         fields = [
-            "id",
-            "title",
-            "content",
-            "author",
-            "category",
-            "category_id",
-            "views",
-            "likes_count",
-            "comments_count",
-            "created_at",
+            "id", "title", "content",
+            "author", "category", "category_id",
+            "views", "likes_count", "comments_count",
+            "created_at", "is_approved", "is_deleted", "moderator_comment",
         ]
+        read_only_fields = ("is_approved", "is_deleted", "moderator_comment")

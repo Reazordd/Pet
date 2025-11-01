@@ -21,9 +21,12 @@ import SellerProfile from "./pages/SellerProfile";
 import PetsList from "./pages/PetsList";
 import FavoritesPage from "./pages/FavoritesPage";
 import Forum from "./pages/Forum";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import AdminAds from "./pages/AdminAds";
 
-import { FavoritesProvider } from "./context/FavoritesContext";
-import { ThemeProvider } from "./context/ThemeContext";
+import { FavoritesProvider } from "./context/FavoritesContext.jsx";
+import { ThemeProvider } from "./context/ThemeContext.jsx";
 import "./styles/global.css";
 
 function App() {
@@ -99,6 +102,9 @@ function App() {
               <Route path="/forum" element={<Forum />} />
 
               <Route path="*" element={<NotFound />} />
+              <Route path="/admin" element={<ProtectedRoute><AdminDashboard/></ProtectedRoute>} />
+              <Route path="/admin/users" element={<ProtectedRoute><AdminUsers/></ProtectedRoute>} />
+              <Route path="/admin/ads" element={<ProtectedRoute><AdminAds/></ProtectedRoute>} />
             </Routes>
           </main>
 

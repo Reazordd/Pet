@@ -23,15 +23,14 @@ INSTALLED_APPS = [
     "corsheaders",
     "django_filters",
     "drf_spectacular",
-    "channels",
 
     # local apps
     "ads",
     "users",
     "pets",
-    "channels",
     "chat",
-    'forum',
+    "forum",
+    "admin_api",   # <-- добавили
 ]
 
 MIDDLEWARE = [
@@ -66,11 +65,17 @@ TEMPLATES = [
 WSGI_APPLICATION = "pet_project.wsgi.application"
 ASGI_APPLICATION = "pet_project.asgi.application"
 
-# Для Channels (WebSocket)
+# Настройка channel layers для production (используем Redis)
+REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
+REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
+
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer"
-    }
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [(REDIS_HOST, REDIS_PORT)],
+        },
+    },
 }
 
 # Database
@@ -125,18 +130,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# Channels (Redis)
-REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
-REDIS_PORT = os.environ.get("REDIS_PORT", "6379")
 
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [(REDIS_HOST, int(REDIS_PORT))],
-        },
-    },
-}
 
 # CORS & CSRF
 CORS_ALLOWED_ORIGINS = [

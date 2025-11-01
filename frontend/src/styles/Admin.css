@@ -1,0 +1,56 @@
+/* frontend/src/styles/Admin.css */
+.admin-page {
+  max-width: 1100px;
+  margin: 24px auto;
+  padding: 12px;
+}
+
+.admin-grid {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.admin-card {
+  flex: 1;
+  min-width: 260px;
+  background: #fff;
+  border: 1px solid #e6e6e6;
+  padding: 18px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.admin-table table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.admin-table th, .admin-table td {
+  border-bottom: 1px solid #eee;
+  padding: 10px;
+  text-align: left;
+}
+
+.admin-ads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 16px;
+}
+
+.admin-ad-card {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-ad-actions {
+  display:flex;
+  gap:8px;
+  padding:10px;
+  justify-content: flex-end;
+}

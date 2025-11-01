@@ -42,3 +42,39 @@ class UserSerializer(serializers.ModelSerializer):
             'email_verified', 'phone_verified'
         )
         read_only_fields = ('email_verified', 'phone_verified')
+
+
+# ========== ЛИЧНЫЙ КАБИНЕТ ==========
+class MyAdsSerializer(serializers.Serializer):
+    """Объявления пользователя (короткая версия)"""
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    price = serializers.DecimalField(max_digits=10, decimal_places=2)
+    is_active = serializers.BooleanField()
+    views_count = serializers.IntegerField()
+    created_at = serializers.DateTimeField()
+    category = serializers.SerializerMethodField()
+
+    def get_category(self, obj):
+        return getattr(obj.category, "name", None)
+
+
+class MyForumActivitySerializer(serializers.Serializer):
+    """Темы пользователя (форум)"""
+    id = serializers.IntegerField()
+    title = serializers.CharField()
+    created_at = serializers.DateTimeField()
+    is_approved = serializers.BooleanField()
+    is_deleted = serializers.BooleanField()
+    moderator_comment = serializers.CharField(allow_null=True, required=False)
+    category = serializers.SerializerMethodField()
+
+    def get_category(self, obj):
+        return getattr(obj.category, "name", None)
+
+
+class DashboardSerializer(serializers.Serializer):
+    """Объединённая информация для главной страницы профиля"""
+    user = UserSerializer()
+    ads = MyAdsSerializer(many=True)
+    forum_topics = MyForumActivitySerializer(many=True)

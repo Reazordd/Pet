@@ -7,6 +7,7 @@ click==8.1.7
 colorama==0.4.6
 coreapi==2.3.3
 coreschema==0.0.4
+daphne
 Django==5.2.2
 django-cors-headers==4.9.0
 django-environ==0.12.0

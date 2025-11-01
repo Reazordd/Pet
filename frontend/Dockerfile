@@ -1,43 +1,37 @@
-# ===============================
-# 🧱 1️⃣ Стадия сборки (Node)
-# ===============================
+# frontend/Dockerfile
+# Stage: build
 FROM node:20 AS build
 
 WORKDIR /app
 
-# Используем стабильный npm registry
-RUN npm config set registry https://registry.npmjs.org
+# Настройки npm, повышаем надёжность скачивания
+RUN npm config set registry https://registry.npmjs.org \
+    && npm config set fetch-retries 5 \
+    && npm config set fetch-retry-mintimeout 20000 \
+    && npm config set fetch-retry-maxtimeout 120000
 
-# Копируем package.json и package-lock.json (чтобы кешировать зависимости)
 COPY package*.json ./
 
-# Устанавливаем зависимости (с кешом)
+# ставим зависимости (prefer npm ci, но fallback на npm install)
 RUN npm ci --legacy-peer-deps --no-audit --no-fund || npm install --legacy-peer-deps --no-audit --no-fund
 
-# Копируем весь проект
 COPY . .
 
-# Собираем Vite-проект
+# Сборка приложения (Vite)
 RUN npm run build
 
-
-# ===============================
-# 🚀 2️⃣ Стадия продакшена (Nginx)
-# ===============================
+# Stage: production nginx
 FROM nginx:stable-alpine
 
-# Удаляем стандартный конфиг nginx и добавляем свой
+# Удаляем дефолтный конфиг и копируем наш
 RUN rm -f /etc/nginx/conf.d/default.conf
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
 
-# Устанавливаем Brotli для сжатия
-RUN apk add --no-cache brotli
-
-# Копируем собранный фронтенд из первой стадии
+# Копируем собранный билд
 COPY --from=build /app/dist /usr/share/nginx/html
 
-# Порт 80 — HTTP
-EXPOSE 80
+# Если нужны brotli утилиты, можно установить, но не использовать директиву brotli в конфиге nginx
+RUN apk add --no-cache brotli
 
-# Запускаем nginx
+EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
