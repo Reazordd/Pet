@@ -1,3 +1,5 @@
+# backend/ads/services.py
+
 import logging
 from .models import Notification
 

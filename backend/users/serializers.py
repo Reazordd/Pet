@@ -1,10 +1,15 @@
+# backend/users/serializers.py
+
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from ads.models import Pet
+from forum.models import ForumTopic
 
 User = get_user_model()
 
 
+# --- Регистрация и профиль ---
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, required=True)
     password_confirm = serializers.CharField(write_only=True, required=True)
@@ -39,42 +44,25 @@ class UserSerializer(serializers.ModelSerializer):
         fields = (
             'id', 'username', 'email', 'first_name', 'last_name',
             'phone', 'bio', 'location', 'avatar',
-            'email_verified', 'phone_verified'
+            'email_verified', 'phone_verified', 'is_active', 'is_staff'
         )
-        read_only_fields = ('email_verified', 'phone_verified')
+        read_only_fields = ('email_verified', 'phone_verified', 'is_staff')
 
 
-# ========== ЛИЧНЫЙ КАБИНЕТ ==========
-class MyAdsSerializer(serializers.Serializer):
-    """Объявления пользователя (короткая версия)"""
-    id = serializers.IntegerField()
-    name = serializers.CharField()
-    price = serializers.DecimalField(max_digits=10, decimal_places=2)
-    is_active = serializers.BooleanField()
-    views_count = serializers.IntegerField()
-    created_at = serializers.DateTimeField()
-    category = serializers.SerializerMethodField()
-
-    def get_category(self, obj):
-        return getattr(obj.category, "name", None)
+# --- Короткая версия пользователя (для списков, форума и т.д.) ---
+class UserShortSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'avatar']
 
 
-class MyForumActivitySerializer(serializers.Serializer):
-    """Темы пользователя (форум)"""
-    id = serializers.IntegerField()
-    title = serializers.CharField()
-    created_at = serializers.DateTimeField()
-    is_approved = serializers.BooleanField()
-    is_deleted = serializers.BooleanField()
-    moderator_comment = serializers.CharField(allow_null=True, required=False)
-    category = serializers.SerializerMethodField()
-
-    def get_category(self, obj):
-        return getattr(obj.category, "name", None)
-
-
+# --- Dashboard для администратора ---
 class DashboardSerializer(serializers.Serializer):
-    """Объединённая информация для главной страницы профиля"""
-    user = UserSerializer()
-    ads = MyAdsSerializer(many=True)
-    forum_topics = MyForumActivitySerializer(many=True)
+    total_users = serializers.IntegerField()
+    active_users = serializers.IntegerField()
+    blocked_users = serializers.IntegerField()
+    total_ads = serializers.IntegerField()
+    active_ads = serializers.IntegerField()
+    hidden_ads = serializers.IntegerField()
+    total_forum_topics = serializers.IntegerField()
+    new_users = UserSerializer(many=True)

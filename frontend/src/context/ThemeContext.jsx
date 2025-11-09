@@ -1,3 +1,5 @@
+// frontend/src/context/ThemeContext.jsx
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext();
@@ -6,11 +8,12 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(localStorage.getItem("theme") || "light");
 
   useEffect(() => {
-    document.body.setAttribute("data-theme", theme);
+    document.documentElement.classList.remove("light", "dark");
+    document.documentElement.classList.add(theme);
     localStorage.setItem("theme", theme);
   }, [theme]);
 
-  const toggleTheme = () => setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  const toggleTheme = () => setTheme(theme === "light" ? "dark" : "light");
 
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>

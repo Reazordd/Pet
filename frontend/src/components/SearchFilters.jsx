@@ -1,3 +1,5 @@
+// frontend/src/components/SearchFilters.jsx
+
 import React, { useState } from 'react';
 import '../styles/Filters.css';
 

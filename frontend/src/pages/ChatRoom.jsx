@@ -1,3 +1,5 @@
+// frontend/src/pages/ChatRoom.jsx
+
 import React, { useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import api from "../utils/api";

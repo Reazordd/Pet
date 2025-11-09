@@ -1,3 +1,5 @@
+// frontend/src/pages/ForumCreate.jsx
+
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../utils/api.js";

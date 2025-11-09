@@ -1,3 +1,5 @@
+// frontend/src/pages/FavoritesPage.jsx
+
 import React, { useContext } from "react";
 import { FavoritesContext } from "../context/FavoritesContext.jsx";
 import PetCard from "../components/PetCard";

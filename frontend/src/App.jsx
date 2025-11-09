@@ -1,3 +1,5 @@
+// D:\Pet\frontend\src\App.jsx
+
 import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { ToastContainer } from "react-toastify";
@@ -24,6 +26,8 @@ import Forum from "./pages/Forum";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import AdminAds from "./pages/AdminAds";
+import AdminForumModeration from "./pages/AdminForumModeration";
+
 
 import { FavoritesProvider } from "./context/FavoritesContext.jsx";
 import { ThemeProvider } from "./context/ThemeContext.jsx";
@@ -105,6 +109,14 @@ function App() {
               <Route path="/admin" element={<ProtectedRoute><AdminDashboard/></ProtectedRoute>} />
               <Route path="/admin/users" element={<ProtectedRoute><AdminUsers/></ProtectedRoute>} />
               <Route path="/admin/ads" element={<ProtectedRoute><AdminAds/></ProtectedRoute>} />
+              <Route
+                path="/admin/forum"
+                element={
+                  <ProtectedRoute>
+                <AdminForumModeration />
+                </ProtectedRoute>
+            }
+            />
             </Routes>
           </main>
 

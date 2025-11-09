@@ -1,3 +1,6 @@
+// frontend/src/context/FavoritesContext.jsx
+
+
 import React, { createContext, useContext, useEffect, useState } from "react";
 
 export const FavoritesContext = createContext();
@@ -9,8 +12,7 @@ export const FavoritesProvider = ({ children }) => {
     try {
       const saved = JSON.parse(localStorage.getItem("favorites") || "[]");
       setFavorites(saved);
-    } catch (error) {
-      console.error("Ошибка чтения favorites:", error);
+    } catch {
       setFavorites([]);
     }
   }, []);

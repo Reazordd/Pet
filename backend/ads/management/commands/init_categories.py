@@ -1,3 +1,5 @@
+# backend/ads/management/commands/init_categories.py
+
 from django.core.management.base import BaseCommand
 from ads.models import Category
 from django.utils.text import slugify
