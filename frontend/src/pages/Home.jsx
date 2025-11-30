@@ -1,5 +1,4 @@
 // frontend/src/pages/Home.jsx
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -53,12 +52,23 @@ function Home() {
     }
   };
 
+  // 🔥 Исправленный вызов
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/categories/');
-      setCategories(response.data.results || response.data);
-    } catch {
+      const response = await api.get('/categories/'); // вызывает наш новый эндпоинт
+      setCategories(response.data);
+    } catch (err) {
+      console.error('Ошибка при загрузке категорий:', err);
       toast.error('Ошибка при загрузке категорий');
+      // Добавим fallback категории
+      setCategories([
+        {"id": 1, "name": "Собаки", "icon": "🐶", "pet_count": 120},
+        {"id": 2, "name": "Кошки", "icon": "🐱", "pet_count": 95},
+        {"id": 3, "name": "Птицы", "icon": "🐦", "pet_count": 30},
+        {"id": 4, "name": "Грызуны", "icon": "🐹", "pet_count": 25},
+        {"id": 5, "name": "Рыбы", "icon": "🐠", "pet_count": 15},
+        {"id": 6, "name": "Рептилии", "icon": "🦎", "pet_count": 10},
+      ]);
     }
   };
 

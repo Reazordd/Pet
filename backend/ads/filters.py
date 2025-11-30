@@ -1,16 +1,14 @@
 # backend/ads/filters.py
-
 import django_filters
 from .models import Pet
 
-
 class PetFilter(django_filters.FilterSet):
-    price_min = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
-    price_max = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
-    breed = django_filters.CharFilter(lookup_expr='iexact')
-    category = django_filters.CharFilter(field_name='category__slug', lookup_expr='iexact')
-    is_active = django_filters.BooleanFilter()
+    species = django_filters.ChoiceFilter(choices=Pet.SPECIES_CHOICES)
+    offer_type = django_filters.ChoiceFilter(choices=Pet.OFFER_TYPE_CHOICES)
+    city = django_filters.CharFilter(lookup_expr='icontains')
+    min_price = django_filters.NumberFilter(field_name='price', lookup_expr='gte')
+    max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
 
     class Meta:
         model = Pet
-        fields = ['breed', 'category', 'is_active', 'price_min', 'price_max']
+        fields = ['species', 'offer_type', 'city', 'min_price', 'max_price']

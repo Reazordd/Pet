@@ -1,5 +1,4 @@
 // frontend/src/pages/Register.jsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -32,13 +31,7 @@ function Register() {
         }));
     };
 
-    const ensureCsrf = async () => {
-        try {
-            await api.get('/csrf/'); // установит CSRF cookie если нужно
-        } catch (e) {
-            // не критично
-        }
-    };
+    // 🔥 Удалён вызов ensureCsrf
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -56,7 +49,7 @@ function Register() {
         setLoading(true);
 
         try {
-            await ensureCsrf();
+            // 🔥 Убран вызов ensureCsrf()
 
             // отправляем ВСЕ поля, включая password_confirm
             const response = await api.post('/register/', formData);

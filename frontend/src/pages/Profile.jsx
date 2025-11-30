@@ -1,5 +1,4 @@
 // frontend/src/pages/Profile.jsx
-
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import api from "../utils/api";
@@ -27,7 +26,7 @@ function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await api.get("/profile/");
+      const res = await api.get("/profile/me/");
       setUserData(res.data);
     } catch {
       toast.error("Ошибка загрузки профиля");
@@ -36,16 +35,20 @@ function Profile() {
 
   const fetchStats = async () => {
     try {
-      const res = await api.get("/profile/stats/");
+      const res = await api.get("/profile/stats/");  // ✅ Теперь будет работать
       setStats(res.data);
-    } catch {}
+    } catch (err) {
+      console.error("Ошибка при загрузке статистики:", err);
+      toast.error("Ошибка загрузки статистики");
+    }
   };
 
   const fetchMyAds = async () => {
     try {
-      const res = await api.get("/pets/?my_ads=true");
+      const res = await api.get("/pets/?owner=true");  // ✅ Теперь будет работать
       setMyAds(res.data.results || []);
-    } catch {
+    } catch (err) {
+      console.error("Ошибка при загрузке объявлений:", err);
       setMyAds([]);
     }
   };
@@ -68,7 +71,9 @@ function Profile() {
     try {
       const data = new FormData();
       Object.entries(userData).forEach(([k, v]) => v && data.append(k, v));
-      const res = await api.put("/profile/", data, { headers: { "Content-Type": "multipart/form-data" } });
+      const res = await api.put("/profile/me/update/", data, {
+        headers: { "Content-Type": "multipart/form-data" }
+      }); // 🔥 Исправлен маршрут
       setUserData(res.data);
       setImagePreview(null);
       toast.success("✅ Профиль обновлён");
@@ -127,8 +132,8 @@ function Profile() {
             <div className="stats-grid">
               <div className="stat-box">Всего: {stats.total_pets || 0}</div>
               <div className="stat-box">Активные: {stats.active_pets || 0}</div>
-              <div className="stat-box">Просмотры: {stats.total_views || 0}</div>
               <div className="stat-box">Средняя цена: {Math.round(stats.avg_price || 0)} ₽</div>
+              <div className="stat-box">Отзывов: {stats.total_reviews || 0}</div>
             </div>
 
             <div className="ads-grid">
@@ -172,7 +177,7 @@ function Profile() {
             <input name="username" value={userData.username || ""} onChange={handleChange} required />
             <input name="email" type="email" value={userData.email || ""} onChange={handleChange} required />
             <input name="phone" value={userData.phone || ""} onChange={handleChange} placeholder="+7 (999) ..." />
-            <textarea name="address" value={userData.address || ""} onChange={handleChange} placeholder="Адрес" />
+            <textarea name="bio" value={userData.bio || ""} onChange={handleChange} placeholder="О себе" />
             <button type="submit" disabled={loading}>
               {loading ? "⏳ Сохраняем..." : "💾 Сохранить"}
             </button>

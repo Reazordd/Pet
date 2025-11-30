@@ -1,159 +1,270 @@
 // frontend/src/pages/PetsList.jsx
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import api from '../utils/api';
+import '../styles/PetsList.css';
 
-import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
-import api from "../utils/api";
-import PetCard from "../components/PetCard";
-import Skeleton from "react-loading-skeleton";
-import "react-loading-skeleton/dist/skeleton.css";
-import "../styles/PetsList.css";
+const SPECIES_LABELS = {
+  dog: 'Собака',
+  cat: 'Кошка',
+  bird: 'Птица',
+  rodent: 'Грызун',
+  fish: 'Рыба',
+  reptile: 'Рептилия',
+  other: 'Другое',
+};
+
+const OFFER_LABELS = {
+  sale: 'Продажа',
+  giveaway: 'Отдам',
+  search: 'Ищу',
+};
 
 function PetsList() {
   const [pets, setPets] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Фильтры
   const [filters, setFilters] = useState({
-    category: "",
-    min_price: "",
-    max_price: "",
-    search: "",
+    species: '',
+    offer_type: '',
+    city: '',
+    breed: '',
+    min_price: '',
+    max_price: '',
+    search: '',
   });
 
-  useEffect(() => {
-    fetchCategories();
-    fetchPets();
-  }, []);
+  // Пагинация
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  const fetchCategories = async () => {
+  const fetchPets = async () => {
+    setLoading(true);
     try {
-      const response = await api.get("/categories/");
-      setCategories(response.data.results ?? response.data);
-    } catch {
-      toast.error("Ошибка при загрузке категорий");
-    }
-  };
+      const params = new URLSearchParams();
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value) params.append(key, value);
+      });
+      params.append('page', page);
 
-  const fetchPets = async (params = {}) => {
-    try {
-      setLoading(true);
-      const query = new URLSearchParams(params).toString();
-      const response = await api.get(`/pets/?${query}`);
-      setPets(response.data.results || response.data);
-    } catch {
-      toast.error("Ошибка при загрузке объявлений");
+      const res = await api.get(`/pets/?${params.toString()}`);
+      setPets(res.data.results || []);
+      setTotalPages(Math.ceil((res.data.count || 0) / 12));
+    } catch (err) {
+      console.error(err);
+      setError('Не удалось загрузить объявления');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
+  useEffect(() => {
+    fetchPets();
+  }, [filters, page]);
+
+  const handleFilterChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchPets(filters);
+    setPage(1); // Сброс на первую страницу при смене фильтра
   };
 
   const resetFilters = () => {
-    const cleared = { category: "", min_price: "", max_price: "", search: "" };
-    setFilters(cleared);
-    fetchPets({});
+    setFilters({
+      species: '',
+      offer_type: '',
+      city: '',
+      breed: '',
+      min_price: '',
+      max_price: '',
+      search: '',
+    });
+    setPage(1);
+  };
+
+  const formatPrice = (price) => {
+    if (price === null) return 'Договорная';
+    return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
   return (
-    <div className="pets-page">
-      {/* Фильтры слева */}
-      <aside className="filters-panel">
-        <h2>Фильтры</h2>
-        <form onSubmit={handleSearch}>
-          <div className="filter-group">
-            <label>Поиск</label>
-            <input
-              type="text"
-              name="search"
-              value={filters.search}
-              onChange={handleChange}
-              placeholder="Имя, порода..."
-            />
-          </div>
+    <div className="pets-list-page max-w-6xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-6">Объявления о животных</h1>
 
-          <div className="filter-group">
-            <label>Категория</label>
+      {/* Фильтры */}
+      <div className="bg-white p-4 rounded shadow mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm mb-1">Вид животного</label>
             <select
-              name="category"
-              value={filters.category}
-              onChange={handleChange}
+              name="species"
+              value={filters.species}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
             >
-              <option value="">Все категории</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.icon} {c.name}
-                </option>
-              ))}
+              <option value="">Любой</option>
+              <option value="dog">Собака</option>
+              <option value="cat">Кошка</option>
+              <option value="bird">Птица</option>
+              <option value="rodent">Грызун</option>
+              <option value="fish">Рыба</option>
+              <option value="reptile">Рептилия</option>
+              <option value="other">Другое</option>
             </select>
           </div>
 
-          <div className="filter-group">
-            <label>Цена, ₽</label>
-            <div className="price-range">
-              <input
-                type="number"
-                name="min_price"
-                placeholder="от"
-                value={filters.min_price}
-                onChange={handleChange}
-              />
-              <input
-                type="number"
-                name="max_price"
-                placeholder="до"
-                value={filters.max_price}
-                onChange={handleChange}
-              />
-            </div>
+          <div>
+            <label className="block text-sm mb-1">Тип объявления</label>
+            <select
+              name="offer_type"
+              value={filters.offer_type}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
+            >
+              <option value="">Любой</option>
+              <option value="sale">Продажа</option>
+              <option value="giveaway">Отдам</option>
+              <option value="search">Ищу</option>
+            </select>
           </div>
 
-          <div className="filter-actions">
-            <button type="submit" className="btn btn-primary w-full">
-              🔍 Найти
-            </button>
+          <div>
+            <label className="block text-sm mb-1">Город</label>
+            <input
+              type="text"
+              name="city"
+              placeholder="Например: Москва"
+              value={filters.city}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Порода</label>
+            <input
+              type="text"
+              name="breed"
+              placeholder="Например: Лабрадор"
+              value={filters.breed}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Цена от (₽)</label>
+            <input
+              type="number"
+              name="min_price"
+              value={filters.min_price}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
+              min="0"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Цена до (₽)</label>
+            <input
+              type="number"
+              name="max_price"
+              value={filters.max_price}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
+              min="0"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm mb-1">Поиск</label>
+            <input
+              type="text"
+              name="search"
+              placeholder="Поиск по названию или описанию"
+              value={filters.search}
+              onChange={handleFilterChange}
+              className="w-full p-2 border rounded"
+            />
+          </div>
+
+          <div className="flex items-end">
             <button
               type="button"
-              className="btn btn-secondary w-full"
               onClick={resetFilters}
+              className="px-4 py-2 bg-gray-200 rounded hover:bg-gray-300"
             >
-              ❌ Сбросить
+              Сбросить
             </button>
           </div>
-        </form>
-      </aside>
-
-      {/* Результаты справа */}
-      <main className="results-panel">
-        <div className="results-header">
-          <h1>Объявления</h1>
-          <span className="results-count">{pets.length} найдено</span>
         </div>
+      </div>
 
-        <div className="pets-grid">
-          {loading ? (
-            Array.from({ length: 9 }).map((_, i) => (
-              <div key={i} className="pet-card">
-                <Skeleton height={200} />
-                <Skeleton count={3} />
-              </div>
-            ))
-          ) : pets.length > 0 ? (
-            pets.map((pet) => <PetCard key={pet.id} pet={pet} />)
-          ) : (
-            <div className="empty-state">
-              <p>😿 Объявления не найдены</p>
+      {error && <p className="text-red-500 mb-4">{error}</p>}
+
+      {loading ? (
+        <p>Загрузка...</p>
+      ) : pets.length === 0 ? (
+        <p>Объявлений не найдено.</p>
+      ) : (
+        <>
+          {/* Список объявлений */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {pets.map((pet) => (
+              <Link
+                key={pet.id}
+                to={`/pets/${pet.id}`}
+                className="block border rounded p-4 hover:shadow-md transition"
+              >
+                <img
+                  src={pet.image || '/images/placeholder-pet.jpg'}  // 🔥 Правильный путь
+                  alt={pet.name || 'Питомец'}
+                  className="w-full h-48 object-cover rounded mb-3"
+                  onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}  // 🔥 Fallback
+                />
+                <h3 className="font-bold text-lg">{pet.name || 'Без имени'}</h3>
+                <p className="text-gray-600">{SPECIES_LABELS[pet.species]}</p>
+                {pet.breed && <p className="text-sm text-gray-500">Порода: {pet.breed}</p>}
+                <p className="font-semibold mt-1">{formatPrice(pet.price)}</p>
+                <p className="text-sm text-gray-500">{pet.city}</p>
+                <span className="inline-block mt-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
+                  {OFFER_LABELS[pet.offer_type]}
+                </span>
+              </Link>
+            ))}
+          </div>
+
+          {/* Пагинация */}
+          {totalPages > 1 && (
+            <div className="flex justify-center mt-8 space-x-2">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Назад
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 rounded ${page === i + 1 ? 'bg-blue-600 text-white' : 'border'}`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Вперёд
+              </button>
             </div>
           )}
-        </div>
-      </main>
+        </>
+      )}
     </div>
   );
 }

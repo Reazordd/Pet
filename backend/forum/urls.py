@@ -1,21 +1,15 @@
-#backend/forum/urls.py
-
+# backend/forum/urls.py
 from rest_framework.routers import DefaultRouter
-from .views import ForumCategoryViewSet, ForumTopicViewSet, ForumCommentModerationViewSet
 from django.urls import path, include
+from . import views
 
 router = DefaultRouter()
-router.register("forum/categories", ForumCategoryViewSet, basename="forum-category")
-router.register("forum/topics", ForumTopicViewSet, basename="forum-topic")
-router.register("forum/comments/moderation", ForumCommentModerationViewSet, basename="forum-comments-moderation")
+router.register(r'topics', views.ForumTopicViewSet, basename='forum-topic')
+router.register(r'comments', views.ForumCommentViewSet, basename='forum-comment')
 
-# 🔹 Добавим эндпоинт для админской модерации форума
-from django.urls import path
-from .views import ForumModerationViewSet
-
-urlpatterns = router.urls + [
-    path("admin/forum/moderation/", ForumModerationViewSet.as_view({"get": "list"}), name="forum-moderation"),
-    path("admin/forum/moderation/<int:pk>/approve/", ForumModerationViewSet.as_view({"post": "approve"})),
-    path("admin/forum/moderation/<int:pk>/delete/", ForumModerationViewSet.as_view({"post": "delete"})),
-    path("", include(router.urls)),
+urlpatterns = [
+    path('', include(router.urls)),
+    # 🔥 Главная страница форума
+    path('forum/', views.forum_home, name='forum-home'),
+    path('categories/', views.get_categories, name='forum-categories'),
 ]

@@ -1,75 +1,116 @@
 # backend/ads/views.py
-
-from rest_framework import viewsets, permissions, filters, status
-from rest_framework.decorators import action
+from rest_framework import viewsets, status
+from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
-
-from .models import Pet, Category
-from .serializers import PetSerializer, CategorySerializer
+from django.shortcuts import get_object_or_404
+from .models import Pet, Favorite, PetImage  # 🔥 Убедимся, что модель есть
+from .serializers import PetSerializer, FavoriteSerializer
 from .filters import PetFilter
-from .pagination import StandardResultsSetPagination
-
-
-class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    """Категории животных (как на Авито — просто список)"""
-    queryset = Category.objects.all().order_by('name')
-    serializer_class = CategorySerializer
-    permission_classes = [permissions.AllowAny]
-
 
 class PetViewSet(viewsets.ModelViewSet):
-    """CRUD для объявлений животных (аналог Авито)"""
-    queryset = Pet.objects.all().select_related('category', 'user')
     serializer_class = PetSerializer
-    permission_classes = [permissions.IsAuthenticatedOrReadOnly]
-    parser_classes = [MultiPartParser, FormParser, JSONParser]
-
-    filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    filter_backends = [DjangoFilterBackend]
     filterset_class = PetFilter
-    search_fields = ['name', 'breed', 'description']
-    ordering_fields = ['created_at', 'price', 'views_count']
-    pagination_class = StandardResultsSetPagination
+    ordering_fields = ['created_at', 'price']
+    ordering = ['-created_at']
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        # неавторизованные видят только активные
-        if not self.request.user.is_authenticated:
-            return qs.filter(is_active=True)
-        return qs
+        owner_filter = self.request.query_params.get('owner', None)
+        if owner_filter == 'true':
+            if self.request.user.is_authenticated:
+                return Pet.objects.filter(user=self.request.user)
+            else:
+                return Pet.objects.none()
+        if self.request.user.is_staff:
+            return Pet.objects.all()
+        return Pet.objects.filter(is_approved=True, is_hidden=False, is_active=True)
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        images = self.request.FILES.getlist('images')
+        if images:
+            context['images'] = images
+        return context
 
     def perform_create(self, serializer):
+        # 🔥 Устанавливаем текущего пользователя как владельца
         serializer.save(user=self.request.user)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.AllowAny])
-    def increment_views(self, request, pk=None):
-        """Инкремент просмотров"""
-        pet = self.get_object()
-        pet.increment_views()
-        return Response({'id': pet.id, 'views_count': pet.views_count})
+    @action(detail=True, methods=['post'])
+    def favorite(self, request, pk=None):
+        pet = get_object_or_404(Pet, pk=pk)
+        user = request.user
 
-    @action(detail=False, methods=['get'], permission_classes=[permissions.IsAuthenticated])
-    def my_pets(self, request):
-        """Мои объявления"""
-        qs = self.get_queryset().filter(user=request.user)
-        page = self.paginate_queryset(qs)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
-        serializer = self.get_serializer(qs, many=True)
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        favorite, created = Favorite.objects.get_or_create(user=user, pet=pet)
+        if created:
+            return Response({'is_favorite': True}, status=status.HTTP_201_CREATED)
+        else:
+            return Response({'is_favorite': True}, status=status.HTTP_200_OK)
+
+    @action(detail=True, methods=['delete'])
+    def remove_favorite(self, request, pk=None):
+        pet = get_object_or_404(Pet, pk=pk)
+        user = request.user
+
+        if not user.is_authenticated:
+            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            favorite = Favorite.objects.get(user=user, pet=pet)
+            favorite.delete()
+            return Response({'is_favorite': False}, status=status.HTTP_204_NO_CONTENT)
+        except Favorite.DoesNotExist:
+            return Response({'error': 'Not in favorites'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 🔥 Новый action: похожие питомцы
+    @action(detail=True, methods=['get'], url_path='similar')
+    def similar_pets(self, request, pk=None):
+        pet = get_object_or_404(Pet, pk=pk)
+
+        # 🔥 Логика: похожие — это питомцы того же вида и города
+        similar = Pet.objects.filter(
+            species=pet.species,
+            city__iexact=pet.city,
+            offer_type=pet.offer_type
+        ).exclude(id=pet.id)[:6]
+
+        serializer = self.get_serializer(similar, many=True, context={'request': request})
         return Response(serializer.data)
 
-    @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated])
-    def toggle_active(self, request, pk=None):
-        """Скрыть/показать объявление (аналог Авито)"""
-        pet = self.get_object()
-        if pet.user != request.user and not request.user.is_staff:
-            return Response({'detail': 'Нет доступа'}, status=status.HTTP_403_FORBIDDEN)
-        pet.is_active = not pet.is_active
-        pet.save(update_fields=['is_active'])
-        return Response({
-            'id': pet.id,
-            'is_active': pet.is_active,
-            'message': 'Объявление активировано' if pet.is_active else 'Объявление скрыто'
-        })
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        if not request.user.is_staff:
+            if not instance.is_approved or instance.is_hidden:
+                from django.http import Http404
+                raise Http404()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):
+    serializer_class = FavoriteSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get_queryset(self):
+        user = self.request.user
+        if not user.is_authenticated:
+            return Favorite.objects.none()
+        return Favorite.objects.filter(user=user).select_related('pet')
+
+@api_view(['GET'])
+def get_categories(request):
+    categories = [
+        {"id": 1, "name": "Собаки", "icon": "🐶", "pet_count": 120},
+        {"id": 2, "name": "Кошки", "icon": "🐱", "pet_count": 95},
+        {"id": 3, "name": "Птицы", "icon": "🐦", "pet_count": 30},
+        {"id": 4, "name": "Грызуны", "icon": "🐹", "pet_count": 25},
+        {"id": 5, "name": "Рыбы", "icon": "🐠", "pet_count": 15},
+        {"id": 6, "name": "Рептилии", "icon": "🦎", "pet_count": 10},
+    ]
+    return Response(categories)

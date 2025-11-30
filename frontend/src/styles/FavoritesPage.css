@@ -1,0 +1,56 @@
+/* frontend/src/styles/FavoritesPage.css */
+.favorites-page {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.favorites-page h1 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.favorites-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.favorite-item {
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  overflow: hidden;
+  padding: 10px;
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.favorite-item img {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+}
+
+.favorite-item h3 {
+  margin: 10px 0 5px;
+  font-size: 1.2rem;
+}
+
+.favorite-item p {
+  margin: 5px 0;
+  color: #666;
+}
+
+.favorite-item button {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.favorite-item button:hover {
+  background-color: #d32f2f;
+}

@@ -1,52 +1,43 @@
 # backend/ads/serializers.py
-
 from rest_framework import serializers
-from django.contrib.auth import get_user_model
-from .models import Pet, Category
+from .models import Pet, PetImage, Favorite
 
-User = get_user_model()
-
-
-class CategorySerializer(serializers.ModelSerializer):
-    pet_count = serializers.SerializerMethodField()
-
+class PetImageSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = ["id", "name", "slug", "icon", "description", "pet_count"]
-
-    def get_pet_count(self, obj):
-        return obj.pet_set.filter(is_active=True).count()
-
-
-class UserShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "username", "email", "phone", "avatar"]
-
+        model = PetImage
+        fields = ['id', 'image', 'is_primary']
 
 class PetSerializer(serializers.ModelSerializer):
-    user = UserShortSerializer(read_only=True)
-    category = CategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        source="category",
-        queryset=Category.objects.all(),
-        write_only=True,
-        required=False
-    )
+    # 🔥 Убираем импорт UserSerializer, используем строку
+    user = serializers.StringRelatedField(read_only=True)
+    images = PetImageSerializer(many=True, read_only=True)
+    is_favorite = serializers.SerializerMethodField()
 
     class Meta:
         model = Pet
         fields = [
-            "id", "user", "category", "category_id",
-            "name", "breed", "age", "description", "price",
-            "photo", "is_active", "views_count",
-            "created_at", "updated_at"
+            'id', 'user', 'name', 'species', 'breed', 'age', 'price',
+            'offer_type', 'city', 'description', 'images', 'created_at', 'is_favorite', 'is_approved', 'is_hidden'
         ]
-        read_only_fields = ["id", "user", "views_count", "created_at", "updated_at"]
+        read_only_fields = ['user', 'created_at']
 
-    def create(self, validated_data):
-        request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or user.is_anonymous:
-            raise serializers.ValidationError({"detail": "Авторизация обязательна"})
-        return Pet.objects.create(user=user, **validated_data)
+    def get_is_favorite(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_authenticated:
+            return obj.favorited_by.filter(user=request.user).exists()
+        return False
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        request = self.context.get('request')
+        if request and instance.image:
+            data['image'] = request.build_absolute_uri(instance.image.url)
+        return data
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    pet = PetSerializer(read_only=True)
+
+    class Meta:
+        model = Favorite
+        fields = ['id', 'pet', 'created_at']
+        read_only_fields = ['id', 'created_at']

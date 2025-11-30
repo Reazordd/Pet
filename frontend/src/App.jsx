@@ -1,37 +1,27 @@
-// D:\Pet\frontend\src\App.jsx
+// frontend/src/App.jsx
+import React from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
-import React from "react";
-import { Routes, Route } from "react-router-dom";
-import { ToastContainer } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
+import Navbar from './components/Navbar';
+import ProtectedRoute from './components/ProtectedRoute';
+import NotFound from './components/NotFound';
 
-import Navbar from "./components/Navbar";
-import ProtectedRoute from "./components/ProtectedRoute";
-import NotFound from "./components/NotFound";
+import Home from './pages/Home';
+import PetsList from './pages/PetsList';
+import PetDetail from './pages/PetDetail';
+import CreatePet from './pages/CreatePet';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import FavoritesPage from './pages/FavoritesPage';
+import ChatPage from './pages/ChatPage';
+import ProfilePage from './pages/ProfilePage';  // 🔥 Для чужого профиля
+import Profile from './pages/Profile';         // 🔥 Для своего профиля
+import Forum from './pages/Forum';
 
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import PetDetail from "./pages/PetDetail";
-import MyPets from "./pages/MyPets";
-import CreatePet from "./pages/CreatePet";
-import Profile from "./pages/Profile";
-import PasswordReset from "./pages/PasswordReset";
-import Messages from "./pages/Messages";
-import ChatRoom from "./pages/ChatRoom";
-import SellerProfile from "./pages/SellerProfile";
-import PetsList from "./pages/PetsList";
-import FavoritesPage from "./pages/FavoritesPage";
-import Forum from "./pages/Forum";
-import AdminDashboard from "./pages/AdminDashboard";
-import AdminUsers from "./pages/AdminUsers";
-import AdminAds from "./pages/AdminAds";
-import AdminForumModeration from "./pages/AdminForumModeration";
-
-
-import { FavoritesProvider } from "./context/FavoritesContext.jsx";
-import { ThemeProvider } from "./context/ThemeContext.jsx";
-import "./styles/global.css";
+import { FavoritesProvider } from './context/FavoritesContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 function App() {
   return (
@@ -44,83 +34,40 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/pets" element={<PetsList />} />
               <Route path="/pets/:id" element={<PetDetail />} />
-
+              <Route path="/create" element={
+                <ProtectedRoute>
+                  <CreatePet />
+                </ProtectedRoute>
+              } />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/password-reset" element={<PasswordReset />} />
-
-              <Route
-                path="/messages"
-                element={
-                  <ProtectedRoute>
-                    <Messages />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/chat/:id"
-                element={
-                  <ProtectedRoute>
-                    <ChatRoom />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route path="/seller/:id" element={<SellerProfile />} />
-
-              <Route
-                path="/mypets"
-                element={
-                  <ProtectedRoute>
-                    <MyPets />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/create"
-                element={
-                  <ProtectedRoute>
-                    <CreatePet />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
-              />
-
-              <Route
-                path="/favorites"
-                element={
-                  <ProtectedRoute>
-                    <FavoritesPage />
-                  </ProtectedRoute>
-                }
-              />
-
-              {/* Форум */}
-              <Route path="/forum" element={<Forum />} />
-
-              <Route path="*" element={<NotFound />} />
-              <Route path="/admin" element={<ProtectedRoute><AdminDashboard/></ProtectedRoute>} />
-              <Route path="/admin/users" element={<ProtectedRoute><AdminUsers/></ProtectedRoute>} />
-              <Route path="/admin/ads" element={<ProtectedRoute><AdminAds/></ProtectedRoute>} />
-              <Route
-                path="/admin/forum"
-                element={
-                  <ProtectedRoute>
-                <AdminForumModeration />
+              <Route path="/favorites" element={
+                <ProtectedRoute>
+                  <FavoritesPage />
                 </ProtectedRoute>
-            }
-            />
+              } />
+              <Route path="/chat" element={
+                <ProtectedRoute>
+                  <ChatPage />
+                </ProtectedRoute>
+              } />
+              {/* 🔥 Свой профиль */}
+              <Route path="/profile" element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              } />
+              {/* 🔥 Чужой профиль */}
+              <Route path="/profile/:id" element={
+                <ProtectedRoute>
+                  <ProfilePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/forum" element={<Forum />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
-
-          <ToastContainer position="top-right" autoClose={4000} />
+          <ToastContainer position="top-right" autoClose={3000} />
         </div>
       </FavoritesProvider>
     </ThemeProvider>

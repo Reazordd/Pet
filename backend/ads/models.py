@@ -1,62 +1,69 @@
 # backend/ads/models.py
-
 from django.db import models
-from django.contrib.auth import get_user_model
-from django.utils.text import slugify
-from django.utils import timezone
+from django.conf import settings
 
-User = get_user_model()
-
-
-class Category(models.Model):
-    name = models.CharField(max_length=100, unique=True, verbose_name="Название категории")
-    slug = models.SlugField(unique=True, blank=True)
-    description = models.TextField(blank=True, null=True, verbose_name="Описание")
-    icon = models.CharField(max_length=50, blank=True, null=True, verbose_name="Иконка (emoji)")
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['name']
-        verbose_name = "Категория"
-        verbose_name_plural = "Категории"
-
-    def save(self, *args, **kwargs):
-        if not self.slug:
-            self.slug = slugify(self.name, allow_unicode=True)
-        super().save(*args, **kwargs)
+class PetImage(models.Model):
+    pet = models.ForeignKey('Pet', on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='pets/')
+    is_primary = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.name
-
+        return f"Image for {self.pet.name or 'Pet'}"
 
 class Pet(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets', verbose_name="Владелец")
-    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Категория")
+    SPECIES_CHOICES = [
+        ('dog', 'Собака'),
+        ('cat', 'Кошка'),
+        ('bird', 'Птица'),
+        ('fish', 'Рыба'),
+        ('reptile', 'Рептилия'),
+        ('rodent', 'Грызун'),
+        ('other', 'Другое'),
+    ]
 
-    name = models.CharField(max_length=255, verbose_name="Имя питомца")
-    breed = models.CharField(max_length=255, blank=True, verbose_name="Порода")
-    age = models.CharField(max_length=100, blank=True, verbose_name="Возраст")
-    description = models.TextField(blank=True, verbose_name="Описание")
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Цена")
-    photo = models.ImageField(upload_to='pets/', null=True, blank=True, verbose_name="Фото")
+    OFFER_TYPE_CHOICES = [
+        ('sale', 'Продажа'),
+        ('giveaway', 'Отдам'),
+        ('search', 'Ищу'),
+    ]
 
-    is_active = models.BooleanField(default=True, verbose_name="Активное объявление")
-    views_count = models.PositiveIntegerField(default=0, verbose_name="Просмотры")
-
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='pets')
+    name = models.CharField('Имя питомца', max_length=100, blank=True)
+    species = models.CharField('Вид', max_length=20, choices=SPECIES_CHOICES)
+    breed = models.CharField('Порода', max_length=100, blank=True)
+    age = models.PositiveSmallIntegerField('Возраст (лет)', null=True, blank=True)
+    price = models.DecimalField('Цена (₽)', max_digits=10, decimal_places=2, null=True, blank=True)
+    offer_type = models.CharField('Тип объявления', max_length=10, choices=OFFER_TYPE_CHOICES, default='sale')
+    city = models.CharField('Город', max_length=100)
+    description = models.TextField('Описание', blank=True)
+    image = models.ImageField('Фото', upload_to='pets/')  # 🔥 Это главное фото
     created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+    is_approved = models.BooleanField('Одобрено', default=False)
+    is_hidden = models.BooleanField('Скрыто', default=False)
 
     class Meta:
         ordering = ['-created_at']
-        verbose_name = "Объявление"
-        verbose_name_plural = "Объявления"
-
-    def increment_views(self):
-        """ Увеличивает количество просмотров (при открытии карточки) """
-        self.views_count = models.F('views_count') + 1
-        self.save(update_fields=['views_count'])
-        # Принудительно обновляем объект в памяти
-        self.refresh_from_db()
+        verbose_name = 'Питомец'
+        verbose_name_plural = 'Питомцы'
 
     def __str__(self):
-        return f"{self.name} ({self.category})"
+        return f"{self.name or 'Без имени'} ({self.get_species_display()}) — {self.city}"
+
+    def save(self, *args, **kwargs):
+        if self.offer_type != 'sale':
+            self.price = None
+        super().save(*args, **kwargs)
+
+class Favorite(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='favorited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'pet')
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранное'
+
+    def __str__(self):
+        return f"{self.user} → {self.pet}"

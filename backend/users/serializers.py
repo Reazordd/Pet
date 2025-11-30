@@ -1,68 +1,52 @@
 # backend/users/serializers.py
-
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
-from ads.models import Pet
-from forum.models import ForumTopic
+from rest_framework.validators import UniqueValidator
 
 User = get_user_model()
 
-
-# --- Регистрация и профиль ---
-class RegisterSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=True)
-    password_confirm = serializers.CharField(write_only=True, required=True)
+class UserSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=False, validators=[validate_password])  # 🔥 Необязательный
+    password_confirm = serializers.CharField(write_only=True, required=False)  # 🔥 Необязательный
 
     class Meta:
         model = User
-        fields = (
-            'username', 'email', 'password', 'password_confirm',
-            'first_name', 'last_name', 'phone', 'bio', 'location'
-        )
+        fields = [
+            'id', 'username', 'email', 'first_name', 'last_name', 'phone',
+            'avatar', 'bio', 'location', 'date_joined', 'password', 'password_confirm'
+        ]
+        read_only_fields = ['id', 'date_joined']
 
-    def validate(self, data):
-        if data.get('password') != data.get('password_confirm'):
-            raise serializers.ValidationError({"password_confirm": "Пароли не совпадают"})
-        validate_password(data.get('password'))
-        return data
+    def validate(self, attrs):
+        password = attrs.get('password')
+        password_confirm = attrs.pop('password_confirm', None)
+
+        if password or password_confirm:
+            if password != password_confirm:
+                raise serializers.ValidationError({"password": "Пароли не совпадают."})
+
+        return attrs
 
     def create(self, validated_data):
         validated_data.pop('password_confirm', None)
         password = validated_data.pop('password')
-        user = User(**validated_data)
+        user = User.objects.create(**validated_data)
         user.set_password(password)
         user.save()
         return user
 
+    def update(self, instance, validated_data):
+        password = validated_data.pop('password', None)
+        password_confirm = validated_data.pop('password_confirm', None)
 
-class UserSerializer(serializers.ModelSerializer):
-    avatar = serializers.ImageField(required=False, allow_null=True)
+        if password:
+            if password != password_confirm:
+                raise serializers.ValidationError({"password": "Пароли не совпадают."})
+            instance.set_password(password)
 
-    class Meta:
-        model = User
-        fields = (
-            'id', 'username', 'email', 'first_name', 'last_name',
-            'phone', 'bio', 'location', 'avatar',
-            'email_verified', 'phone_verified', 'is_active', 'is_staff'
-        )
-        read_only_fields = ('email_verified', 'phone_verified', 'is_staff')
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
 
-
-# --- Короткая версия пользователя (для списков, форума и т.д.) ---
-class UserShortSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username', 'avatar']
-
-
-# --- Dashboard для администратора ---
-class DashboardSerializer(serializers.Serializer):
-    total_users = serializers.IntegerField()
-    active_users = serializers.IntegerField()
-    blocked_users = serializers.IntegerField()
-    total_ads = serializers.IntegerField()
-    active_ads = serializers.IntegerField()
-    hidden_ads = serializers.IntegerField()
-    total_forum_topics = serializers.IntegerField()
-    new_users = UserSerializer(many=True)
+        instance.save()
+        return instance

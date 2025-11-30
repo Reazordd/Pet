@@ -1,38 +1,71 @@
-# D:\Pet\backend\pet_project\settings.py
-
-
+# backend/pet_project/settings.py
 import os
+import logging
 from pathlib import Path
 from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "django-insecure-dev-key")
-DEBUG = os.environ.get("DEBUG", "True") == "True"
-ALLOWED_HOSTS = ["*", "localhost", "127.0.0.1", "pet-backend"]
+def env(key, default=None):
+    val = os.environ.get(key, default)
+    return val
+
+SECRET_KEY = env("SECRET_KEY", "django-insecure-dev-key")
+DEBUG = str(env("DEBUG", "True")).lower() in ("1", "true", "yes")
+
+ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
+
+# Sentry (optional)
+SENTRY_DSN = env("SENTRY_DSN", "").strip()
+SENTRY_ENV = env("SENTRY_ENV", "development")
+SENTRY_TRACES_SAMPLE_RATE = float(env("SENTRY_TRACES_SAMPLE_RATE", "0.0"))
+SENTRY_PROFILES_SAMPLE_RATE = float(env("SENTRY_PROFILES_SAMPLE_RATE", "0.0"))
+
+if SENTRY_DSN:
+    try:
+        import sentry_sdk
+        from sentry_sdk.integrations.django import DjangoIntegration
+        from sentry_sdk.integrations.celery import CeleryIntegration
+        from sentry_sdk.integrations.logging import LoggingIntegration
+
+        sentry_logging = LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)
+        sentry_sdk.init(
+            dsn=SENTRY_DSN,
+            integrations=[DjangoIntegration(), CeleryIntegration(), sentry_logging],
+            traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
+            profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
+            environment=SENTRY_ENV,
+            send_default_pii=True,
+        )
+        print(f"[SENTRY] Enabled (env={SENTRY_ENV})")
+    except Exception as e:
+        print("[SENTRY] init failed or sentry_sdk not installed:", e)
+else:
+    print("[SENTRY] disabled (no DSN)")
 
 INSTALLED_APPS = [
-    "django.contrib.admin",
-    "django.contrib.auth",
-    "django.contrib.contenttypes",
-    "django.contrib.sessions",
-    "django.contrib.messages",
-    "django.contrib.staticfiles",
-
-    # third-party
-    "rest_framework",
-    "rest_framework_simplejwt.token_blacklist",
-    "corsheaders",
-    "django_filters",
-    "drf_spectacular",
-
-    # local apps
-    "ads",
-    "users",
-    "pets",
-    "chat",
-    "forum",
-    "admin_api",   # <-- добавили
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    # Third-party
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'corsheaders',
+    'channels',
+    'django_filters',
+    # 🔥 Убедитесь, что 'users' идёт до 'ads', 'chat', 'forum'
+    'users',
+    'ads',
+    'chat',
+    'forum',
+    'notifications',
+    'history',
+    'reviews',
+    # 🔥 Добавим admin_api, если он существует
+    # 'admin_api',  # ❌ УБРАТЬ, если нет такой папки
 ]
 
 MIDDLEWARE = [
@@ -64,31 +97,29 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "pet_project.wsgi.application"
 ASGI_APPLICATION = "pet_project.asgi.application"
 
-# Настройка channel layers для production (используем Redis)
-REDIS_HOST = os.environ.get("REDIS_HOST", "redis")
-REDIS_PORT = int(os.environ.get("REDIS_PORT", 6379))
+# 🔥 Добавлено
+REDIS_HOST = env("REDIS_HOST", "redis")
+REDIS_PORT = int(env("REDIS_PORT", 6379))
 
+# Redis / Channels
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [(REDIS_HOST, REDIS_PORT)],
-        },
-    },
+        "CONFIG": {"hosts": [(REDIS_HOST, REDIS_PORT)]},
+    }
 }
 
 # Database
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": os.environ.get("POSTGRES_DB", "petmarket"),
-        "USER": os.environ.get("POSTGRES_USER", "petuser"),
-        "PASSWORD": os.environ.get("POSTGRES_PASSWORD", "5v1234567"),
-        "HOST": os.environ.get("DB_HOST", "pet-db"),
-        "PORT": os.environ.get("DB_PORT", "5432"),
+        "NAME": env("POSTGRES_DB", "petdb"),
+        "USER": env("POSTGRES_USER", "petuser"),
+        "PASSWORD": env("POSTGRES_PASSWORD", "petpassword"),
+        "HOST": env("DB_HOST", "db"),
+        "PORT": env("DB_PORT", "5432"),
     }
 }
 
@@ -99,68 +130,84 @@ AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.NumericPasswordValidator"},
 ]
 
-# Internationalization
-LANGUAGE_CODE = "ru-RU"
-TIME_ZONE = "Europe/Moscow"
+LANGUAGE_CODE = env("LANGUAGE_CODE", "ru-RU")
+TIME_ZONE = env("TIME_ZONE", "Europe/Bucharest")
 USE_I18N = True
 USE_TZ = True
 
-# Static & media
+# Static & media — critical for prod
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
-STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# DRF
+# REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-        "rest_framework.authentication.SessionAuthentication",
     ],
-    "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
-    ],
+    # 🔥 Исправлено: разрешаем анонимные GET-запросы
+    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"],
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
+    "PAGE_SIZE": 12,
 }
 
+# JWT
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(hours=1),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=7),
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=int(env("JWT_ACCESS_HOURS", "1"))),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=int(env("JWT_REFRESH_DAYS", "7"))),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-
+# Security
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
 # CORS & CSRF
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-]
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in env("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",") if origin.strip()]
 CORS_ALLOW_CREDENTIALS = True
-
-CSRF_TRUSTED_ORIGINS = [
-    "http://localhost:8080",
-    "http://127.0.0.1:8080",
-]
-
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env("CSRF_TRUSTED_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",") if origin.strip()]
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
-SPECTACULAR_SETTINGS = {
-    "TITLE": "PetMarket API",
-    "DESCRIPTION": "API для маркетплейса домашних животных",
-    "VERSION": "1.0.0",
+# Email
+EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "webmaster@localhost")
+FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
+
+# Production hardening
+if not DEBUG:
+    SECURE_BROWSER_XSS_FILTER = True
+    X_FRAME_OPTIONS = "DENY"
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+
+# Logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "formatters": {"verbose": {"format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s"}},
+    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "verbose"}},
+    "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-EMAIL_BACKEND = os.environ.get("EMAIL_BACKEND", "django.core.mail.backends.smtp.EmailBackend")
-EMAIL_HOST = os.environ.get("EMAIL_HOST")
-EMAIL_PORT = int(os.environ.get("EMAIL_PORT", 587))
-EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER")
-EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD")
-EMAIL_USE_TLS = os.environ.get("EMAIL_USE_TLS", "True") == "True"
-DEFAULT_FROM_EMAIL = os.environ.get("DEFAULT_FROM_EMAIL", "webmaster@localhost")
-FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:8080")
+# Celery
+CELERY_BROKER_URL = env("CELERY_BROKER_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
+CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+CELERY_ACCEPT_CONTENT = ["json"]
+CELERY_TASK_SERIALIZER = "json"
+CELERY_RESULT_SERIALIZER = "json"
+CELERY_TIMEZONE = TIME_ZONE
+
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULE = {
+    "debug-every-30-seconds": {
+        "task": "pet_project.tasks.debug_task",
+        "schedule": int(env("CELERY_BEAT_SCHEDULE_INTERVAL", "30")),
+    },
+}
+
+CELERY_RESULT_BACKEND = 'django-db'

@@ -1,59 +1,61 @@
-backend/forum/serializers.py
-
+# backend/forum/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import ForumCategory, ForumTopic, ForumComment
 
 User = get_user_model()
 
-
 class UserShortSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ["id", "username", "avatar"]
 
-
 class ForumCategorySerializer(serializers.ModelSerializer):
-    topics_count = serializers.IntegerField(source="topics.count", read_only=True)
-
     class Meta:
         model = ForumCategory
-        fields = ["id", "name", "slug", "description", "topics_count"]
-
+        fields = ["id", "name", "slug", "description", "is_active"]
 
 class ForumCommentSerializer(serializers.ModelSerializer):
     author = UserShortSerializer(read_only=True)
-    likes_count = serializers.IntegerField(source="likes.count", read_only=True)
 
     class Meta:
         model = ForumComment
-        fields = [
-            "id", "author", "text",
-            "likes_count", "created_at",
-            "is_approved", "is_deleted", "moderator_comment",
-        ]
-        read_only_fields = ("is_approved", "is_deleted", "moderator_comment")
+        fields = ["id", "topic", "author", "text", "is_approved", "created_at"]
+        read_only_fields = ["id", "author", "created_at"]
 
-
-class ForumTopicSerializer(serializers.ModelSerializer):
+class ForumTopicListSerializer(serializers.ModelSerializer):
     author = UserShortSerializer(read_only=True)
     category = ForumCategorySerializer(read_only=True)
-    category_id = serializers.PrimaryKeyRelatedField(
-        source="category",
-        queryset=ForumCategory.objects.all(),
-        write_only=True,
-        required=False,
-        allow_null=True,
-    )
-    comments_count = serializers.IntegerField(source="comments.count", read_only=True)
-    likes_count = serializers.IntegerField(source="likes.count", read_only=True)
+    likes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = ForumTopic
         fields = [
-            "id", "title", "content",
-            "author", "category", "category_id",
-            "views", "likes_count", "comments_count",
-            "created_at", "is_approved", "is_deleted", "moderator_comment",
+            "id", "title", "content", "author", "category",
+            "likes_count", "is_approved", "is_pinned", "created_at",
         ]
-        read_only_fields = ("is_approved", "is_deleted", "moderator_comment")
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+class ForumTopicDetailSerializer(serializers.ModelSerializer):
+    author = UserShortSerializer(read_only=True)
+    category = ForumCategorySerializer(read_only=True)
+    comments = ForumCommentSerializer(many=True, read_only=True)
+    likes_count = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ForumTopic
+        fields = [
+            "id", "title", "content", "author", "category",
+            "likes_count", "comments", "is_approved", "is_pinned", "created_at",
+        ]
+
+    def get_likes_count(self, obj):
+        return obj.likes.count()
+
+# --- Упрощённые сериализаторы для "моя активность" в личном кабинете ---
+class MyForumActivitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ForumTopic
+        fields = ["id", "title", "created_at", "is_approved", "is_pinned"]

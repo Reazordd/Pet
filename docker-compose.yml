@@ -1,74 +1,58 @@
-# D:\Pet\docker-compose.yml
-
-version: "3.9"
-
 services:
   db:
-    image: postgres:15
-    container_name: pet-db
-    restart: unless-stopped
+    image: postgres:15-alpine
+    container_name: pet_db
     environment:
       POSTGRES_USER: petuser
-      POSTGRES_PASSWORD: 5v1234567
-      POSTGRES_DB: petmarket
+      POSTGRES_PASSWORD: petpassword
+      POSTGRES_DB: petdb
+    volumes:
+      - db_data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-    volumes:
-      - pet-db-data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U petuser -d petmarket"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-      start_period: 10s
 
   redis:
     image: redis:7-alpine
-    container_name: pet-redis
-    restart: unless-stopped
+    container_name: pet_redis
     ports:
       - "6379:6379"
-    command: ["redis-server", "--appendonly", "yes"]
-    healthcheck:
-      test: ["CMD-SHELL", "redis-cli ping || exit 1"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-      start_period: 5s
 
   backend:
     build:
       context: ./backend
-    container_name: pet-backend
-    restart: unless-stopped
+      dockerfile: Dockerfile
+    container_name: pet_backend
     env_file:
       - ./backend/.env
     environment:
-      - REDIS_HOST=redis
-      - DB_HOST=db
+      # 🔥 Эти переменные нужны для создания суперпользователя
+      DJANGO_SUPERUSER_USERNAME: admin
+      DJANGO_SUPERUSER_EMAIL: admin@example.com
+      DJANGO_SUPERUSER_PASSWORD: admin123
+    depends_on:
+      - db
+      - redis
     volumes:
-      - ./backend:/app
-      - static_volume:/app/staticfiles
-      - media_volume:/app/media
+      - media_data:/app/media
+      - static_data:/app/staticfiles
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
-      redis:
-        condition: service_started
+    # 🔥 Используем entrypoint.sh
+    entrypoint: ["/app/entrypoint.sh"]
+    command: ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
   frontend:
     build:
       context: ./frontend
-    container_name: pet-frontend
-    restart: unless-stopped
+      dockerfile: Dockerfile
+    container_name: pet_frontend
     ports:
-      - "8080:80"
-    depends_on:
-      - backend
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    command: npm run dev
 
 volumes:
-  pet-db-data:
-  static_volume:
-  media_volume:
+  db_data: {}
+  media_data: {}
+  static_data: {}

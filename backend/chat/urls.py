@@ -1,13 +1,14 @@
 # backend/chat/urls.py
-
-from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ChatViewSet, SendMessageView
+from django.urls import path, include
+from . import views
 
 router = DefaultRouter()
-router.register("chats", ChatViewSet, basename="chat")
+router.register(r'chats', views.ChatViewSet, basename='chat')
 
 urlpatterns = [
-    path("", include(router.urls)),
-    path("chats/<int:chat_id>/messages/send/", SendMessageView.as_view(), name="chat-send"),
+    path('create/', views.create_chat, name='create-chat'),
+    path('list/', views.get_user_chats, name='user-chats'),
 ]
+
+urlpatterns += router.urls

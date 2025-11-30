@@ -1,81 +1,74 @@
 // frontend/src/pages/Forum.jsx
-
-import React, { useState, useEffect } from "react";
-import api from "../utils/api";
-import "../styles/Forum.css";
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import api from '../utils/api';
+import Skeleton from 'react-loading-skeleton';
+import 'react-loading-skeleton/dist/skeleton.css';
+import '../styles/Forum.css';
 
 function Forum() {
   const [posts, setPosts] = useState([]);
-  const [newPost, setNewPost] = useState({ title: "", content: "" });
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchTopics();
+    fetchPosts();
   }, []);
 
-  const fetchTopics = async () => {
+  const fetchPosts = async () => {
     try {
-      const res = await api.get("/forum/");
-      setPosts(res.data);
-    } catch {
+      const response = await api.get('/forum/');
+      // 🔥 Проверяем формат данных
+      let data = response.data;
+      if (data.results) {
+        data = data.results;
+      }
+      if (Array.isArray(data)) {
+        setPosts(data);
+      } else {
+        setPosts([]);
+        toast.error('Данные форума пришли в неверном формате');
+      }
+    } catch (err) {
+      console.error('Ошибка при загрузке постов:', err);
+      toast.error('Ошибка при загрузке постов');
       setPosts([]);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleCreatePost = async () => {
-    if (!newPost.title.trim() || !newPost.content.trim()) return;
-    const res = await api.post("/forum/", newPost);
-    setPosts([res.data, ...posts]);
-    setNewPost({ title: "", content: "" });
-  };
-
-  const handleLike = async (id) => {
-    const res = await api.post(`/forum/${id}/like/`);
-    setPosts(
-      posts.map((p) =>
-        p.id === id ? { ...p, likes_count: res.data.likes } : p
-      )
-    );
-  };
-
   return (
-    <div className="forum-page">
-      <div className="forum-header">
-        <h1>Форум 🗣</h1>
-      </div>
-
-      <div className="forum-create">
-        <input
-          placeholder="Заголовок темы"
-          value={newPost.title}
-          onChange={(e) => setNewPost({ ...newPost, title: e.target.value })}
-        />
-        <textarea
-          placeholder="Опишите тему..."
-          value={newPost.content}
-          onChange={(e) => setNewPost({ ...newPost, content: e.target.value })}
-        />
-        <button onClick={handleCreatePost} className="btn btn-primary">
-          Опубликовать
-        </button>
-      </div>
-
-      <div className="forum-list">
-        {posts.length === 0 ? (
-          <p>Нет обсуждений 😿</p>
-        ) : (
-          posts.map((p) => (
-            <div key={p.id} className="forum-card">
-              <h3>{p.title}</h3>
-              <p>{p.content}</p>
-              <div className="forum-footer">
-                <span>Автор: {p.author?.username}</span>
-                <div>
-                  <button onClick={() => handleLike(p.id)}>❤️ {p.likes_count}</button>
-                  <span>💬 {p.comments_count}</span>
-                </div>
-              </div>
+    <div className="forum-wrapper">
+      <h1>Форум</h1>
+      <div className="forum-content">
+        {loading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="post-card">
+              <Skeleton height={20} />
+              <Skeleton count={3} />
             </div>
           ))
+        ) : posts.length > 0 ? (
+          posts.map((post) => (
+            <div key={post.id} className="post-card">
+              <h3>
+                <Link to={`/forum/${post.id}`}>{post.title}</Link>
+              </h3>
+              {/* 🔥 Исправлено: выводим username, а не объект */}
+              <p>Автор: {post.author?.username || 'Неизвестный'}</p>
+              <p>{post.content}</p>
+              <div className="post-meta">
+                <span>Дата: {new Date(post.created_at).toLocaleDateString()}</span>
+              </div>
+              <Link to={`/forum/${post.id}`}>Читать далее</Link>
+            </div>
+          ))
+        ) : (
+          <div className="no-results">
+            <h3>Нет постов</h3>
+            <p>Пока что никто не писал в форум.</p>
+          </div>
         )}
       </div>
     </div>

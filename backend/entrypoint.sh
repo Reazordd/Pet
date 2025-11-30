@@ -1,29 +1,64 @@
-#!/bin/sh
-set -e
+#!/bin/bash
+set -euo pipefail
 
-echo "📦 Ждём БД..."
-until pg_isready -h "${DB_HOST:-db}" -U "${POSTGRES_USER:-petuser}"; do
+echo "➡️ Entrypoint started for: $@"
+
+export DJANGO_SETTINGS_MODULE=pet_project.settings
+
+# Ждём БД
+echo "⏳ Waiting for PostgreSQL..."
+until python -c "
+import os, sys
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'pet_project.settings')
+try:
+    import django; django.setup()
+    from django.db import connections
+    connections['default'].ensure_connection()
+except Exception:
+    sys.exit(1)
+"; do
   sleep 1
 done
+echo "✅ DB ready"
 
-echo "📦 Применяем миграции..."
+# Директории
+mkdir -p /app/media /app/staticfiles
+
+# Создаём миграции
+echo "🔧 Creating migrations..."
+python manage.py makemigrations
+
+# Применяем миграции
+echo "🔄 Running migrations..."
 python manage.py migrate --noinput
 
-echo "📦 Собираем статику..."
-python manage.py collectstatic --noinput
+# Создаём суперпользователя
+if [ -n "${DJANGO_SUPERUSER_USERNAME:-}" ] && [ -n "${DJANGO_SUPERUSER_PASSWORD:-}" ]; then
+    echo "👤 Ensuring superuser exists..."
+    python <<PY
+import os
+import django
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "pet_project.settings")
+django.setup()
+from django.contrib.auth import get_user_model
+User = get_user_model()
+username = os.getenv("DJANGO_SUPERUSER_USERNAME")
+email = os.getenv("DJANGO_SUPERUSER_EMAIL", "")
+password = os.getenv("DJANGO_SUPERUSER_PASSWORD")
 
-echo "👤 Создаём суперпользователя если нужно..."
-python manage.py shell -c "
-from django.contrib.auth import get_user_model;
-User = get_user_model();
-import sys;
-if not User.objects.filter(username='admin').exists():
-    User.objects.create_superuser('admin', 'admin@example.com', 'admin123');
-    print('✅ Админ создан: admin / admin123');
+if not User.objects.filter(username=username).exists():
+    User.objects.create_superuser(username=username, email=email, password=password)
+    print(f"✅ Created superuser: {username}")
 else:
-    print('ℹ️ Админ уже существует.');
-sys.exit(0)
-"
+    print(f"⚠️ Superuser already exists: {username}")
+PY
+else
+    echo "⚠️ DJANGO_SUPERUSER credentials not set."
+fi
 
-echo "🚀 Запускаем Daphne (ASGI)..."
-exec daphne -b 0.0.0.0 -p 8000 pet_project.asgi:application
+# Собираем статику
+echo "📦 Collecting static..."
+python manage.py collectstatic --noinput --clear
+
+echo "🚀 Starting: $@"
+exec "$@"

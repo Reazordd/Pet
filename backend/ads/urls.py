@@ -1,12 +1,17 @@
-#backend/ads/urls.py
-
+# backend/ads/urls.py
 from rest_framework.routers import DefaultRouter
-from .views import PetViewSet, CategoryViewSet
-from .views_moderation import AdsModerationViewSet
+from django.urls import path, include
+from . import views
 
 router = DefaultRouter()
-router.register(r'pets', PetViewSet, basename='pets')
-router.register(r'categories', CategoryViewSet, basename='categories')
-router.register("ads-moderation", AdsModerationViewSet, basename="ads-moderation")
 
-urlpatterns = router.urls
+# 🔥 Указываем basename, т.к. queryset динамический
+router.register(r'pets', views.PetViewSet, basename='pet')
+router.register(r'favorites', views.FavoriteViewSet, basename='favorite')
+
+urlpatterns = [
+    # 🔥 Эндпоинт для получения категорий
+    path('categories/', views.get_categories, name='categories'),
+]
+
+urlpatterns += router.urls
