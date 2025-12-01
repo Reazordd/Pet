@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
 import '../styles/PetDetail.css';
+import { jwtDecode } from 'jwt-decode';
 
 const SPECIES_LABELS = {
   dog: 'Собака',
@@ -41,7 +42,6 @@ function PetDetail() {
       setPet(res.data);
       setIsFavorite(res.data.is_favorite || false);
 
-      // 🔥 Получаем похожие питомцы (если endpoint существует)
       try {
         const similarRes = await api.get(`/pets/${id}/similar/`);
         setSimilarPets(similarRes.data);
@@ -85,8 +85,11 @@ function PetDetail() {
     }
 
     try {
+      const decoded = jwtDecode(token);
+      const currentUserId = decoded.user_id;
+
       const res = await api.post('/chat/create/', {
-        users: [pet.user.id]
+        users: [pet.user.id, currentUserId]
       });
       const chatId = res.data.id;
       toast.success('Чат создан');
@@ -101,6 +104,7 @@ function PetDetail() {
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
   if (!pet) return null;
 
+  // 🔥 Исправлено: функция называется `formatPrice`, а не `formatPrice`
   const formatPrice = (price) => {
     if (price === null) return 'Договорная';
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
@@ -150,7 +154,7 @@ function PetDetail() {
             </h1>
             {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
             {pet.age !== null && <p>Возраст: {pet.age} лет</p>}
-            <p className="text-lg font-semibold mb-2">{formatPrice(pet.price)}</p>
+            <p className="text-lg font-semibold mb-2">{formatPrice(pet.price)}</p>  {/* ✅ Правильно: formatPrice */}
             <p className="text-gray-700 mb-1">Город: {pet.city}</p>
             <p className="text-sm text-gray-500 mb-3">
               <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">

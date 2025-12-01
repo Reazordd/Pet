@@ -1,6 +1,7 @@
 # backend/ads/serializers.py
 from rest_framework import serializers
 from .models import Pet, PetImage, Favorite
+from users.serializers import UserSerializer  # 🔥 Импортируем UserSerializer
 
 class PetImageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -8,8 +9,8 @@ class PetImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image', 'is_primary']
 
 class PetSerializer(serializers.ModelSerializer):
-    # 🔥 Убираем импорт UserSerializer, используем строку
-    user = serializers.StringRelatedField(read_only=True)
+    # 🔥 Меняем StringRelatedField на UserSerializer
+    user = UserSerializer(read_only=True)
     images = PetImageSerializer(many=True, read_only=True)
     is_favorite = serializers.SerializerMethodField()
 

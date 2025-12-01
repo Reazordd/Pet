@@ -2,6 +2,8 @@
 from django.db import models
 from django.conf import settings
 
+User = settings.AUTH_USER_MODEL
+
 class PetImage(models.Model):
     pet = models.ForeignKey('Pet', on_delete=models.CASCADE, related_name='images')
     image = models.ImageField(upload_to='pets/')
@@ -27,7 +29,7 @@ class Pet(models.Model):
         ('search', 'Ищу'),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='pets')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='pets')  # 🔥 Не null=True
     name = models.CharField('Имя питомца', max_length=100, blank=True)
     species = models.CharField('Вид', max_length=20, choices=SPECIES_CHOICES)
     breed = models.CharField('Порода', max_length=100, blank=True)
@@ -36,7 +38,7 @@ class Pet(models.Model):
     offer_type = models.CharField('Тип объявления', max_length=10, choices=OFFER_TYPE_CHOICES, default='sale')
     city = models.CharField('Город', max_length=100)
     description = models.TextField('Описание', blank=True)
-    image = models.ImageField('Фото', upload_to='pets/')  # 🔥 Это главное фото
+    image = models.ImageField('Фото', upload_to='pets/')
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField('Одобрено', default=False)
@@ -56,7 +58,7 @@ class Pet(models.Model):
         super().save(*args, **kwargs)
 
 class Favorite(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='favorites')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='favorited_by')
     created_at = models.DateTimeField(auto_now_add=True)
 

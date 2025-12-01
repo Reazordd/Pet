@@ -19,7 +19,10 @@ import ChatPage from './pages/ChatPage';
 import ProfilePage from './pages/ProfilePage';  // 🔥 Для чужого профиля
 import Profile from './pages/Profile';         // 🔥 Для своего профиля
 import Forum from './pages/Forum';
+// 🔥 Импортируем страницу модерации
+import AdminAds from './pages/AdminAds';
 
+// 🔥 Импортируем контексты
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -64,6 +67,12 @@ function App() {
                 </ProtectedRoute>
               } />
               <Route path="/forum" element={<Forum />} />
+              {/* 🔥 Модерация объявлений */}
+              <Route path="/admin/ads" element={
+                <ProtectedRoute>
+                  <AdminAds />
+                </ProtectedRoute>
+              } />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
