@@ -8,7 +8,7 @@ router.register(r'chats', views.ChatViewSet, basename='chat')
 
 urlpatterns = [
     path('', include(router.urls)),
-    # 🔥 Эндпоинт для создания чата
+    # 🔥 Эндпоинты для чата
     path('create/', views.create_chat, name='create-chat'),
     path('list/', views.get_user_chats, name='user-chats'),
 ]

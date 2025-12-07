@@ -88,7 +88,8 @@ function PetDetail() {
       const decoded = jwtDecode(token);
       const currentUserId = decoded.user_id;
 
-      const res = await api.post('/chat/create/', {
+      // ✅ Исправлено: вызываем /api/chat/create/
+      const res = await api.post('/api/chat/create/', {
         users: [pet.user.id, currentUserId]
       });
       const chatId = res.data.id;
@@ -104,7 +105,7 @@ function PetDetail() {
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
   if (!pet) return null;
 
-  // 🔥 Исправлено: функция называется `formatPrice`, а не `formatPrice`
+  // ✅ Исправлено: функция называется `formatPrice`, а не `formatPrice`
   const formatPrice = (price) => {
     if (price === null) return 'Договорная';
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';

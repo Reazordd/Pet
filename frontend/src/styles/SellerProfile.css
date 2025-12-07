@@ -1,5 +1,4 @@
-/*frontend/src/styles/SellerProfile.css*/
-
+/* frontend/src/styles/SellerProfile.css */
 .seller-profile {
   max-width: 1200px;
   margin: 40px auto;
@@ -50,7 +49,7 @@
   margin-bottom: 8px;
 }
 
-.seller-name {
+.seller-email {
   color: #636e72;
   margin-bottom: 8px;
 }

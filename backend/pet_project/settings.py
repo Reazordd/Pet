@@ -64,8 +64,6 @@ INSTALLED_APPS = [
     'notifications',
     'history',
     'reviews',
-    # 🔥 Добавим admin_api, если он существует
-    # 'admin_api',  # ❌ УБРАТЬ, если нет такой папки
 ]
 
 MIDDLEWARE = [
