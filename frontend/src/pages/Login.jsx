@@ -1,5 +1,4 @@
 // frontend/src/pages/Login.jsx
-
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -32,6 +31,7 @@ function Login() {
         setLoading(true);
 
         try {
+            // 🔥 Исправлено: теперь будет POST /api/token/
             const response = await api.post('/token/', credentials);
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);

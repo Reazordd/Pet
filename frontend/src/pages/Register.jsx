@@ -31,8 +31,6 @@ function Register() {
         }));
     };
 
-    // 🔥 Удалён вызов ensureCsrf
-
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -49,9 +47,7 @@ function Register() {
         setLoading(true);
 
         try {
-            // 🔥 Убран вызов ensureCsrf()
-
-            // отправляем ВСЕ поля, включая password_confirm
+            // 🔥 Исправлено: теперь будет POST /api/register/
             const response = await api.post('/register/', formData);
 
             // После регистрации — получаем токены которые вернул сервер

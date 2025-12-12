@@ -1,5 +1,4 @@
-// D:\Pet\frontend\src\components\ChatButton.jsx
-
+// frontend/src/components/ChatButton.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
@@ -24,21 +23,12 @@ function ChatButton({ otherUserId, className = '' }) {
 
     try {
       setLoading(true);
-      // Создаём или получаем чат с пользователем — API ожидает { receiver_id }
-      const res = await api.post('/chats/', { receiver_id: otherUserId });
-      const chat = res.data;
-      // У API можем получить либо chat object, либо { id: ... }
-      const chatId = chat.id || (chat.data && chat.data.id);
-      if (!chatId && chatId !== 0) {
-        // если вернулся сериализованный объект с id в другом поле
-        const foundId = chat?.id || chat?.pk || (Array.isArray(chat) && chat[0]?.id);
-        if (foundId) {
-          navigate(`/chat/${foundId}`);
-          return;
-        }
-        toast.error('Не удалось получить id чата');
-        return;
-      }
+
+      // ✅ Исправлено: вызываем /chat/create/ (без /api/api/...)
+      const res = await api.post('/chat/create/', {
+        users: [otherUserId]
+      });
+      const chatId = res.data.id;
       navigate(`/chat/${chatId}`);
     } catch (err) {
       console.error(err);
