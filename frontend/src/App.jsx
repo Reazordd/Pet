@@ -15,14 +15,15 @@ import CreatePet from './pages/CreatePet';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FavoritesPage from './pages/FavoritesPage';
-import ChatPage from './pages/ChatPage';
-import ProfilePage from './pages/ProfilePage';  // 🔥 Для чужого профиля
-import Profile from './pages/Profile';         // 🔥 Для своего профиля
+import ProfilePage from './pages/ProfilePage';
+import Profile from './pages/Profile';
 import Forum from './pages/Forum';
-// 🔥 Импортируем страницу модерации
 import AdminAds from './pages/AdminAds';
 
-// 🔥 Импортируем контексты
+// 🔥 НОВЫЕ СТРАНИЦЫ
+import MessagesPage from './pages/MessagesPage';
+import ChatPage from './pages/ChatPage';
+
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -49,25 +50,28 @@ function App() {
                   <FavoritesPage />
                 </ProtectedRoute>
               } />
-              <Route path="/chat" element={
+              {/* 🔥 ДОБАВЛЕНО: маршруты чата */}
+              <Route path="/messages" element={
+                <ProtectedRoute>
+                  <MessagesPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/chat/:id" element={
                 <ProtectedRoute>
                   <ChatPage />
                 </ProtectedRoute>
               } />
-              {/* 🔥 Свой профиль */}
               <Route path="/profile" element={
                 <ProtectedRoute>
                   <Profile />
                 </ProtectedRoute>
               } />
-              {/* 🔥 Чужой профиль */}
               <Route path="/profile/:id" element={
                 <ProtectedRoute>
                   <ProfilePage />
                 </ProtectedRoute>
               } />
               <Route path="/forum" element={<Forum />} />
-              {/* 🔥 Модерация объявлений */}
               <Route path="/admin/ads" element={
                 <ProtectedRoute>
                   <AdminAds />

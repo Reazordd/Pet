@@ -74,7 +74,7 @@ function PetDetail() {
     }
   };
 
-  const handleChat = async () => {
+  const handleSendMessage = async () => {
     if (!pet) return;
 
     const token = localStorage.getItem('access_token');
@@ -84,40 +84,31 @@ function PetDetail() {
       return;
     }
 
+    let sellerId;
+    if (typeof pet.user === 'number') {
+      sellerId = pet.user;
+    } else if (typeof pet.user === 'object' && pet.user?.id) {
+      sellerId = pet.user.id;
+    }
+
+    if (!sellerId) {
+      toast.error('Невозможно определить продавца');
+      return;
+    }
+
     try {
-      const decoded = jwtDecode(token);
-      const currentUserId = Number(decoded.user_id);
-
-      // 🔥 Универсальное определение ID продавца
-      let sellerId;
-      if (typeof pet.user === 'number') {
-        sellerId = pet.user;
-      } else if (typeof pet.user === 'object' && pet.user !== null && pet.user.id) {
-        sellerId = pet.user.id;
-      } else {
-        toast.error('Невозможно определить ID продавца');
-        return;
-      }
-
-      sellerId = Number(sellerId);
-
-      if (!sellerId || isNaN(sellerId) || !currentUserId || isNaN(currentUserId)) {
-        toast.error('Неверные данные пользователей');
-        return;
-      }
-
-      const res = await api.post('/chat/create/', {
-        users: [sellerId, currentUserId]
+      // 🔥 Отправляем сообщение напрямую (Avito-style)
+      await api.post('/messages/', {
+        recipient_id: sellerId,
+        content: `Здравствуйте! Интересует питомец: ${pet.name || 'без имени'}.`
       });
-      const chatId = res.data.id;
-      toast.success('Чат создан');
-      navigate(`/chat/${chatId}`);
+      toast.success('Сообщение отправлено продавцу');
     } catch (err) {
-      console.error('Ошибка при создании чата:', err);
+      console.error('Ошибка отправки:', err);
       if (err.response?.data?.error) {
         toast.error(err.response.data.error);
       } else {
-        toast.error('Не удалось создать чат');
+        toast.error('Не удалось отправить сообщение');
       }
     }
   };
@@ -210,7 +201,7 @@ function PetDetail() {
 
               {pet.offer_type !== 'search' && (
                 <button
-                  onClick={handleChat}
+                  onClick={handleSendMessage}
                   className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
                 >
                   <svg

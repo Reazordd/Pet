@@ -56,7 +56,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'channels',
     'django_filters',
-    # 🔥 Убедитесь, что 'users' идёт до 'ads', 'chat', 'forum'
+    # 🔥 Порядок соблюдён
     'users',
     'ads',
     'chat',
@@ -97,11 +97,9 @@ TEMPLATES = [
 
 ASGI_APPLICATION = "pet_project.asgi.application"
 
-# 🔥 Добавлено
 REDIS_HOST = env("REDIS_HOST", "redis")
 REDIS_PORT = int(env("REDIS_PORT", 6379))
 
-# Redis / Channels
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
@@ -109,7 +107,6 @@ CHANNEL_LAYERS = {
     }
 }
 
-# Database
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -133,7 +130,6 @@ TIME_ZONE = env("TIME_ZONE", "Europe/Bucharest")
 USE_I18N = True
 USE_TZ = True
 
-# Static & media — critical for prod
 STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 MEDIA_URL = "/media/"
@@ -141,49 +137,40 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-# REST Framework
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    # 🔥 Исправлено: разрешаем анонимные GET-запросы
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.IsAuthenticatedOrReadOnly"],
-    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 12,
 }
 
-# JWT
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(hours=int(env("JWT_ACCESS_HOURS", "1"))),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=int(env("JWT_REFRESH_DAYS", "7"))),
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# Security
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-# CORS & CSRF
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in env("CORS_ALLOWED_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",") if origin.strip()]
+CORS_ALLOWED_ORIGINS = [origin.strip() for origin in env("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env("CSRF_TRUSTED_ORIGINS", "http://localhost:3000,http://localhost:8080").split(",") if origin.strip()]
+CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env("CSRF_TRUSTED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
-# Email
 EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
 DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "webmaster@localhost")
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
 
-# Production hardening
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = "DENY"
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
-# Logging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -207,5 +194,5 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": int(env("CELERY_BEAT_SCHEDULE_INTERVAL", "30")),
     },
 }
-
-CELERY_RESULT_BACKEND = 'django-db'
+# 🔥 УДАЛЕН ЛИШНИЙ ИМПОРТ
+# CELERY_RESULT_BACKEND = 'django-db'  ← убрать эту строку (если она есть в конце файла)

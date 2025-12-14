@@ -4,19 +4,14 @@ from django.urls import path, include
 from . import views
 
 router = DefaultRouter()
-
-# 🔥 Указываем basename, т.к. queryset динамический
 router.register(r'pets', views.PetViewSet, basename='pet')
 router.register(r'favorites', views.FavoriteViewSet, basename='favorite')
 
-# 🔥 Новый роутер для модерации (только для админов)
 moderation_router = DefaultRouter()
-moderation_router.register(r'admin/pets', views.AdminPetModerationViewSet, basename='admin-pet')  # ✅ basename указан
+moderation_router.register(r'pets', views.AdminPetModerationViewSet, basename='admin-pet')
 
 urlpatterns = [
-    # 🔥 Эндпоинт для получения категорий
-    path('categories/', views.get_categories, name='categories'),
-    # 🔥 Модерация объявлений (для админов)
+    path('categories/', views.get_categories, name='categories'),  # ✅ Здесь
     path('admin/', include(moderation_router.urls)),
 ]
 

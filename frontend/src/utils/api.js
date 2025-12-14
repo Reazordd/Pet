@@ -1,7 +1,7 @@
 // frontend/src/utils/api.js
 import axios from "axios";
 
-// 🔥 Добавим `/api` в baseURL, чтобы все вызовы шли через него
+// 🔥 baseURL ДОЛЖЕН включать /api
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 const api = axios.create({
@@ -20,7 +20,9 @@ api.interceptors.request.use((config) => {
       config.headers = config.headers || {};
       config.headers.Authorization = `Bearer ${token}`;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn("Token parse error", e);
+  }
   return config;
 });
 

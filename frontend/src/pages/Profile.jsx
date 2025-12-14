@@ -1,11 +1,13 @@
 // frontend/src/pages/Profile.jsx
 import React, { useState, useEffect } from "react";
-import { toast } from "react-toastify";
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 import api from "../utils/api";
 import { checkToken, logout } from "../utils/auth";
 import "../styles/Profile.css";
 
 function Profile() {
+  const navigate = useNavigate();
   const [userData, setUserData] = useState({});
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -29,7 +31,6 @@ function Profile() {
 
   const fetchProfile = async () => {
     try {
-      // ✅ Исправлено: теперь вызывает /api/profile/me/
       const res = await api.get("/profile/me/");
       setUserData(res.data);
     } catch (err) {
@@ -40,7 +41,6 @@ function Profile() {
 
   const fetchStats = async () => {
     try {
-      // ✅ Исправлено: теперь вызывает /api/profile/stats/
       const res = await api.get("/profile/stats/");
       setStats(res.data);
     } catch (err) {
@@ -88,7 +88,6 @@ function Profile() {
           data.append(k, v);
         }
       });
-      // ✅ Исправлено: теперь вызывает /api/profile/me/update/
       const res = await api.put("/profile/me/update/", data, {
         headers: { "Content-Type": "multipart/form-data" }
       });
@@ -110,7 +109,6 @@ function Profile() {
       return;
     }
     try {
-      // ✅ Исправлено: теперь вызывает /api/password-change/
       await api.post("/password-change/", {
         old_password: passwords.old_password,
         new_password: passwords.new_password,
@@ -141,6 +139,12 @@ function Profile() {
             className={`pb-2 px-4 ${activeTab === "ads" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
           >
             Мои объявления
+          </button>
+          <button
+            onClick={() => setActiveTab("messages")}
+            className={`pb-2 px-4 ${activeTab === "messages" ? "border-b-2 border-blue-600 text-blue-600" : "text-gray-500"}`}
+          >
+            Сообщения
           </button>
           <button
             onClick={() => setActiveTab("settings")}
@@ -204,7 +208,6 @@ function Profile() {
               )}
             </div>
 
-            {/* Пагинация */}
             {totalPages > 1 && (
               <div className="flex justify-center mt-8 space-x-2">
                 <button
@@ -232,6 +235,14 @@ function Profile() {
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* === Сообщения === */}
+        {activeTab === "messages" && (
+          <div className="messages-tab">
+            <h2 className="text-xl font-semibold mb-4">Сообщения</h2>
+            <p className="text-gray-600">Перейдите в раздел <button onClick={() => navigate('/messages')} className="text-blue-600 underline">все сообщения</button> для полного списка.</p>
           </div>
         )}
 
