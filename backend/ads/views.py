@@ -8,9 +8,10 @@ from django.shortcuts import get_object_or_404
 from .models import Pet, Favorite, PetImage
 from .serializers import PetSerializer, FavoriteSerializer
 from .filters import PetFilter
+from notifications.models import Notification
+
 
 class PetViewSet(viewsets.ModelViewSet):
-    # 🔥 Убираем queryset, т.к. он динамический
     serializer_class = PetSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend]
@@ -38,10 +39,10 @@ class PetViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        # 🔥 Устанавливаем текущего пользователя как владельца
         serializer.save(user=self.request.user)
 
-    @action(detail=True, methods=['post'])
+    # 🔥 ЕДИНЫЙ ЭНДПОИНТ ДЛЯ ИЗБРАННОГО: POST = добавить, DELETE = удалить
+    @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
         pet = get_object_or_404(Pet, pk=pk)
         user = request.user
@@ -49,44 +50,36 @@ class PetViewSet(viewsets.ModelViewSet):
         if not user.is_authenticated:
             return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        favorite, created = Favorite.objects.get_or_create(user=user, pet=pet)
-        if created:
-            return Response({'is_favorite': True}, status=status.HTTP_201_CREATED)
-        else:
-            return Response({'is_favorite': True}, status=status.HTTP_200_OK)
+        if request.method == 'POST':
+            favorite, created = Favorite.objects.get_or_create(user=user, pet=pet)
+            if created and pet.user != user:
+                Notification.objects.create(
+                    recipient=pet.user,
+                    actor=user,
+                    verb='favorite',
+                    description=f'Пользователь {user.username} добавил ваше объявление в избранное'
+                )
+            return Response({'is_favorite': True}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
 
-    @action(detail=True, methods=['delete'])
-    def remove_favorite(self, request, pk=None):
-        pet = get_object_or_404(Pet, pk=pk)
-        user = request.user
+        elif request.method == 'DELETE':
+            try:
+                favorite = Favorite.objects.get(user=user, pet=pet)
+                favorite.delete()
+                return Response({'is_favorite': False}, status=status.HTTP_204_NO_CONTENT)
+            except Favorite.DoesNotExist:
+                return Response({'error': 'Not in favorites'}, status=status.HTTP_400_BAD_REQUEST)
 
-        if not user.is_authenticated:
-            return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
-
-        try:
-            favorite = Favorite.objects.get(user=user, pet=pet)
-            favorite.delete()
-            return Response({'is_favorite': False}, status=status.HTTP_204_NO_CONTENT)
-        except Favorite.DoesNotExist:
-            return Response({'error': 'Not in favorites'}, status=status.HTTP_400_BAD_REQUEST)
-
-    # 🔥 Исправленный action: похожие питомцы
     @action(detail=True, methods=['get'], url_path='similar')
     def similar_pets(self, request, pk=None):
         pet = get_object_or_404(Pet, pk=pk)
-
-        # 🔥 Проверим, что у питомца есть вид и город
         if not pet.species or not pet.city:
             return Response([], status=status.HTTP_200_OK)
-
-        # 🔥 Логика: похожие — это питомцы того же вида и города
         similar = Pet.objects.filter(
             species=pet.species,
-            city__iexact=pet.city,  # 🔥 iexact — нечувствительно к регистру
+            city__iexact=pet.city,
             offer_type=pet.offer_type
         ).exclude(id=pet.id)[:6]
-
-        serializer = self.get_serializer(similar, many=True, context={'request': request})
+        serializer = self.get_serializer(similar, many=True)
         return Response(serializer.data)
 
     def retrieve(self, request, *args, **kwargs):
@@ -98,25 +91,21 @@ class PetViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
+
 class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = FavoriteSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user
-        if not user.is_authenticated:
-            return Favorite.objects.none()
-        return Favorite.objects.filter(user=user).select_related('pet')
+        return Favorite.objects.filter(user=user).select_related(
+            'pet') if user.is_authenticated else Favorite.objects.none()
 
-# 🔥 Новый ViewSet: модерация объявлений (только для админов)
+
 from rest_framework.permissions import IsAdminUser
 
+
 class AdminPetModerationViewSet(viewsets.ModelViewSet):
-    """
-    Только для админов:
-    - список всех объявлений (включая скрытые и неодобренные)
-    - approve / hide / delete (деактивировать)
-    """
     permission_classes = [IsAdminUser]
     serializer_class = PetSerializer
     filter_backends = [DjangoFilterBackend]
@@ -125,7 +114,6 @@ class AdminPetModerationViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        # 🔥 Показываем все объявления (включая неодобренные и скрытые)
         return Pet.objects.all().select_related('user').prefetch_related('images')
 
     @action(detail=True, methods=['post'])
@@ -152,9 +140,10 @@ class AdminPetModerationViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def delete(self, request, pk=None):
         pet = get_object_or_404(Pet, pk=pk)
-        pet.is_active = False  # 🔥 Деактивируем, не удаляем из БД
+        pet.is_active = False
         pet.save(update_fields=['is_active'])
         return Response({'is_active': False}, status=status.HTTP_204_NO_CONTENT)
+
 
 @api_view(['GET'])
 def get_categories(request):

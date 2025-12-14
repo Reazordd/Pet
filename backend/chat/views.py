@@ -7,6 +7,7 @@ from django.shortcuts import get_object_or_404
 from django.contrib.auth import get_user_model
 from .models import Chat, Message
 from .serializers import ChatSerializer, MessageSerializer
+from notifications.models import Notification
 
 User = get_user_model()
 
@@ -33,6 +34,7 @@ def create_chat(request):
 
     chat = Chat.objects.create()
     chat.users.set([request.user, other_user])
+    chat.save()
     return Response(ChatSerializer(chat, context={'request': request}).data, status=status.HTTP_201_CREATED)
 
 
@@ -64,8 +66,18 @@ def send_message(request, chat_id):
 
     serializer = MessageSerializer(data=request.data, context={'request': request})
     if serializer.is_valid():
-        # Подставляем chat и sender вручную
-        serializer.save(chat=chat, sender=request.user)
+        message = serializer.save(chat=chat, sender=request.user)
+
+        # 🔥 Создаём уведомление для собеседника
+        other_user = chat.users.exclude(id=request.user.id).first()
+        if other_user:
+            Notification.objects.create(
+                recipient=other_user,
+                actor=request.user,
+                verb='message',
+                description=f'Новое сообщение: "{message.content[:50]}..."'
+            )
+
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -93,6 +105,16 @@ def send_message_to_user(request):
     if not chat:
         chat = Chat.objects.create()
         chat.users.set([request.user, recipient])
+        chat.save()
 
-    Message.objects.create(chat=chat, sender=request.user, content=content)
+    message = Message.objects.create(chat=chat, sender=request.user, content=content)
+
+    # 🔥 Уведомление в этом режиме тоже создаём
+    Notification.objects.create(
+        recipient=recipient,
+        actor=request.user,
+        verb='message',
+        description=f'Новое сообщение: "{message.content[:50]}..."'
+    )
+
     return Response({'success': 'Сообщение отправлено'}, status=201)

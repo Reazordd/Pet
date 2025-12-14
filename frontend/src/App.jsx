@@ -23,6 +23,7 @@ import AdminAds from './pages/AdminAds';
 // 🔥 НОВЫЕ СТРАНИЦЫ
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
+import NotificationsPage from './pages/NotificationsPage'; // ✅ Новый маршрут
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -50,7 +51,7 @@ function App() {
                   <FavoritesPage />
                 </ProtectedRoute>
               } />
-              {/* 🔥 ДОБАВЛЕНО: маршруты чата */}
+              {/* 🔥 МАРШРУТЫ */}
               <Route path="/messages" element={
                 <ProtectedRoute>
                   <MessagesPage />
@@ -59,6 +60,11 @@ function App() {
               <Route path="/chat/:id" element={
                 <ProtectedRoute>
                   <ChatPage />
+                </ProtectedRoute>
+              } />
+              <Route path="/notifications" element={
+                <ProtectedRoute>
+                  <NotificationsPage />
                 </ProtectedRoute>
               } />
               <Route path="/profile" element={

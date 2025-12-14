@@ -13,6 +13,12 @@ def get_notifications(request):
     serializer = NotificationSerializer(notifications, many=True, context={'request': request})
     return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_unread_count(request):
+    count = Notification.objects.filter(recipient=request.user, is_read=False).count()
+    return Response({'unread_count': count})
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def mark_as_read(request, notification_id):
@@ -20,7 +26,6 @@ def mark_as_read(request, notification_id):
         notification = Notification.objects.get(id=notification_id, recipient=request.user)
     except Notification.DoesNotExist:
         return Response({'error': 'Уведомление не найдено'}, status=status.HTTP_404_NOT_FOUND)
-
     notification.is_read = True
     notification.save()
     return Response({'is_read': True})

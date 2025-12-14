@@ -9,7 +9,7 @@ urlpatterns = [
     path('api/', include('ads.urls')),
     path('api/', include('chat.urls')),        # 🔥 Обязательно до forum/ и др.
     path('api/', include('forum.urls')),
-    path('api/', include('notifications.urls')),
+    path('api/notifications/', include('notifications.urls')),
     path('api/', include('history.urls')),
     path('api/', include('reviews.urls')),
 
