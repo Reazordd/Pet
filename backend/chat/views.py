@@ -11,37 +11,46 @@ from notifications.models import Notification
 
 User = get_user_model()
 
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_chat(request):
-    user_ids = request.data.get('users', [])
-    if not isinstance(user_ids, list) or len(user_ids) != 2 or request.user.id not in user_ids:
-        return Response(
-            {'error': 'Specify exactly 2 users, including yourself.'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    target_user_id = request.data.get('target_user_id')
 
-    other_user_id = [uid for uid in user_ids if uid != request.user.id][0]
+    if not target_user_id:
+        return Response({'error': 'target_user_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+
     try:
-        other_user = User.objects.get(id=other_user_id)
-    except User.DoesNotExist:
-        return Response({'error': 'Other user not found'}, status=status.HTTP_404_NOT_FOUND)
+        target_user_id = int(target_user_id)
+    except (TypeError, ValueError):
+        return Response({'error': 'target_user_id must be an integer'}, status=status.HTTP_400_BAD_REQUEST)
 
-    chats = Chat.objects.filter(users=request.user).filter(users=other_user)
-    if chats.exists():
-        chat = chats.first()
-        return Response(ChatSerializer(chat, context={'request': request}).data)
+    if request.user.id == target_user_id:
+        return Response({'error': 'You cannot start a chat with yourself'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        other_user = User.objects.get(id=target_user_id)
+    except User.DoesNotExist:
+        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    chat = Chat.objects.filter(users=request.user).filter(users=other_user).first()
+    if chat:
+        serializer = ChatSerializer(chat, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     chat = Chat.objects.create()
     chat.users.set([request.user, other_user])
-    chat.save()
-    return Response(ChatSerializer(chat, context={'request': request}).data, status=status.HTTP_201_CREATED)
+    serializer = ChatSerializer(chat, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_chats(request):
-    chats = Chat.objects.filter(users=request.user).prefetch_related('users', 'messages')
+    chats = Chat.objects.filter(users=request.user).prefetch_related(
+        'users__profile',
+        'messages'
+    ).distinct()
     serializer = ChatSerializer(chats, many=True, context={'request': request})
     return Response(serializer.data)
 
@@ -52,7 +61,7 @@ def get_chat_messages(request, chat_id):
     chat = get_object_or_404(Chat, id=chat_id)
     if request.user not in chat.users.all():
         return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
-    messages = chat.messages.all()
+    messages = chat.messages.select_related('sender').order_by('created_at')
     serializer = MessageSerializer(messages, many=True, context={'request': request})
     return Response(serializer.data)
 
@@ -64,57 +73,39 @@ def send_message(request, chat_id):
     if request.user not in chat.users.all():
         return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
 
-    serializer = MessageSerializer(data=request.data, context={'request': request})
-    if serializer.is_valid():
-        message = serializer.save(chat=chat, sender=request.user)
+    content = request.data.get('content', '').strip() or None
+    file = request.FILES.get('file')
 
-        # 🔥 Создаём уведомление для собеседника
-        other_user = chat.users.exclude(id=request.user.id).first()
-        if other_user:
-            Notification.objects.create(
-                recipient=other_user,
-                actor=request.user,
-                verb='message',
-                description=f'Новое сообщение: "{message.content[:50]}..."'
-            )
+    if not content and not file:
+        return Response({'error': 'Message or file is required'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def send_message_to_user(request):
-    recipient_id = request.data.get('recipient_id')
-    content = request.data.get('content', '').strip()
-
-    if not recipient_id:
-        return Response({'error': 'Укажите recipient_id'}, status=400)
-    if not content:
-        return Response({'error': 'Сообщение не может быть пустым'}, status=400)
-
-    try:
-        recipient = User.objects.get(id=recipient_id)
-    except User.DoesNotExist:
-        return Response({'error': 'Пользователь не найден'}, status=404)
-
-    if recipient == request.user:
-        return Response({'error': 'Нельзя писать самому себе'}, status=400)
-
-    chat = Chat.objects.filter(users=request.user).filter(users=recipient).first()
-    if not chat:
-        chat = Chat.objects.create()
-        chat.users.set([request.user, recipient])
-        chat.save()
-
-    message = Message.objects.create(chat=chat, sender=request.user, content=content)
-
-    # 🔥 Уведомление в этом режиме тоже создаём
-    Notification.objects.create(
-        recipient=recipient,
-        actor=request.user,
-        verb='message',
-        description=f'Новое сообщение: "{message.content[:50]}..."'
+    message = Message.objects.create(
+        chat=chat,
+        sender=request.user,
+        content=content,
+        file=file  # Django сам обработает None или файл
     )
 
-    return Response({'success': 'Сообщение отправлено'}, status=201)
+    other_user = chat.users.exclude(id=request.user.id).first()
+    if other_user:
+        preview = content[:50] if content else '[Фото]'
+        Notification.objects.create(
+            recipient=other_user,
+            actor=request.user,
+            verb='message',
+            description=f'Новое сообщение: "{preview}..."'
+        )
+
+    serializer = MessageSerializer(message, context={'request': request})
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_chat(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+    if request.user not in chat.users.all():
+        return Response({'error': 'Access denied'}, status=status.HTTP_403_FORBIDDEN)
+
+    chat.delete()
+    return Response({'success': 'Chat deleted'}, status=status.HTTP_204_NO_CONTENT)

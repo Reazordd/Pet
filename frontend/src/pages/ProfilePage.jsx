@@ -20,7 +20,7 @@ function ProfilePage() {
   const [totalPages, setTotalPages] = useState(1);
 
   useEffect(() => {
-    if (!user_id || isNaN(user_id)) {
+    if (!user_id || isNaN(user_id) || user_id <= 0) {
       setError('Некорректный ID пользователя');
       setLoading(false);
       return;
@@ -37,7 +37,7 @@ function ProfilePage() {
       setPets(petsRes.data.results || []);
       setTotalPages(Math.ceil((petsRes.data.count || 0) / 12));
     } catch (err) {
-      console.error('Ошибка загрузки профиля:', err);
+      console.error('Ошибка загрузки профиля:', err.response || err);
       setError('Профиль не найден');
       toast.error('Не удалось загрузить профиль');
     } finally {
@@ -46,6 +46,7 @@ function ProfilePage() {
   };
 
   const handleSendMessage = async () => {
+    // Проверка: не пытаемся ли написать самому себе?
     const token = localStorage.getItem('access_token');
     if (!token) {
       toast.info('Войдите, чтобы написать продавцу');
@@ -57,14 +58,22 @@ function ProfilePage() {
       const decoded = jwtDecode(token);
       const currentUserId = Number(decoded.user_id);
 
-      const res = await api.post('/create/', {
-        users: [user_id, currentUserId]
+      if (currentUserId === user_id) {
+        toast.warn('Нельзя написать самому себе');
+        return;
+      }
+
+      // ✅ Правильный запрос к чату
+      const res = await api.post('/chat/create/', {
+        target_user_id: user_id  // ← именно так ожидает бэкенд
       });
+
       const chatId = res.data.id;
       navigate(`/chat/${chatId}`);
     } catch (err) {
       console.error('Ошибка создания чата:', err.response?.data || err.message);
-      toast.error('Не удалось открыть чат');
+      const errorMsg = err.response?.data?.error || 'Не удалось начать чат';
+      toast.error(errorMsg);
     }
   };
 
@@ -72,109 +81,77 @@ function ProfilePage() {
   if (error) return <div className="max-w-4xl mx-auto p-4"><p className="text-center mt-10 text-red-500">{error}</p></div>;
   if (!user) return null;
 
-  // 🔥 Мокаем статусы (в реальном проекте они должны приходить с бэка)
-  const badges = [
-    { id: 1, title: "Надёжный продавец", bgColor: "#E6F6FF", textColor: "#0071F0" },
-    { id: 2, title: "18 покупок с Авито Доставкой", bgColor: "#FFF8E6", textColor: "#FFA800" },
-  ];
+  const badges = user.badges || [
+    { title: "Надёжный продавец", bgColor: "#E6F6FF", textColor: "#0071F0" },
+    user.avito_delivery_count > 0 && {
+      title: `${user.avito_delivery_count} покупок с Авито Доставкой`,
+      bgColor: "#FFF8E6",
+      textColor: "#FFA800"
+    }
+  ].filter(Boolean);
 
   return (
-    <div className="max-w-4xl mx-auto p-4 pb-8">
-      {/* Шапка профиля в стиле Avito */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden mb-8">
-        <div className="p-6">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            {/* Аватар */}
-            <div className="relative">
-              {user.avatar ? (
-                <img
-                  src={user.avatar}
-                  alt={user.username}
-                  className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-md"
-                />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700 border-4 border-white shadow-md">
-                  {user.username?.[0]?.toUpperCase() || '?'}
-                </div>
-              )}
-            </div>
+    <div className="seller-profile">
+      <div className="seller-header">
+        <div className="seller-avatar">
+          {user.avatar ? (
+            <img src={user.avatar} alt={user.username} />
+          ) : (
+            <div className="avatar-placeholder">{user.username?.[0]?.toUpperCase() || '?'}</div>
+          )}
+        </div>
+        <div className="seller-info">
+          <h1>{user.username}</h1>
 
-            {/* Информация */}
-            <div className="text-center md:text-left flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">{user.username}</h1>
-
-              {/* Статусы (как у Avito) */}
-              <div className="flex flex-wrap justify-center md:justify-start gap-2 mb-4">
-                {badges.map(badge => (
-                  <span
-                    key={badge.id}
-                    className="px-3 py-1 rounded-full text-sm font-medium"
-                    style={{ backgroundColor: badge.bgColor, color: badge.textColor }}
-                  >
-                    {badge.title}
-                  </span>
-                ))}
-              </div>
-
-              {user.location && (
-                <p className="text-gray-600 flex items-center justify-center md:justify-start gap-1 mb-1">
-                  <span>📍</span> {user.location}
-                </p>
-              )}
-              {user.bio && <p className="text-gray-700 mt-2 max-w-2xl">{user.bio}</p>}
-            </div>
+          <div className="mb-3">
+            {badges.map((badge, idx) => (
+              <span key={idx} className="badge" style={{ backgroundColor: badge.bgColor, color: badge.textColor }}>
+                {badge.title}
+              </span>
+            ))}
           </div>
 
-          {/* Кнопки действий */}
-          <div className="flex flex-col sm:flex-row gap-3 mt-6 justify-center md:justify-start">
-            <button
-              onClick={handleSendMessage}
-              className="px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md"
-            >
+          {user.location && <p className="seller-location">📍 {user.location}</p>}
+          {user.bio && <p className="seller-bio">{user.bio}</p>}
+
+          <div className="seller-contacts">
+            <button className="btn btn-primary" onClick={handleSendMessage}>
               💬 Написать
             </button>
-            <button className="px-6 py-3 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition">
+            <button className="btn btn-secondary">
               📞 Позвонить
             </button>
           </div>
         </div>
       </div>
 
-      {/* Объявления */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Объявления пользователя</h2>
-
+      <div className="seller-pets">
+        <h2>Объявления пользователя</h2>
         {pets.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="pets-grid">
             {pets.map((pet) => (
               <PetCard key={pet.id} pet={pet} />
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <p className="text-gray-500 text-lg">У пользователя пока нет объявлений</p>
+          <div className="empty-state">
+            <p>У пользователя пока нет объявлений</p>
           </div>
         )}
 
-        {/* Пагинация */}
         {totalPages > 1 && (
-          <div className="flex justify-center mt-8 space-x-2">
+          <div className="pagination">
             <button
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
-              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50"
             >
-              Назад
+              &lt;
             </button>
             {[...Array(totalPages)].map((_, i) => (
               <button
                 key={i + 1}
                 onClick={() => setPage(i + 1)}
-                className={`px-4 py-2 rounded-lg ${
-                  page === i + 1
-                    ? "bg-blue-600 text-white"
-                    : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
+                className={page === i + 1 ? 'active' : ''}
               >
                 {i + 1}
               </button>
@@ -182,9 +159,8 @@ function ProfilePage() {
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
-              className="px-4 py-2 border border-gray-300 rounded-lg disabled:opacity-50 hover:bg-gray-50"
             >
-              Вперёд
+              &gt;
             </button>
           </div>
         )}

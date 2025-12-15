@@ -13,8 +13,7 @@ function MessagesTab() {
   useEffect(() => {
     const loadChats = async () => {
       try {
-        // ✅ Исправлено: /list/ вместо /chat/list/
-        const res = await api.get('/list/');
+        const res = await api.get('/chat/list/'); // ✅
         setChats(res.data || []);
       } catch (err) {
         console.error('Ошибка загрузки чатов:', err);
@@ -30,7 +29,7 @@ function MessagesTab() {
   if (chats.length === 0) return <p className="text-gray-500">У вас пока нет сообщений.</p>;
 
   return (
-    <div className="messages-tab space-y-3">
+    <div className="space-y-3">
       <h2 className="text-xl font-semibold">Сообщения</h2>
       <div className="space-y-3">
         {chats.map((chat) => (

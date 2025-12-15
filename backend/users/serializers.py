@@ -7,46 +7,35 @@ from rest_framework.validators import UniqueValidator
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
-    password = serializers.CharField(write_only=True, required=False, validators=[validate_password])
-    password_confirm = serializers.CharField(write_only=True, required=False)
+    badges = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'phone',
-            'avatar', 'bio', 'location', 'date_joined', 'password', 'password_confirm'
+            'avatar', 'bio', 'location', 'date_joined',
+            'is_trusted_seller', 'avito_delivery_count', 'is_company_verified', 'badges'
         ]
-        read_only_fields = ['id', 'date_joined']
+        read_only_fields = ['id', 'date_joined', 'badges']
 
-    def validate(self, attrs):
-        password = attrs.get('password')
-        password_confirm = attrs.pop('password_confirm', None)
-
-        if password or password_confirm:
-            if password != password_confirm:
-                raise serializers.ValidationError({"password": "Пароли не совпадают."})
-
-        return attrs
-
-    def create(self, validated_data):
-        validated_data.pop('password_confirm', None)
-        password = validated_data.pop('password')
-        user = User.objects.create(**validated_data)
-        user.set_password(password)
-        user.save()
-        return user
-
-    def update(self, instance, validated_data):
-        password = validated_data.pop('password', None)
-        password_confirm = validated_data.pop('password_confirm', None)
-
-        if password:
-            if password != password_confirm:
-                raise serializers.ValidationError({"password": "Пароли не совпадают."})
-            instance.set_password(password)
-
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-
-        instance.save()
-        return instance
+    def get_badges(self, obj):
+        badges = []
+        if obj.is_trusted_seller:
+            badges.append({
+                "title": "Надёжный продавец",
+                "bgColor": "#E6F6FF",
+                "textColor": "#0071F0"
+            })
+        if obj.avito_delivery_count > 0:
+            badges.append({
+                "title": f"{obj.avito_delivery_count} покупок на PetMarket",
+                "bgColor": "#FFF8E6",
+                "textColor": "#FFA800"
+            })
+        if obj.is_company_verified:
+            badges.append({
+                "title": "Компания проверена",
+                "bgColor": "#E8F5E9",
+                "textColor": "#2E7D32"
+            })
+        return badges
