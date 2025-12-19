@@ -47,10 +47,8 @@ def create_chat(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_chats(request):
-    # ✅ Исправлено: убран 'users__profile', добавлен select_related
-    chats = Chat.objects.filter(users=request.user).prefetch_related(
-        'messages'
-    ).select_related('users')
+    # ✅ ИСПРАВЛЕНО: убран select_related, оставлен только prefetch_related
+    chats = Chat.objects.filter(users=request.user).prefetch_related('messages')
     serializer = ChatSerializer(chats, many=True, context={'request': request})
     return Response(serializer.data)
 
