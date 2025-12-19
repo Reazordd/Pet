@@ -26,7 +26,8 @@ const PetCard = ({ pet }) => {
   const toggleFavorite = async () => {
     try {
       if (isFavorite) {
-        await api.delete(`/pets/${pet.id}/remove_favorite/`); // ✅ Исправлено: убрано `remove_favorite`
+        // ✅ ИСПРАВЛЕНО: DELETE на /favorite/, а не /remove_favorite/
+        await api.delete(`/pets/${pet.id}/favorite/`);
         setIsFavorite(false);
         toast.info('Удалено из избранного');
       } else {
@@ -48,9 +49,9 @@ const PetCard = ({ pet }) => {
     <div className="pet-card">
       <Link to={`/pets/${pet.id}`}>
         <img
-          src={pet.image || '/images/placeholder-pet.jpg'}  // ✅ Правильный путь к заглушке
+          src={pet.image || '/images/placeholder-pet.jpg'}
           alt={pet.name || 'Питомец'}
-          onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}  // ✅ Fallback
+          onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
         />
         <h3>{pet.name || 'Без имени'}</h3>
         <p>{pet.city}</p>

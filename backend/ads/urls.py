@@ -11,7 +11,7 @@ moderation_router = DefaultRouter()
 moderation_router.register(r'pets', views.AdminPetModerationViewSet, basename='admin-pet')
 
 urlpatterns = [
-    path('categories/', views.get_categories, name='categories'),  # ✅ Здесь
+    path('categories/', views.get_categories, name='categories'),
     path('admin/', include(moderation_router.urls)),
 ]
 

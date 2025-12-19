@@ -47,10 +47,10 @@ def create_chat(request):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_user_chats(request):
+    # ✅ Исправлено: убран 'users__profile', добавлен select_related
     chats = Chat.objects.filter(users=request.user).prefetch_related(
-        'users__profile',
         'messages'
-    ).distinct()
+    ).select_related('users')
     serializer = ChatSerializer(chats, many=True, context={'request': request})
     return Response(serializer.data)
 
@@ -83,7 +83,7 @@ def send_message(request, chat_id):
         chat=chat,
         sender=request.user,
         content=content,
-        file=file  # Django сам обработает None или файл
+        file=file
     )
 
     other_user = chat.users.exclude(id=request.user.id).first()

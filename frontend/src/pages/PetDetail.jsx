@@ -61,7 +61,8 @@ function PetDetail() {
   const toggleFavorite = async () => {
     try {
       if (isFavorite) {
-        await api.delete(`/pets/${id}/remove_favorite/`);
+        // ✅ Исправлено: DELETE на /favorite/, а не /remove_favorite/
+        await api.delete(`/pets/${id}/favorite/`);
         setIsFavorite(false);
         toast.info('Удалено из избранного');
       } else {
@@ -97,18 +98,25 @@ function PetDetail() {
     }
 
     try {
-      // 🔥 Отправляем сообщение напрямую (Avito-style)
-      await api.post('/messages/', {
-        recipient_id: sellerId,
-        content: `Здравствуйте! Интересует питомец: ${pet.name || 'без имени'}.`
+      const decoded = jwtDecode(token);
+      const currentUserId = Number(decoded.user_id);
+
+      if (currentUserId === sellerId) {
+        toast.warn('Нельзя написать самому себе');
+        return;
+      }
+
+      const res = await api.post('/chat/create/', {
+        target_user_id: sellerId
       });
-      toast.success('Сообщение отправлено продавцу');
+      const chatId = res.data.id;
+      navigate(`/chat/${chatId}`);
     } catch (err) {
       console.error('Ошибка отправки:', err);
       if (err.response?.data?.error) {
         toast.error(err.response.data.error);
       } else {
-        toast.error('Не удалось отправить сообщение');
+        toast.error('Не удалось начать чат');
       }
     }
   };
@@ -130,7 +138,6 @@ function PetDetail() {
 
       <div className="bg-white p-6 rounded shadow">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Галерея фото */}
           <div>
             {pet.images && pet.images.length > 0 ? (
               <img
@@ -233,7 +240,6 @@ function PetDetail() {
         </div>
       </div>
 
-      {/* Похожие объявления */}
       {similarPets.length > 0 && (
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Похожие объявления</h2>
