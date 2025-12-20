@@ -4,6 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
+import Lightbox from '../components/Lightbox';
 import '../styles/PetDetail.css';
 import { jwtDecode } from 'jwt-decode';
 
@@ -31,6 +32,7 @@ function PetDetail() {
   const [loading, setLoading] = useState(true);
   const [isFavorite, setIsFavorite] = useState(false);
   const [error, setError] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
 
   useEffect(() => {
     fetchPet();
@@ -61,7 +63,6 @@ function PetDetail() {
   const toggleFavorite = async () => {
     try {
       if (isFavorite) {
-        // ✅ Исправлено: DELETE на /favorite/, а не /remove_favorite/
         await api.delete(`/pets/${id}/favorite/`);
         setIsFavorite(false);
         toast.info('Удалено из избранного');
@@ -121,6 +122,14 @@ function PetDetail() {
     }
   };
 
+  const openLightbox = (src) => {
+    setLightboxImage(src);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
   if (loading) return <p className="text-center mt-10">Загрузка...</p>;
   if (error) return <p className="text-center mt-10 text-red-500">{error}</p>;
   if (!pet) return null;
@@ -129,6 +138,9 @@ function PetDetail() {
     if (price === null) return 'Договорная';
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
+
+  // ✅ Правильно: только pet.images
+  const images = pet.images || [];
 
   return (
     <div className="pet-detail max-w-4xl mx-auto p-4">
@@ -139,28 +151,39 @@ function PetDetail() {
       <div className="bg-white p-6 rounded shadow">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            {pet.images && pet.images.length > 0 ? (
-              <img
-                src={pet.image || pet.images[0]?.image || '/images/placeholder-pet.jpg'}
-                alt={pet.name || 'Питомец'}
-                className="w-full h-80 object-cover rounded"
-                onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
-              />
+            {images.length > 0 ? (
+              <div
+                className="w-full h-80 overflow-hidden rounded cursor-pointer"
+                onClick={() => openLightbox(images[0].image)}
+              >
+                <img
+                  src={images[0].image}
+                  alt={pet.name || 'Питомец'}
+                  className="w-full h-full object-cover"
+                  onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
+                />
+              </div>
             ) : (
               <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-80 flex items-center justify-center">
                 <span>🖼️ Нет фото</span>
               </div>
             )}
-            {pet.images && pet.images.length > 1 && (
+
+            {images.length > 1 && (
               <div className="grid grid-cols-3 gap-2 mt-2">
-                {pet.images.map((img) => (
-                  <img
-                    key={img.id}
-                    src={img.image || '/images/placeholder-pet.jpg'}
-                    alt={`Фото ${img.id}`}
-                    className="h-20 object-cover rounded cursor-pointer"
-                    onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
-                  />
+                {images.slice(1).map((img, idx) => (
+                  <div
+                    key={idx}
+                    className="cursor-pointer overflow-hidden rounded"
+                    onClick={() => openLightbox(img.image)}
+                  >
+                    <img
+                      src={img.image}
+                      alt={`Фото ${idx + 1}`}
+                      className="w-full h-20 object-cover"
+                      onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
+                    />
+                  </div>
                 ))}
               </div>
             )}
@@ -239,6 +262,14 @@ function PetDetail() {
           </div>
         </div>
       </div>
+
+      {lightboxImage && (
+        <Lightbox
+          src={lightboxImage}
+          alt="Фото питомца"
+          onClose={closeLightbox}
+        />
+      )}
 
       {similarPets.length > 0 && (
         <div className="mt-8">

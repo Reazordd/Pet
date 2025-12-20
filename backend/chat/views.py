@@ -107,3 +107,12 @@ def delete_chat(request, chat_id):
 
     chat.delete()
     return Response({'success': 'Chat deleted'}, status=status.HTTP_204_NO_CONTENT)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_chat_detail(request, chat_id):
+    chat = get_object_or_404(Chat, id=chat_id)
+    if request.user not in chat.users.all():
+        return Response({'error': 'Access denied'}, status=403)
+    serializer = ChatSerializer(chat, context={'request': request})
+    return Response(serializer.data)

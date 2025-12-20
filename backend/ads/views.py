@@ -20,15 +20,38 @@ class PetViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
+        # 🔥 НОВАЯ ФИЛЬТРАЦИЯ: ?user=123 — работает для всех, включая админа
+        user_id_param = self.request.query_params.get('user')
+        if user_id_param is not None:
+            try:
+                user_id = int(user_id_param)
+                return Pet.objects.filter(
+                    user_id=user_id,
+                    is_approved=True,
+                    is_hidden=False,
+                    is_active=True
+                )
+            except (TypeError, ValueError):
+                return Pet.objects.none()
+
+        # Старая логика (для /pets?owner=true)
         owner_filter = self.request.query_params.get('owner', None)
         if owner_filter == 'true':
             if self.request.user.is_authenticated:
                 return Pet.objects.filter(user=self.request.user)
             else:
                 return Pet.objects.none()
+
+        # Админ видит всё (но только если не задан ?user=)
         if self.request.user.is_staff:
             return Pet.objects.all()
-        return Pet.objects.filter(is_approved=True, is_hidden=False, is_active=True)
+
+        # Обычные пользователи — только активные объявления
+        return Pet.objects.filter(
+            is_approved=True,
+            is_hidden=False,
+            is_active=True
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -41,7 +64,6 @@ class PetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    # 🔥 ЕДИНЫЙ ЭНДПОИНТ ДЛЯ ИЗБРАННОГО: POST = добавить, DELETE = удалить
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
         pet = get_object_or_404(Pet, pk=pk)

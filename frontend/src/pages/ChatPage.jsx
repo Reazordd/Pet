@@ -1,8 +1,10 @@
 // frontend/src/pages/ChatPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
+import Lightbox from '../components/Lightbox';
+import '../styles/Chat.css'; // ← убедись, что подключён CSS
 
 const ChatPage = () => {
   const { id } = useParams();
@@ -12,6 +14,8 @@ const ChatPage = () => {
   const [inputValue, setInputValue] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [otherUser, setOtherUser] = useState(null);
+  const [lightboxImage, setLightboxImage] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -25,6 +29,16 @@ const ChatPage = () => {
     }
   };
 
+  const fetchOtherUser = async () => {
+    try {
+      const res = await api.get(`/chat/${chatId}/`);
+      const other = res.data.other_user;
+      setOtherUser(other);
+    } catch (err) {
+      console.warn('Не удалось загрузить данные собеседника');
+    }
+  };
+
   useEffect(() => {
     if (!id || isNaN(chatId) || chatId <= 0) {
       toast.error('Неверный ID чата');
@@ -32,6 +46,7 @@ const ChatPage = () => {
       return;
     }
     loadMessages();
+    fetchOtherUser();
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [id]);
@@ -98,8 +113,27 @@ const ChatPage = () => {
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const openLightbox = (src) => {
+    setLightboxImage(src);
+  };
+
+  const closeLightbox = () => {
+    setLightboxImage(null);
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-4">
+      {otherUser && (
+        <div className="mb-3 text-center">
+          <Link
+            to={`/profile/${otherUser.id}`}
+            className="text-blue-600 hover:underline font-medium text-lg"
+          >
+            {otherUser.username}
+          </Link>
+        </div>
+      )}
+
       <div className="mb-4 h-96 overflow-y-auto border rounded-lg p-3 bg-white">
         {messages.length === 0 ? (
           <p className="text-gray-500 text-center py-10">Нет сообщений</p>
@@ -109,16 +143,42 @@ const ChatPage = () => {
               key={msg.id}
               className={`mb-3 ${msg.is_own ? 'text-right' : 'text-left'}`}
             >
+              {/* Аватар + имя собеседника */}
+              {!msg.is_own && otherUser && (
+                <Link
+                  to={`/profile/${otherUser.id}`}
+                  className="text-blue-600 hover:underline text-sm flex items-center gap-1 mb-1"
+                >
+                  {otherUser.avatar ? (
+                    <img
+                      src={otherUser.avatar}
+                      alt={otherUser.username}
+                      className="w-5 h-5 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold">
+                      {otherUser.username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <span>{otherUser.username}</span>
+                </Link>
+              )}
+
+              {/* Фото */}
               {msg.file_url ? (
-                <div className={msg.is_own ? 'inline-block max-w-xs' : 'inline-block max-w-xs'}>
+                <div
+                  className={`inline-block max-w-xs cursor-pointer ${msg.is_own ? 'ml-auto' : 'mr-auto'}`}
+                  onClick={() => openLightbox(msg.file_url)}
+                >
                   <img
                     src={msg.file_url}
                     alt="Фото"
-                    className="rounded-lg max-w-full h-auto border"
-                    style={{ maxHeight: '200px', objectFit: 'cover' }}
+                    className="rounded-lg border chat-image" // ← используем CSS-класс
                   />
                 </div>
               ) : null}
+
+              {/* Текст */}
               {msg.content ? (
                 <div
                   className={`inline-block p-2 rounded-lg max-w-xs ${
@@ -130,6 +190,8 @@ const ChatPage = () => {
                   {msg.content}
                 </div>
               ) : null}
+
+              {/* Время */}
               <div
                 className={`text-xs text-gray-500 mt-1 ${
                   msg.is_own ? 'text-right' : 'text-left'
@@ -145,6 +207,14 @@ const ChatPage = () => {
         )}
         <div ref={messagesEndRef} />
       </div>
+
+      {lightboxImage && (
+        <Lightbox
+          src={lightboxImage}
+          alt="Фото из чата"
+          onClose={closeLightbox}
+        />
+      )}
 
       <form onSubmit={handleSend} className="flex flex-col gap-2">
         {selectedFile && (
