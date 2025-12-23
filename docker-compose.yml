@@ -1,6 +1,6 @@
 services:
   db:
-    image: postgres:15-alpine
+    image: postgres:15
     container_name: pet_db
     environment:
       POSTGRES_USER: petuser
@@ -12,7 +12,7 @@ services:
       - "5432:5432"
 
   redis:
-    image: redis:7-alpine
+    image: redis:7
     container_name: pet_redis
     ports:
       - "6379:6379"

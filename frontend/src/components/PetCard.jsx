@@ -4,21 +4,8 @@ import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 
-const SPECIES_LABELS = {
-  dog: 'Собака',
-  cat: 'Кошка',
-  bird: 'Птица',
-  rodent: 'Грызун',
-  fish: 'Рыба',
-  reptile: 'Рептилия',
-  other: 'Другое',
-};
-
-const OFFER_LABELS = {
-  sale: 'Продажа',
-  giveaway: 'Отдам',
-  search: 'Ищу',
-};
+const SPECIES_LABELS = { /* ... */ };
+const OFFER_LABELS = { /* ... */ };
 
 const PetCard = ({ pet }) => {
   const [isFavorite, setIsFavorite] = useState(pet.is_favorite);
@@ -26,7 +13,6 @@ const PetCard = ({ pet }) => {
   const toggleFavorite = async () => {
     try {
       if (isFavorite) {
-        // ✅ ИСПРАВЛЕНО: DELETE на /favorite/, а не /remove_favorite/
         await api.delete(`/pets/${pet.id}/favorite/`);
         setIsFavorite(false);
         toast.info('Удалено из избранного');
@@ -45,13 +31,17 @@ const PetCard = ({ pet }) => {
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
+  // ✅ Используем pet.images[0].image
+  const imageUrl = pet.images?.[0]?.image || '/images/placeholder-pet.jpg';
+
   return (
     <div className="pet-card">
       <Link to={`/pets/${pet.id}`}>
         <img
-          src={pet.image || '/images/placeholder-pet.jpg'}
+          src={imageUrl}
           alt={pet.name || 'Питомец'}
-          onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
+          className="pet-card-image" // ← Avito-стиль
+          onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
         />
         <h3>{pet.name || 'Без имени'}</h3>
         <p>{pet.city}</p>

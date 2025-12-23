@@ -139,7 +139,6 @@ function PetDetail() {
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
-  // ✅ Правильно: только pet.images
   const images = pet.images || [];
 
   return (
@@ -152,8 +151,9 @@ function PetDetail() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             {images.length > 0 ? (
+              // ✅ Avito: главное фото — 80px высота, object-cover
               <div
-                className="w-full h-80 overflow-hidden rounded cursor-pointer"
+                className="w-full h-80 overflow-hidden rounded-lg cursor-pointer"
                 onClick={() => openLightbox(images[0].image)}
               >
                 <img
@@ -170,17 +170,18 @@ function PetDetail() {
             )}
 
             {images.length > 1 && (
+              // ✅ Avito: миниатюры — 20px высота, квадратные
               <div className="grid grid-cols-3 gap-2 mt-2">
                 {images.slice(1).map((img, idx) => (
                   <div
                     key={idx}
-                    className="cursor-pointer overflow-hidden rounded"
+                    className="w-full h-20 overflow-hidden rounded cursor-pointer"
                     onClick={() => openLightbox(img.image)}
                   >
                     <img
                       src={img.image}
-                      alt={`Фото ${idx + 1}`}
-                      className="w-full h-20 object-cover"
+                      alt={`Фото ${idx + 2}`}
+                      className="w-full h-full object-cover"
                       onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
                     />
                   </div>

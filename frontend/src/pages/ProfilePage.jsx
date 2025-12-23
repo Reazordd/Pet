@@ -46,7 +46,6 @@ function ProfilePage() {
   };
 
   const handleSendMessage = async () => {
-    // Проверка: не пытаемся ли написать самому себе?
     const token = localStorage.getItem('access_token');
     if (!token) {
       toast.info('Войдите, чтобы написать продавцу');
@@ -63,9 +62,8 @@ function ProfilePage() {
         return;
       }
 
-      // ✅ Правильный запрос к чату
       const res = await api.post('/chat/create/', {
-        target_user_id: user_id  // ← именно так ожидает бэкенд
+        target_user_id: user_id
       });
 
       const chatId = res.data.id;
@@ -95,9 +93,12 @@ function ProfilePage() {
       <div className="seller-header">
         <div className="seller-avatar">
           {user.avatar ? (
-            <img src={user.avatar} alt={user.username} />
+            // ✅ Avito-стиль: круглый аватар 64px
+            <img src={user.avatar} alt={user.username} className="avatar-lg" />
           ) : (
-            <div className="avatar-placeholder">{user.username?.[0]?.toUpperCase() || '?'}</div>
+            <div className="avatar-placeholder">
+              {user.username?.[0]?.toUpperCase() || '?'}
+            </div>
           )}
         </div>
         <div className="seller-info">
