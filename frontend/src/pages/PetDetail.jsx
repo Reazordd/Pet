@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
 import Lightbox from '../components/Lightbox';
+import { buildImageUrl } from '../utils/image'; // ← добавлено
 import '../styles/PetDetail.css';
 import { jwtDecode } from 'jwt-decode';
 
@@ -143,43 +144,43 @@ function PetDetail() {
 
   return (
     <div className="pet-detail max-w-4xl mx-auto p-4">
-      <button onClick={() => navigate(-1)} className="mb-4 text-blue-600 hover:underline">
+      <button onClick={() => navigate(-1)} className="mb-6 text-blue-600 hover:underline font-medium">
         ← Назад к объявлениям
       </button>
 
-      <div className="bg-white p-6 rounded shadow">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
+      {/* ✅ Avito-стиль: одна строка — фото слева, текст справа */}
+      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+        <div className="flex flex-col md:flex-row">
+          {/* Левая часть — фото */}
+          <div className="md:w-1/2 p-6">
             {images.length > 0 ? (
-              // ✅ Avito: главное фото — 80px высота, object-cover
               <div
-                className="w-full h-80 overflow-hidden rounded-lg cursor-pointer"
-                onClick={() => openLightbox(images[0].image)}
+                className="w-full h-96 bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
+                onClick={() => openLightbox(buildImageUrl(images[0].image))}
               >
                 <img
-                  src={images[0].image}
+                  src={buildImageUrl(images[0].image)} // ← исправлено
                   alt={pet.name || 'Питомец'}
                   className="w-full h-full object-cover"
                   onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
                 />
               </div>
             ) : (
-              <div className="bg-gray-200 border-2 border-dashed rounded-xl w-full h-80 flex items-center justify-center">
-                <span>🖼️ Нет фото</span>
+              <div className="w-full h-96 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
+                <span className="text-gray-500 text-2xl">🖼️ Нет фото</span>
               </div>
             )}
 
             {images.length > 1 && (
-              // ✅ Avito: миниатюры — 20px высота, квадратные
-              <div className="grid grid-cols-3 gap-2 mt-2">
+              <div className="grid grid-cols-4 gap-2 mt-3">
                 {images.slice(1).map((img, idx) => (
                   <div
                     key={idx}
-                    className="w-full h-20 overflow-hidden rounded cursor-pointer"
-                    onClick={() => openLightbox(img.image)}
+                    className="w-full h-20 bg-gray-100 rounded overflow-hidden cursor-pointer"
+                    onClick={() => openLightbox(buildImageUrl(img.image))}
                   >
                     <img
-                      src={img.image}
+                      src={buildImageUrl(img.image)} // ← исправлено
                       alt={`Фото ${idx + 2}`}
                       className="w-full h-full object-cover"
                       onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
@@ -190,28 +191,27 @@ function PetDetail() {
             )}
           </div>
 
-          <div>
-            <h1 className="text-2xl font-bold mb-2">
+          {/* Правая часть — текст */}
+          <div className="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-200">
+            <h1 className="text-2xl font-bold mb-1">
               {pet.name || 'Без имени'} — {SPECIES_LABELS[pet.species]}
             </h1>
             {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
-            {pet.age !== null && <p>Возраст: {pet.age} лет</p>}
-            <p className="text-lg font-semibold mb-2">{formatPrice(pet.price)}</p>
-            <p className="text-gray-700 mb-1">Город: {pet.city}</p>
-            <p className="text-sm text-gray-500 mb-3">
-              <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                {OFFER_LABELS[pet.offer_type]}
-              </span>
-            </p>
-            {pet.description && <p className="mt-4 whitespace-pre-line">{pet.description}</p>}
+            {pet.age !== null && <p className="text-gray-700">Возраст: {pet.age} лет</p>}
+            <p className="text-xl font-semibold my-2">{formatPrice(pet.price)}</p>
+            <p className="text-gray-700 mb-2">📍 {pet.city}</p>
+            <div className="inline-block bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded mb-4">
+              {OFFER_LABELS[pet.offer_type]}
+            </div>
+            {pet.description && <p className="mt-2 text-gray-800 whitespace-pre-line">{pet.description}</p>}
 
             <div className="mt-6 flex flex-wrap gap-3">
               <button
                 onClick={toggleFavorite}
-                className={`px-4 py-2 rounded flex items-center ${
+                className={`px-4 py-2 rounded-lg flex items-center font-medium ${
                   isFavorite
-                    ? 'bg-red-100 text-red-800'
-                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                    ? 'bg-red-50 text-red-600'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
                 <svg
@@ -227,37 +227,23 @@ function PetDetail() {
                     clipRule="evenodd"
                   />
                 </svg>
-                {isFavorite ? 'В избранном' : 'В избранное'}
+                {isFavorite ? 'В избранном' : 'Добавить в избранное'}
               </button>
 
               {pet.offer_type !== 'search' && (
                 <button
                   onClick={handleSendMessage}
-                  className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center"
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 mr-1"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                    />
-                  </svg>
-                  Написать
+                  💬 Написать
                 </button>
               )}
 
               <Link
                 to={`/profile/${typeof pet.user === 'object' ? pet.user.id : pet.user}`}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300"
+                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium"
               >
-                Профиль продавца
+                👤 Профиль продавца
               </Link>
             </div>
           </div>

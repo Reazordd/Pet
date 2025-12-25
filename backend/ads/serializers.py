@@ -8,7 +8,6 @@ class PetImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image', 'is_primary']
 
 class PetSerializer(serializers.ModelSerializer):
-    # 🔥 Исправлено: возвращаем user как ID, а не как объект
     user = serializers.PrimaryKeyRelatedField(read_only=True)
     images = PetImageSerializer(many=True, read_only=True)
     is_favorite = serializers.SerializerMethodField()
@@ -17,7 +16,8 @@ class PetSerializer(serializers.ModelSerializer):
         model = Pet
         fields = [
             'id', 'user', 'name', 'species', 'breed', 'age', 'price',
-            'offer_type', 'city', 'description', 'images', 'created_at', 'is_favorite', 'is_approved', 'is_hidden'
+            'offer_type', 'city', 'description', 'images',
+            'created_at', 'is_favorite', 'is_approved', 'is_hidden'
         ]
         read_only_fields = ['user', 'created_at']
 
@@ -27,12 +27,7 @@ class PetSerializer(serializers.ModelSerializer):
             return obj.favorited_by.filter(user=request.user).exists()
         return False
 
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        request = self.context.get('request')
-        if request and instance.image:
-            data['image'] = request.build_absolute_uri(instance.image.url)
-        return data
+# ❌ УДАЛЕНЫ create и update — они мешают работе с файлами
 
 class FavoriteSerializer(serializers.ModelSerializer):
     pet = PetSerializer(read_only=True)

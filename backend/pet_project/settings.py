@@ -4,18 +4,26 @@ import logging
 from pathlib import Path
 from datetime import timedelta
 
+# Безопасное чтение .env с явной кодировкой UTF-8
+from dotenv import load_dotenv
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-def env(key, default=None):
-    val = os.environ.get(key, default)
-    return val
+# Загружаем .env только если он существует, в UTF-8
+env_path = BASE_DIR / ".env"
+if env_path.exists():
+    load_dotenv(env_path, encoding="utf-8")
 
-SECRET_KEY = env("SECRET_KEY", "django-insecure-dev-key")
+def env(key, default=None):
+    return os.environ.get(key, default)
+
+# Основные настройки
+SECRET_KEY = env("SECRET_KEY", "django-insecure-dev-key-for-local-use-only")
 DEBUG = str(env("DEBUG", "True")).lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 
-# Sentry (optional)
+# Sentry (опционально)
 SENTRY_DSN = env("SENTRY_DSN", "").strip()
 SENTRY_ENV = env("SENTRY_ENV", "development")
 SENTRY_TRACES_SAMPLE_RATE = float(env("SENTRY_TRACES_SAMPLE_RATE", "0.0"))
@@ -43,6 +51,7 @@ if SENTRY_DSN:
 else:
     print("[SENTRY] disabled (no DSN)")
 
+# Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -54,9 +63,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'corsheaders',
-    'channels',
     'django_filters',
-    # 🔥 Порядок соблюдён
+    # Local apps
     'users',
     'ads',
     'chat',
@@ -95,25 +103,17 @@ TEMPLATES = [
     },
 ]
 
-ASGI_APPLICATION = "pet_project.asgi.application"
+# Используем WSGI (без Channels)
+WSGI_APPLICATION = "pet_project.wsgi.application"
 
-REDIS_HOST = env("REDIS_HOST", "redis")
-REDIS_PORT = int(env("REDIS_PORT", 6379))
-
-CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {"hosts": [(REDIS_HOST, REDIS_PORT)]},
-    }
-}
-
+# База данных — твои имена переменных + пароль 5v1234567
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": env("POSTGRES_DB", "petdb"),
         "USER": env("POSTGRES_USER", "petuser"),
-        "PASSWORD": env("POSTGRES_PASSWORD", "petpassword"),
-        "HOST": env("DB_HOST", "db"),
+        "PASSWORD": env("POSTGRES_PASSWORD", "5v1234567"),  # ← ПРАВИЛЬНЫЙ ПАРОЛЬ
+        "HOST": env("DB_HOST", "localhost"),  # ← localhost, не "db"
         "PORT": env("DB_PORT", "5432"),
     }
 }
@@ -154,9 +154,13 @@ SIMPLE_JWT = {
 
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
-CORS_ALLOWED_ORIGINS = [origin.strip() for origin in env("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
+CORS_ALLOWED_ORIGINS = [
+    origin.strip() for origin in env("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()
+]
 CORS_ALLOW_CREDENTIALS = True
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in env("CSRF_TRUSTED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in env("CSRF_TRUSTED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()
+]
 CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
@@ -179,9 +183,11 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-# Celery
-CELERY_BROKER_URL = env("CELERY_BROKER_URL", f"redis://{REDIS_HOST}:{REDIS_PORT}/0")
-CELERY_RESULT_BACKEND = env("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+# Celery (оставлено, но можно игнорировать)
+REDIS_HOST = env("REDIS_HOST", "localhost")
+REDIS_PORT = int(env("REDIS_PORT", 6379))
+CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
@@ -194,5 +200,3 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": int(env("CELERY_BEAT_SCHEDULE_INTERVAL", "30")),
     },
 }
-# 🔥 УДАЛЕН ЛИШНИЙ ИМПОРТ
-# CELERY_RESULT_BACKEND = 'django-db'  ← убрать эту строку (если она есть в конце файла)

@@ -4,11 +4,13 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from "../utils/api";
 import { checkToken, logout } from "../utils/auth";
+import { buildImageUrl } from "../utils/image";
 import "../styles/Profile.css";
 
 function Profile() {
   const navigate = useNavigate();
   const [userData, setUserData] = useState({});
+  const [avatarFile, setAvatarFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("ads");
@@ -69,7 +71,7 @@ function Profile() {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setUserData({ ...userData, avatar: file });
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (ev) => setImagePreview(ev.target.result);
       reader.readAsDataURL(file);
@@ -81,18 +83,21 @@ function Profile() {
     setLoading(true);
     try {
       const data = new FormData();
-      Object.entries(userData).forEach(([k, v]) => {
-        if (v instanceof File) {
-          data.append(k, v);
-        } else if (typeof v === 'string' || typeof v === 'number') {
-          data.append(k, v);
+      if (avatarFile) {
+        data.append('avatar', avatarFile);
+      }
+      ['first_name', 'last_name', 'username', 'email', 'phone', 'bio'].forEach(key => {
+        if (userData[key] !== undefined && userData[key] !== null) {
+          data.append(key, userData[key]);
         }
       });
+
       const res = await api.put("/profile/me/update/", data, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setUserData(res.data);
       setImagePreview(null);
+      setAvatarFile(null);
       toast.success("✅ Профиль обновлён");
     } catch (err) {
       console.error(err);
@@ -132,16 +137,23 @@ function Profile() {
   return (
     <div className="profile-container min-h-screen bg-gray-50 py-6">
       <div className="max-w-6xl mx-auto px-4">
-        {/* Шапка профиля в стиле Avito */}
+        {/* Шапка профиля */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
           <div className="flex flex-col md:flex-row items-center">
             <div className="mb-4 md:mb-0 md:mr-6">
               {imagePreview ? (
-                <img src={imagePreview} alt="Avatar" className="w-24 h-24 rounded-full object-cover border-4 border-white shadow" />
+                <div className="profile-avatar-container">
+                  <img src={imagePreview} alt="Avatar" />
+                </div>
               ) : userData.avatar ? (
-                <img src={userData.avatar} alt={userData.username} className="w-24 h-24 rounded-full object-cover border-4 border-white shadow" />
+                <div className="profile-avatar-container">
+                  <img
+                    src={buildImageUrl(userData.avatar)}
+                    alt={userData.username}
+                  />
+                </div>
               ) : (
-                <div className="w-24 h-24 rounded-full bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700 border-4 border-white shadow">
+                <div className="profile-avatar-container bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700">
                   {userData.username?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
@@ -155,7 +167,7 @@ function Profile() {
           </div>
         </div>
 
-        {/* Вкладки как в Avito */}
+        {/* Вкладки */}
         <div className="bg-white rounded-t-xl shadow-sm">
           <div className="flex overflow-x-auto px-2 border-b">
             {[
@@ -179,9 +191,8 @@ function Profile() {
           </div>
         </div>
 
-        {/* Контент вкладок */}
+        {/* Контент */}
         <div className="bg-white rounded-b-xl shadow-sm p-6">
-          {/* === Мои объявления === */}
           {activeTab === "ads" && (
             <div>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
@@ -201,11 +212,10 @@ function Profile() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {myAds.length ? (
                   myAds.map((ad) => (
-                    <div key={ad.id} className="border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+                    <div key={ad.id} className="ad-card">
                       <img
-                        src={ad.image || "/images/placeholder-pet.jpg"}
+                        src={buildImageUrl(ad.images?.[0]?.image)}
                         alt={ad.name || "Питомец"}
-                        className="w-full h-48 object-cover"
                         onError={(e) => (e.target.src = "/images/placeholder-pet.jpg")}
                       />
                       <div className="p-4">
@@ -258,11 +268,11 @@ function Profile() {
             </div>
           )}
 
-          {/* === Сообщения === */}
           {activeTab === "messages" && (
             <div className="messages-tab">
               <h2 className="text-xl font-semibold mb-4">Сообщения</h2>
-              <p className="text-gray-600">Перейдите в раздел{" "}
+              <p className="text-gray-600">
+                Перейдите в раздел{" "}
                 <button
                   onClick={() => navigate('/messages')}
                   className="text-blue-600 underline font-medium"
@@ -273,18 +283,24 @@ function Profile() {
             </div>
           )}
 
-          {/* === Настройки профиля === */}
           {activeTab === "settings" && (
             <form onSubmit={handleSubmit} className="max-w-2xl">
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-2">Фото профиля</label>
                 <div className="flex items-center space-x-4">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="w-16 h-16 rounded-full object-cover" />
+                    <div className="profile-avatar-small">
+                      <img src={imagePreview} alt="Preview" />
+                    </div>
                   ) : userData.avatar ? (
-                    <img src={userData.avatar} alt="Avatar" className="w-16 h-16 rounded-full object-cover" />
+                    <div className="profile-avatar-small">
+                      <img
+                        src={buildImageUrl(userData.avatar)}
+                        alt="Avatar"
+                      />
+                    </div>
                   ) : (
-                    <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center">
+                    <div className="profile-avatar-small bg-gray-200 flex items-center justify-center">
                       <span className="text-gray-500">👤</span>
                     </div>
                   )}
@@ -370,7 +386,6 @@ function Profile() {
             </form>
           )}
 
-          {/* === Безопасность === */}
           {activeTab === "security" && (
             <div className="max-w-md">
               <h2 className="text-xl font-semibold mb-4">🔒 Смена пароля</h2>

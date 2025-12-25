@@ -5,16 +5,51 @@
   min-height: 100vh;
 }
 
-.profile-card {
-  background: white;
-  padding: 40px;
-  border-radius: 16px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+/* === Аватар профиля === */
+.profile-avatar-container {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid white;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+  background: #f0f0f0;
+}
+
+.profile-avatar-container img {
   width: 100%;
-  max-width: 900px;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* === Объявления в профиле === */
+.ad-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  overflow: hidden;
+  background: white;
+  transition: box-shadow 0.2s;
+  max-width: 260px; /* ← как в поиске */
   margin: 0 auto;
 }
 
+.ad-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ad-card img {
+  width: 100%;
+  height: 160px; /* ← единый размер с PetCard */
+  object-fit: cover;
+  display: block;
+}
+
+.ad-card .p-4 {
+  padding: 1rem;
+}
+
+/* === Вкладки === */
 .tabs {
   display: flex;
   gap: 4px;
@@ -40,6 +75,7 @@
   border-bottom: 2px solid #0071f0;
 }
 
+/* === Статистика === */
 .stats-grid {
   margin-bottom: 24px;
 }
@@ -52,50 +88,9 @@
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
-.ad-card {
-  border: 1px solid #e0e0e0;
-  border-radius: 8px;
-  padding: 16px;
-  text-align: center;
-  transition: box-shadow 0.2s;
-}
-
-.ad-card:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.ad-card img {
-  width: 100%;
-  height: 160px;
-  object-fit: cover;
-  border-radius: 8px;
-}
-
-.status {
-  font-weight: bold;
-}
-
-.edit-btn {
-  margin-top: 8px;
-}
-
+/* === Формы === */
 .profile-settings input,
-.profile-settings textarea {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-}
-
-.profile-settings .form-row {
-  margin-bottom: 16px;
-}
-
-.profile-avatar input[type="file"] {
-  margin-top: 8px;
-}
-
+.profile-settings textarea,
 .security-form input {
   width: 100%;
   padding: 10px;
@@ -104,12 +99,29 @@
   font-size: 1rem;
 }
 
+.profile-settings .form-row,
+.security-form .form-row {
+  margin-bottom: 16px;
+}
+
+.profile-avatar input[type="file"] {
+  margin-top: 8px;
+}
+
 .security-form button {
   margin-top: 16px;
 }
 
+/* Адаптивность */
 @media (max-width: 768px) {
-  .profile-card {
-    padding: 25px;
+  .profile-container {
+    padding: 40px 16px;
+  }
+  .profile-avatar-container {
+    width: 80px;
+    height: 80px;
+  }
+  .ad-card {
+    max-width: 100%;
   }
 }

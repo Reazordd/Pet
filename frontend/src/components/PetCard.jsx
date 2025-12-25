@@ -3,9 +3,17 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
+import { buildImageUrl } from '../utils/image';
+import '../styles/PetCard.css';
 
-const SPECIES_LABELS = { /* ... */ };
-const OFFER_LABELS = { /* ... */ };
+const SPECIES_LABELS = {
+  dog: 'Собака', cat: 'Кошка', bird: 'Птица',
+  rodent: 'Грызун', fish: 'Рыба', reptile: 'Рептилия', other: 'Другое',
+};
+
+const OFFER_LABELS = {
+  sale: 'Продажа', giveaway: 'Отдам', search: 'Ищу',
+};
 
 const PetCard = ({ pet }) => {
   const [isFavorite, setIsFavorite] = useState(pet.is_favorite);
@@ -31,23 +39,30 @@ const PetCard = ({ pet }) => {
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
-  // ✅ Используем pet.images[0].image
-  const imageUrl = pet.images?.[0]?.image || '/images/placeholder-pet.jpg';
+  const imageUrl = pet.images?.length > 0
+    ? buildImageUrl(pet.images[0].image)
+    : '/images/placeholder-pet.jpg';
 
   return (
     <div className="pet-card">
-      <Link to={`/pets/${pet.id}`}>
-        <img
-          src={imageUrl}
-          alt={pet.name || 'Питомец'}
-          className="pet-card-image" // ← Avito-стиль
-          onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
-        />
-        <h3>{pet.name || 'Без имени'}</h3>
-        <p>{pet.city}</p>
-        <p>{formatPrice(pet.price)}</p>
+      <Link to={`/pets/${pet.id}`} className="pet-image-link">
+        <div className="pet-image">
+          <img
+            src={imageUrl}
+            alt={pet.name || 'Питомец'}
+            onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
+          />
+        </div>
+        <div className="pet-info">
+          <h3 className="pet-name">{pet.name || 'Без имени'}</h3>
+          <p className="pet-city">{pet.city}</p>
+          <p className="pet-price">{formatPrice(pet.price)}</p>
+        </div>
       </Link>
-      <button onClick={toggleFavorite}>
+      <button
+        onClick={toggleFavorite}
+        className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+      >
         {isFavorite ? '❤️' : '🤍'}
       </button>
     </div>

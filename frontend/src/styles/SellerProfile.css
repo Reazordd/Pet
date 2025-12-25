@@ -12,38 +12,42 @@
   border-radius: 16px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
   margin-bottom: 40px;
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
 }
 
+/* Аватар продавца — 120×120 как на Avito */
 .seller-avatar {
   width: 120px;
   height: 120px;
   border-radius: 50%;
   overflow: hidden;
   flex-shrink: 0;
+  border: 4px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  background: #f0f2f5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .seller-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border: 4px solid white;
-  border-radius: 50%;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  display: block;
 }
 
 .avatar-placeholder {
-  width: 120px;
-  height: 120px;
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f2f5;
   color: #65676b;
   font-size: 2.5rem;
   font-weight: 600;
-  border-radius: 50%;
-  border: 4px solid white;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
 .seller-info h1 {
@@ -76,6 +80,8 @@
   font-size: 0.85rem;
   font-weight: 600;
   margin: 0 4px 4px 0;
+  background: #eee;
+  color: #333;
 }
 
 /* Кнопки действий */

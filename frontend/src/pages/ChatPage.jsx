@@ -4,7 +4,8 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import Lightbox from '../components/Lightbox';
-import '../styles/Chat.css'; // ← убедись, что подключён CSS
+import { buildImageUrl } from '../utils/image';
+import '../styles/Chat.css';
 
 const ChatPage = () => {
   const { id } = useParams();
@@ -88,9 +89,7 @@ const ChatPage = () => {
 
     try {
       await api.post(`/chat/${chatId}/send/`, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
       setInputValue('');
       setSelectedFile(null);
@@ -151,12 +150,12 @@ const ChatPage = () => {
                 >
                   {otherUser.avatar ? (
                     <img
-                      src={otherUser.avatar}
+                      src={buildImageUrl(otherUser.avatar)}
                       alt={otherUser.username}
-                      className="w-5 h-5 rounded-full object-cover"
+                      className="avatar-xs" // ← КЛЮЧЕВОЕ: используем глобальный класс
                     />
                   ) : (
-                    <div className="w-5 h-5 rounded-full bg-gray-300 flex items-center justify-center text-xs font-bold">
+                    <div className="avatar-xs bg-gray-300 flex items-center justify-center text-xs font-bold">
                       {otherUser.username?.[0]?.toUpperCase() || '?'}
                     </div>
                   )}
@@ -168,12 +167,12 @@ const ChatPage = () => {
               {msg.file_url ? (
                 <div
                   className={`inline-block max-w-xs cursor-pointer ${msg.is_own ? 'ml-auto' : 'mr-auto'}`}
-                  onClick={() => openLightbox(msg.file_url)}
+                  onClick={() => openLightbox(buildImageUrl(msg.file_url))}
                 >
                   <img
-                    src={msg.file_url}
+                    src={buildImageUrl(msg.file_url)}
                     alt="Фото"
-                    className="rounded-lg border chat-image" // ← используем CSS-класс
+                    className="rounded-lg border chat-image"
                   />
                 </div>
               ) : null}
@@ -197,10 +196,7 @@ const ChatPage = () => {
                   msg.is_own ? 'text-right' : 'text-left'
                 }`}
               >
-                {new Date(msg.created_at).toLocaleTimeString([], {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
           ))

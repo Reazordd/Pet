@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
+import { buildImageUrl } from '../utils/image'; // ← добавлено
 import '../styles/SellerProfile.css';
 
 function ProfilePage() {
@@ -93,8 +94,11 @@ function ProfilePage() {
       <div className="seller-header">
         <div className="seller-avatar">
           {user.avatar ? (
-            // ✅ Avito-стиль: круглый аватар 64px
-            <img src={user.avatar} alt={user.username} className="avatar-lg" />
+            <img
+              src={buildImageUrl(user.avatar)} // ← исправлено
+              alt={user.username}
+              className="avatar-lg"
+            />
           ) : (
             <div className="avatar-placeholder">
               {user.username?.[0]?.toUpperCase() || '?'}

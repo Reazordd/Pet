@@ -1,4 +1,5 @@
 # backend/ads/views.py
+from rest_framework.permissions import AllowAny
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
@@ -13,14 +14,13 @@ from notifications.models import Notification
 
 class PetViewSet(viewsets.ModelViewSet):
     serializer_class = PetSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_class = PetFilter
     ordering_fields = ['created_at', 'price']
     ordering = ['-created_at']
 
     def get_queryset(self):
-        # 🔥 НОВАЯ ФИЛЬТРАЦИЯ: ?user=123 — работает для всех, включая админа
         user_id_param = self.request.query_params.get('user')
         if user_id_param is not None:
             try:
@@ -30,39 +30,44 @@ class PetViewSet(viewsets.ModelViewSet):
                     is_approved=True,
                     is_hidden=False,
                     is_active=True
-                )
+                ).prefetch_related('images')  # ← добавлено
             except (TypeError, ValueError):
-                return Pet.objects.none()
+                return Pet.objects.none().prefetch_related('images')
 
-        # Старая логика (для /pets?owner=true)
         owner_filter = self.request.query_params.get('owner', None)
         if owner_filter == 'true':
             if self.request.user.is_authenticated:
-                return Pet.objects.filter(user=self.request.user)
+                return Pet.objects.filter(user=self.request.user).prefetch_related('images')
             else:
-                return Pet.objects.none()
+                return Pet.objects.none().prefetch_related('images')
 
-        # Админ видит всё (но только если не задан ?user=)
         if self.request.user.is_staff:
-            return Pet.objects.all()
+            return Pet.objects.all().prefetch_related('images')
 
-        # Обычные пользователи — только активные объявления
         return Pet.objects.filter(
             is_approved=True,
             is_hidden=False,
             is_active=True
-        )
+        ).prefetch_related('images')  # ← добавлено
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
         context['request'] = self.request
-        images = self.request.FILES.getlist('images')
-        if images:
-            context['images'] = images
         return context
 
     def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
+        pet = serializer.save(user=self.request.user)
+        images = self.request.FILES.getlist('images')
+        for image in images:
+            PetImage.objects.create(pet=pet, image=image)
+
+    def perform_update(self, serializer):
+        pet = serializer.save()
+        images = self.request.FILES.getlist('images')
+        if images:
+            pet.images.all().delete()
+            for image in images:
+                PetImage.objects.create(pet=pet, image=image)
 
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
@@ -100,7 +105,7 @@ class PetViewSet(viewsets.ModelViewSet):
             species=pet.species,
             city__iexact=pet.city,
             offer_type=pet.offer_type
-        ).exclude(id=pet.id)[:6]
+        ).exclude(id=pet.id).prefetch_related('images')[:6]
         serializer = self.get_serializer(similar, many=True)
         return Response(serializer.data)
 
@@ -120,8 +125,7 @@ class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Favorite.objects.filter(user=user).select_related(
-            'pet') if user.is_authenticated else Favorite.objects.none()
+        return Favorite.objects.filter(user=user).select_related('pet').prefetch_related('pet__images') if user.is_authenticated else Favorite.objects.none()
 
 
 from rest_framework.permissions import IsAdminUser
