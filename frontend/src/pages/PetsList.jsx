@@ -1,24 +1,8 @@
 // frontend/src/pages/PetsList.jsx
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import api from '../utils/api';
-import '../styles/PetsList.css';
+import PetCard from '../components/PetCard'; // ← ИСПОЛЬЗУЕМ PetCard
 
-const SPECIES_LABELS = {
-  dog: 'Собака',
-  cat: 'Кошка',
-  bird: 'Птица',
-  rodent: 'Грызун',
-  fish: 'Рыба',
-  reptile: 'Рептилия',
-  other: 'Другое',
-};
-
-const OFFER_LABELS = {
-  sale: 'Продажа',
-  giveaway: 'Отдам',
-  search: 'Ищу',
-};
 
 function PetsList() {
   const [pets, setPets] = useState([]);
@@ -81,11 +65,6 @@ function PetsList() {
       search: '',
     });
     setPage(1);
-  };
-
-  const formatPrice = (price) => {
-    if (price === null) return 'Договорная';
-    return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
   return (
@@ -204,34 +183,15 @@ function PetsList() {
       {error && <p className="text-red-500 mb-4">{error}</p>}
 
       {loading ? (
-        <p>Загрузка...</p>
+        <p className="text-center mt-10">Загрузка...</p>
       ) : pets.length === 0 ? (
-        <p>Объявлений не найдено.</p>
+        <p className="text-center mt-10 text-gray-500">Объявлений не найдено.</p>
       ) : (
         <>
-          {/* Список объявлений */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* ✅ ИСПОЛЬЗУЕМ PetCard */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {pets.map((pet) => (
-              <Link
-                key={pet.id}
-                to={`/pets/${pet.id}`}
-                className="block border rounded p-4 hover:shadow-md transition"
-              >
-                <img
-                  src={pet.image || '/images/placeholder-pet.jpg'}  // 🔥 Правильный путь
-                  alt={pet.name || 'Питомец'}
-                  className="w-full h-48 object-cover rounded mb-3"
-                  onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}  // 🔥 Fallback
-                />
-                <h3 className="font-bold text-lg">{pet.name || 'Без имени'}</h3>
-                <p className="text-gray-600">{SPECIES_LABELS[pet.species]}</p>
-                {pet.breed && <p className="text-sm text-gray-500">Порода: {pet.breed}</p>}
-                <p className="font-semibold mt-1">{formatPrice(pet.price)}</p>
-                <p className="text-sm text-gray-500">{pet.city}</p>
-                <span className="inline-block mt-2 px-2 py-1 text-xs bg-blue-100 text-blue-800 rounded">
-                  {OFFER_LABELS[pet.offer_type]}
-                </span>
-              </Link>
+              <PetCard key={pet.id} pet={pet} size="small" />
             ))}
           </div>
 
