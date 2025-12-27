@@ -1,12 +1,12 @@
 # backend/ads/views.py
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
-from .models import Pet, Favorite, PetImage
+from django.utils import timezone
+from .models import Pet, Favorite, PetImage, ViewHistory
 from .serializers import PetSerializer, FavoriteSerializer
 from .filters import PetFilter
 from notifications.models import Notification
@@ -30,7 +30,7 @@ class PetViewSet(viewsets.ModelViewSet):
                     is_approved=True,
                     is_hidden=False,
                     is_active=True
-                ).prefetch_related('images')  # ← добавлено
+                ).prefetch_related('images')
             except (TypeError, ValueError):
                 return Pet.objects.none().prefetch_related('images')
 
@@ -48,7 +48,7 @@ class PetViewSet(viewsets.ModelViewSet):
             is_approved=True,
             is_hidden=False,
             is_active=True
-        ).prefetch_related('images')  # ← добавлено
+        ).prefetch_related('images')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -68,6 +68,67 @@ class PetViewSet(viewsets.ModelViewSet):
             pet.images.all().delete()
             for image in images:
                 PetImage.objects.create(pet=pet, image=image)
+
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        # 🔥 Статистика просмотров
+        if not request.user.is_staff:
+            if not instance.is_approved or instance.is_hidden:
+                from django.http import Http404
+                raise Http404()
+            # Фиксируем просмотр
+            ViewHistory.objects.create(
+                pet=instance,
+                ip_address=self.get_client_ip(request)
+            )
+
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    def get_client_ip(self, request):
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0]
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+    # 🔥 НОВОЕ: Управление объявлением
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def raise_ad(self, request, pk=None):
+        pet = self.get_object()
+        if pet.user != request.user:
+            return Response({'error': 'Только владелец может управлять объявлением'}, status=status.HTTP_403_FORBIDDEN)
+        if not pet.is_active:
+            return Response({'error': 'Объявление снято с публикации'}, status=status.HTTP_400_BAD_REQUEST)
+        if not pet.can_be_raised():
+            return Response({
+                'error': 'Можно поднять только раз в 7 дней',
+                'next_raise_allowed_at': pet.get_next_raise_date().isoformat()
+            }, status=status.HTTP_400_BAD_REQUEST)
+        pet.last_raised_at = timezone.now()
+        pet.save(update_fields=['last_raised_at'])
+        return Response({'last_raised_at': pet.last_raised_at.isoformat()})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def deactivate(self, request, pk=None):
+        pet = self.get_object()
+        if pet.user != request.user:
+            return Response({'error': 'Только владелец может управлять объявлением'}, status=status.HTTP_403_FORBIDDEN)
+        pet.is_active = False
+        pet.save(update_fields=['is_active'])
+        return Response({'is_active': False})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def activate(self, request, pk=None):
+        pet = self.get_object()
+        if pet.user != request.user:
+            return Response({'error': 'Только владелец может управлять объявлением'}, status=status.HTTP_403_FORBIDDEN)
+        pet.is_active = True
+        pet.last_raised_at = timezone.now()
+        pet.save(update_fields=['is_active', 'last_raised_at'])
+        return Response({'is_active': True})
 
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
     def favorite(self, request, pk=None):
@@ -109,14 +170,6 @@ class PetViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(similar, many=True)
         return Response(serializer.data)
 
-    def retrieve(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if not request.user.is_staff:
-            if not instance.is_approved or instance.is_hidden:
-                from django.http import Http404
-                raise Http404()
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
 
 
 class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):

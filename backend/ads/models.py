@@ -1,8 +1,11 @@
 # backend/ads/models.py
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
+from datetime import timedelta
 
 User = settings.AUTH_USER_MODEL
+
 
 class Pet(models.Model):
     SPECIES_CHOICES = [
@@ -30,11 +33,13 @@ class Pet(models.Model):
     offer_type = models.CharField('Тип объявления', max_length=10, choices=OFFER_TYPE_CHOICES, default='sale')
     city = models.CharField('Город', max_length=100)
     description = models.TextField('Описание', blank=True)
-    # ❌ УДАЛЕНО: image = models.ImageField(...)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField('Одобрено', default=False)
     is_hidden = models.BooleanField('Скрыто', default=False)
+
+    # 🔥 НОВОЕ: для поднятия
+    last_raised_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ['-created_at']
@@ -49,10 +54,29 @@ class Pet(models.Model):
             self.price = None
         super().save(*args, **kwargs)
 
+    def can_be_raised(self):
+        """Можно поднять, если прошло >=7 дней"""
+        return timezone.now() - self.last_raised_at >= timedelta(days=7)
+
+    def get_next_raise_date(self):
+        """Дата следующего поднятия"""
+        return self.last_raised_at + timedelta(days=7)
+
+
+# 🔥 НОВОЕ: статистика просмотров
+class ViewHistory(models.Model):
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Просмотр'
+        verbose_name_plural = 'Просмотры'
+
 
 class PetImage(models.Model):
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='images')
-    image = models.ImageField('Фото', upload_to='pet_images/')  # ✅ ДОБАВЛЕНО!
+    image = models.ImageField('Фото', upload_to='pet_images/')
     is_primary = models.BooleanField(default=False)
 
     def __str__(self):

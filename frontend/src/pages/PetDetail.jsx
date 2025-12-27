@@ -33,8 +33,18 @@ function PetDetail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [error, setError] = useState(null);
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
+    const token = localStorage.getItem('access_token');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setCurrentUserId(Number(decoded.user_id));
+      } catch (e) {
+        console.warn("Invalid token");
+      }
+    }
     fetchPet();
   }, [id]);
 
@@ -86,27 +96,18 @@ function PetDetail() {
       return;
     }
 
-    let sellerId;
-    if (typeof pet.user === 'number') {
-      sellerId = pet.user;
-    } else if (typeof pet.user === 'object' && pet.user?.id) {
-      sellerId = pet.user.id;
-    }
-
+    let sellerId = pet.user?.id || pet.user;
     if (!sellerId) {
       toast.error('Невозможно определить продавца');
       return;
     }
 
+    if (currentUserId === sellerId) {
+      toast.warn('Нельзя написать самому себе');
+      return;
+    }
+
     try {
-      const decoded = jwtDecode(token);
-      const currentUserId = Number(decoded.user_id);
-
-      if (currentUserId === sellerId) {
-        toast.warn('Нельзя написать самому себе');
-        return;
-      }
-
       const res = await api.post('/chat/create/', {
         target_user_id: sellerId
       });
@@ -114,11 +115,35 @@ function PetDetail() {
       navigate(`/chat/${chatId}`);
     } catch (err) {
       console.error('Ошибка отправки:', err);
-      if (err.response?.data?.error) {
-        toast.error(err.response.data.error);
+      const errorMsg = err.response?.data?.error || 'Не удалось начать чат';
+      toast.error(errorMsg);
+    }
+  };
+
+  // Управление объявлением (поднятие/снятие)
+  const handleRaise = async () => {
+    try {
+      await api.post(`/pets/${id}/raise_ad/`);
+      toast.success('✅ Объявление поднято!');
+      fetchPet();
+    } catch (err) {
+      const errorMsg = err.response?.data?.error || 'Не удалось поднять';
+      toast.error(errorMsg);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    try {
+      if (pet.is_active) {
+        await api.post(`/pets/${id}/deactivate/`);
+        toast.info('Объявление снято с публикации');
       } else {
-        toast.error('Не удалось начать чат');
+        await api.post(`/pets/${id}/activate/`);
+        toast.success('Объявление снова в публикации');
       }
+      fetchPet();
+    } catch (err) {
+      toast.error('Ошибка при изменении статуса');
     }
   };
 
@@ -140,6 +165,7 @@ function PetDetail() {
   };
 
   const images = pet.images || [];
+  const isOwner = currentUserId && pet.user && (pet.user.id === currentUserId || pet.user === currentUserId);
 
   return (
     <div className="pet-detail max-w-4xl mx-auto p-4">
@@ -196,7 +222,27 @@ function PetDetail() {
             </h1>
             {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
             {pet.age !== null && <p className="text-gray-700">Возраст: {pet.age} лет</p>}
-            <p className="text-xl font-semibold my-2">{formatPrice(pet.price)}</p>
+
+            {/* ✅ КОМПАКТНАЯ КНОПКА ИЗБРАННОГО */}
+            <div className="flex items-center justify-between my-2">
+              <p className="text-xl font-semibold">{formatPrice(pet.price)}</p>
+              <button
+                onClick={toggleFavorite}
+                className="p-2 rounded-full hover:bg-gray-100 transition"
+                aria-label={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
+              >
+                {isFavorite ? (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path fillRule="evenodd" d="M5.293 12.293a1 1 0 011.414 0L10 15.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                  </svg>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                  </svg>
+                )}
+              </button>
+            </div>
+
             <p className="text-gray-700 mb-2">📍 {pet.city}</p>
             <div className="inline-block bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded mb-4">
               {OFFER_LABELS[pet.offer_type]}
@@ -204,34 +250,10 @@ function PetDetail() {
             {pet.description && <p className="mt-2 text-gray-800 whitespace-pre-line">{pet.description}</p>}
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button
-                onClick={toggleFavorite}
-                className={`px-4 py-2 rounded-lg flex items-center font-medium ${
-                  isFavorite
-                    ? 'bg-red-50 text-red-600'
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5 mr-1"
-                  viewBox="0 0 20 20"
-                  fill={isFavorite ? 'currentColor' : 'none'}
-                  stroke="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.828a4 4 0 010-5.656z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-                {isFavorite ? 'В избранном' : 'Добавить в избранное'}
-              </button>
-
               {pet.offer_type !== 'search' && (
                 <button
                   onClick={handleSendMessage}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center"
+                  className="flex-1 min-w-[120px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
                 >
                   💬 Написать
                 </button>
@@ -239,14 +261,65 @@ function PetDetail() {
 
               <Link
                 to={`/profile/${typeof pet.user === 'object' ? pet.user.id : pet.user}`}
-                className="px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium"
+                className="flex-1 min-w-[120px] px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium text-center"
               >
-                👤 Профиль продавца
+                👤 Профиль
               </Link>
+
+              {isOwner && (
+                <Link
+                  to={`/pets/${pet.id}/edit`}
+                  className="flex-1 min-w-[120px] px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium text-center"
+                >
+                  ✏️ Редактировать
+                </Link>
+              )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* Панель управления для владельца */}
+      {isOwner && (
+        <div className="pet-management bg-blue-50 p-4 rounded-lg mt-6">
+          <h3 className="font-bold text-lg mb-3">Управление объявлением</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <button
+              onClick={handleRaise}
+              disabled={!pet.can_be_raised}
+              className={`px-4 py-2 rounded font-medium ${
+                pet.can_be_raised
+                  ? 'bg-green-600 text-white hover:bg-green-700'
+                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+              }`}
+            >
+              {pet.can_be_raised ? 'Поднять объявление' : 'Поднять можно позже'}
+            </button>
+
+            <button
+              onClick={handleToggleActive}
+              className={`px-4 py-2 rounded font-medium ${
+                pet.is_active
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-yellow-600 text-white hover:bg-yellow-700'
+              }`}
+            >
+              {pet.is_active ? 'Снять с публикации' : 'Вернуть в публикацию'}
+            </button>
+          </div>
+
+          {pet.last_raised_at && (
+            <p className="text-sm text-gray-700 mt-2">
+              Последнее поднятие: {new Date(pet.last_raised_at).toLocaleDateString('ru-RU')}
+            </p>
+          )}
+          {!pet.can_be_raised && pet.next_raise_allowed_at && (
+            <p className="text-sm text-gray-600 mt-1">
+              Следующее поднятие: {new Date(pet.next_raise_allowed_at).toLocaleDateString('ru-RU')}
+            </p>
+          )}
+        </div>
+      )}
 
       {lightboxImage && (
         <Lightbox

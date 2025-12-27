@@ -12,6 +12,7 @@ import Home from './pages/Home';
 import PetsList from './pages/PetsList';
 import PetDetail from './pages/PetDetail';
 import CreatePet from './pages/CreatePet';
+import EditPet from './pages/EditPet'; // ← НОВОЕ
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FavoritesPage from './pages/FavoritesPage';
@@ -20,10 +21,9 @@ import Profile from './pages/Profile';
 import Forum from './pages/Forum';
 import AdminAds from './pages/AdminAds';
 
-// 🔥 НОВЫЕ СТРАНИЦЫ
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
-import NotificationsPage from './pages/NotificationsPage'; // ✅ Новый маршрут
+import NotificationsPage from './pages/NotificationsPage';
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -39,6 +39,11 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/pets" element={<PetsList />} />
               <Route path="/pets/:id" element={<PetDetail />} />
+              <Route path="/pets/:id/edit" element={ // ← НОВЫЙ МАРШРУТ
+                <ProtectedRoute>
+                  <EditPet />
+                </ProtectedRoute>
+              } />
               <Route path="/create" element={
                 <ProtectedRoute>
                   <CreatePet />
@@ -51,7 +56,6 @@ function App() {
                   <FavoritesPage />
                 </ProtectedRoute>
               } />
-              {/* 🔥 МАРШРУТЫ */}
               <Route path="/messages" element={
                 <ProtectedRoute>
                   <MessagesPage />
