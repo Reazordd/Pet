@@ -1,29 +1,35 @@
-// ViewStatsChart.jsx
+// frontend/src/components/ViewStatsChart.jsx
 import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
+import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip } from 'chart.js';
+import api from '../utils/api';
 
-ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
+ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip);
 
 export default function ViewStatsChart({ petId }) {
-  const [data, setData] = useState(null);
+  const [chartData, setChartData] = useState(null);
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
         const res = await api.get(`/pets/${petId}/stats/`);
-        const chartData = {
-          labels: res.data.map(item => new Date(item.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })),
+        const labels = res.data.map(item =>
+          new Date(item.date).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' })
+        );
+        const counts = res.data.map(item => item.count);
+
+        setChartData({
+          labels,
           datasets: [{
-            label: 'Просмотры',
-            data: res.data.map(item => item.count),
+            data: counts,
             borderColor: '#0071f0',
             backgroundColor: 'rgba(0, 113, 240, 0.1)',
             tension: 0.3,
-            fill: true
+            fill: true,
+            pointRadius: 3,
+            pointHoverRadius: 5
           }]
-        };
-        setData(chartData);
+        });
       } catch (err) {
         console.warn('Статистика недоступна');
       }
@@ -31,12 +37,31 @@ export default function ViewStatsChart({ petId }) {
     fetchStats();
   }, [petId]);
 
-  if (!data) return <p className="text-gray-500 text-sm">Загрузка статистики...</p>;
+  if (!chartData) return null;
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          label: (context) => `Просмотры: ${context.raw}`
+        }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: { stepSize: 1 }
+      }
+    }
+  };
 
   return (
-    <div className="mt-4">
-      <h4 className="font-medium mb-2">Просмотры за неделю</h4>
-      <Line data={data} options={{ responsive: true, plugins: { legend: { display: false } }}} />
+    <div className="mt-4" style={{ height: '200px' }}>
+      <h4 className="font-medium mb-2 text-gray-700">Просмотры за неделю</h4>
+      <Line data={chartData} options={options} />
     </div>
   );
 }

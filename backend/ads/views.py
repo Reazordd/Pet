@@ -1,12 +1,15 @@
 # backend/ads/views.py
-from rest_framework.permissions import AllowAny, IsAuthenticated, IsAuthenticatedOrReadOnly
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework import viewsets, status
-from rest_framework.decorators import api_view, action
+from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
-from .models import Pet, Favorite, PetImage, ViewHistory
+from datetime import timedelta
+from django.db.models import Count
+from .models import Pet, Favorite, PetImage
+from history.models import ViewHistory  # ← Используем из приложения history
 from .serializers import PetSerializer, FavoriteSerializer
 from .filters import PetFilter
 from notifications.models import Notification
@@ -72,29 +75,18 @@ class PetViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        # 🔥 Статистика просмотров
         if not request.user.is_staff:
             if not instance.is_approved or instance.is_hidden:
                 from django.http import Http404
                 raise Http404()
-            # Фиксируем просмотр
-            ViewHistory.objects.create(
-                pet=instance,
-                ip_address=self.get_client_ip(request)
-            )
+            # 🔥 Фиксируем просмотр через history.ViewHistory
+            if request.user.is_authenticated:
+                ViewHistory.objects.get_or_create(user=request.user, pet=instance)
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    def get_client_ip(self, request):
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-        if x_forwarded_for:
-            ip = x_forwarded_for.split(',')[0]
-        else:
-            ip = request.META.get('REMOTE_ADDR')
-        return ip
-
-    # 🔥 НОВОЕ: Управление объявлением
+    # 🔥 Управление объявлением (без изменений)
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def raise_ad(self, request, pk=None):
         pet = self.get_object()
@@ -171,10 +163,35 @@ class PetViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
+# 🔥 НОВЫЙ: Эндпоинт статистики (вне класса, как standalone API)
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_pet_view_stats(request, pet_id):
+    """Статистика просмотров за последние 7 дней (только для владельца)"""
+    try:
+        pet = Pet.objects.get(id=pet_id, user=request.user)
+    except Pet.DoesNotExist:
+        return Response({'error': 'Нет доступа'}, status=status.HTTP_403_FORBIDDEN)
+
+    week_ago = timezone.now() - timedelta(days=7)
+    stats = ViewHistory.objects.filter(
+        pet=pet,
+        viewed_at__gte=week_ago
+    ).extra(
+        select={'date': "date(viewed_at)"}
+    ).values('date').annotate(count=Count('id')).order_by('date')
+
+    # Заполнить все дни (включая нули)
+    all_dates = [(week_ago + timedelta(days=i)).date() for i in range(8)]
+    result = {item['date']: item['count'] for item in stats}
+    filled = [{'date': d.isoformat(), 'count': result.get(d, 0)} for d in all_dates]
+
+    return Response(filled)
+
 
 class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = FavoriteSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user

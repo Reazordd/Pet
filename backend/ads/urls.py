@@ -12,6 +12,7 @@ moderation_router.register(r'pets', views.AdminPetModerationViewSet, basename='a
 
 urlpatterns = [
     path('categories/', views.get_categories, name='categories'),
+    path('pets/<int:pet_id>/stats/', views.get_pet_view_stats, name='pet-stats'),
     path('admin/', include(moderation_router.urls)),
 ]
 

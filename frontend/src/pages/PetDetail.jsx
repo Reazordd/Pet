@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
 import Lightbox from '../components/Lightbox';
+import ViewStatsChart from '../components/ViewStatsChart'; // ← НОВОЕ
 import { buildImageUrl } from '../utils/image';
 import { jwtDecode } from 'jwt-decode';
 
@@ -47,6 +48,13 @@ function PetDetail() {
     }
     fetchPet();
   }, [id]);
+
+  // 🔥 Добавление в историю просмотров
+  useEffect(() => {
+    if (pet && currentUserId) {
+      api.post(`/history/add/${id}/`).catch(err => console.warn('History error:', err));
+    }
+  }, [pet, currentUserId, id]);
 
   const fetchPet = async () => {
     try {
@@ -120,7 +128,6 @@ function PetDetail() {
     }
   };
 
-  // Управление объявлением (поднятие/снятие)
   const handleRaise = async () => {
     try {
       await api.post(`/pets/${id}/raise_ad/`);
@@ -223,7 +230,6 @@ function PetDetail() {
             {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
             {pet.age !== null && <p className="text-gray-700">Возраст: {pet.age} лет</p>}
 
-            {/* ✅ КОМПАКТНАЯ КНОПКА ИЗБРАННОГО */}
             <div className="flex items-center justify-between my-2">
               <p className="text-xl font-semibold">{formatPrice(pet.price)}</p>
               <button
@@ -279,7 +285,7 @@ function PetDetail() {
         </div>
       </div>
 
-      {/* Панель управления для владельца */}
+      {/* Панель управления с графиком */}
       {isOwner && (
         <div className="pet-management bg-blue-50 p-4 rounded-lg mt-6">
           <h3 className="font-bold text-lg mb-3">Управление объявлением</h3>
@@ -318,6 +324,9 @@ function PetDetail() {
               Следующее поднятие: {new Date(pet.next_raise_allowed_at).toLocaleDateString('ru-RU')}
             </p>
           )}
+
+          {/* ✅ ГРАФИК ПРОСМОТРОВ */}
+          <ViewStatsChart petId={pet.id} />
         </div>
       )}
 
