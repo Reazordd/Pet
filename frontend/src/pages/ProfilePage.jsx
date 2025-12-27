@@ -4,9 +4,9 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
-import PetCard from '../components/PetCard';
-import { buildImageUrl } from '../utils/image'; // ← добавлено
-import '../styles/SellerProfile.css';
+import PetCard from '../components/PetCard'; // ← теперь принимает size
+import { buildImageUrl } from '../utils/image';
+import '../styles/Avatar.css'; // ← новое
 
 function ProfilePage() {
   const { id: user_id_str } = useParams();
@@ -95,7 +95,7 @@ function ProfilePage() {
         <div className="seller-avatar">
           {user.avatar ? (
             <img
-              src={buildImageUrl(user.avatar)} // ← исправлено
+              src={buildImageUrl(user.avatar)}
               alt={user.username}
               className="avatar-lg"
             />
@@ -135,7 +135,7 @@ function ProfilePage() {
         {pets.length > 0 ? (
           <div className="pets-grid">
             {pets.map((pet) => (
-              <PetCard key={pet.id} pet={pet} />
+              <PetCard key={pet.id} pet={pet} size="small" />
             ))}
           </div>
         ) : (

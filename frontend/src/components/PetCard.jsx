@@ -1,4 +1,4 @@
-// frontend/src/components/PetCard.jsx
+// PetCard.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -15,7 +15,7 @@ const OFFER_LABELS = {
   sale: 'Продажа', giveaway: 'Отдам', search: 'Ищу',
 };
 
-const PetCard = ({ pet }) => {
+const PetCard = ({ pet, size = 'default' }) => {
   const [isFavorite, setIsFavorite] = useState(pet.is_favorite);
 
   const toggleFavorite = async () => {
@@ -44,24 +44,28 @@ const PetCard = ({ pet }) => {
     : '/images/placeholder-pet.jpg';
 
   return (
-    <div className="pet-card">
-      <Link to={`/pets/${pet.id}`} className="pet-image-link">
-        <div className="pet-image">
-          <img
-            src={imageUrl}
-            alt={pet.name || 'Питомец'}
-            onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
-          />
-        </div>
-        <div className="pet-info">
-          <h3 className="pet-name">{pet.name || 'Без имени'}</h3>
-          <p className="pet-city">{pet.city}</p>
-          <p className="pet-price">{formatPrice(pet.price)}</p>
-        </div>
-      </Link>
+    <div className={`pet-card ${size === 'small' ? 'pet-card-small' : ''}`}>
+      {/* ✅ НОВАЯ ОБЁРТКА */}
+      <div className="pet-image-container">
+        <Link to={`/pets/${pet.id}`} className="pet-card-link">
+          <div className="pet-image">
+            <img
+              src={imageUrl}
+              alt={pet.name || 'Питомец'}
+              onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
+            />
+          </div>
+        </Link>
+      </div>
+      <div className="pet-info">
+        <h3 className="pet-name">{pet.name || 'Без имени'}</h3>
+        <p className="pet-city">{pet.city}</p>
+        <p className="pet-price">{formatPrice(pet.price)}</p>
+      </div>
       <button
         onClick={toggleFavorite}
         className={`favorite-btn ${isFavorite ? 'active' : ''}`}
+        aria-label={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
       >
         {isFavorite ? '❤️' : '🤍'}
       </button>

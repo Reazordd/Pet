@@ -6,6 +6,7 @@ import api from '../utils/api';
 import Lightbox from '../components/Lightbox';
 import { buildImageUrl } from '../utils/image';
 import '../styles/Chat.css';
+import '../styles/Avatar.css';
 
 const ChatPage = () => {
   const { id } = useParams();

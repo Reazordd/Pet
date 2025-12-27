@@ -5,7 +5,8 @@ import { toast } from 'react-toastify';
 import api from "../utils/api";
 import { checkToken, logout } from "../utils/auth";
 import { buildImageUrl } from "../utils/image";
-import "../styles/Profile.css";
+import PetCard from "../components/PetCard";
+import "../styles/Avatar.css"; // ← ключевое: общие стили аватарок
 
 function Profile() {
   const navigate = useNavigate();
@@ -127,11 +128,6 @@ function Profile() {
     }
   };
 
-  const formatPrice = (price) => {
-    if (price === null) return "Бесплатно";
-    return new Intl.NumberFormat('ru-RU').format(price) + " ₽";
-  };
-
   if (loading && !userData.username) return <div className="text-center mt-10">Загрузка...</div>;
 
   return (
@@ -142,18 +138,19 @@ function Profile() {
           <div className="flex flex-col md:flex-row items-center">
             <div className="mb-4 md:mb-0 md:mr-6">
               {imagePreview ? (
-                <div className="profile-avatar-container">
-                  <img src={imagePreview} alt="Avatar" />
+                <div className="avatar-lg-container">
+                  <img src={imagePreview} alt="Avatar" className="avatar-lg" />
                 </div>
               ) : userData.avatar ? (
-                <div className="profile-avatar-container">
+                <div className="avatar-lg-container">
                   <img
                     src={buildImageUrl(userData.avatar)}
                     alt={userData.username}
+                    className="avatar-lg"
                   />
                 </div>
               ) : (
-                <div className="profile-avatar-container bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700">
+                <div className="avatar-lg bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700">
                   {userData.username?.[0]?.toUpperCase() || '?'}
                 </div>
               )}
@@ -209,32 +206,16 @@ function Profile() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {myAds.length ? (
-                  myAds.map((ad) => (
-                    <div key={ad.id} className="ad-card">
-                      <img
-                        src={buildImageUrl(ad.images?.[0]?.image)}
-                        alt={ad.name || "Питомец"}
-                        onError={(e) => (e.target.src = "/images/placeholder-pet.jpg")}
-                      />
-                      <div className="p-4">
-                        <h3 className="font-bold truncate">{ad.name || "Без имени"}</h3>
-                        <p className="text-lg font-semibold text-blue-600">{formatPrice(ad.price)}</p>
-                        <p className="text-gray-600 text-sm">{ad.city}</p>
-                        <p className={`mt-2 text-sm ${ad.is_active ? "text-green-600" : "text-red-600"}`}>
-                          {ad.is_active ? "Активно" : "Скрыто"}
-                        </p>
-                        <button className="mt-3 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition">
-                          Редактировать
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-500 col-span-full text-center py-8">Нет объявлений</p>
-                )}
-              </div>
+              {/* ✅ Используем PetCard с size="small" */}
+              {myAds.length ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {myAds.map((ad) => (
+                    <PetCard key={ad.id} pet={ad} size="small" />
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500 text-center py-8">Нет объявлений</p>
+              )}
 
               {totalPages > 1 && (
                 <div className="flex justify-center mt-8 space-x-2">
@@ -289,18 +270,19 @@ function Profile() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Фото профиля</label>
                 <div className="flex items-center space-x-4">
                   {imagePreview ? (
-                    <div className="profile-avatar-small">
-                      <img src={imagePreview} alt="Preview" />
+                    <div className="avatar-md">
+                      <img src={imagePreview} alt="Preview" className="avatar-md" />
                     </div>
                   ) : userData.avatar ? (
-                    <div className="profile-avatar-small">
+                    <div className="avatar-md">
                       <img
                         src={buildImageUrl(userData.avatar)}
                         alt="Avatar"
+                        className="avatar-md"
                       />
                     </div>
                   ) : (
-                    <div className="profile-avatar-small bg-gray-200 flex items-center justify-center">
+                    <div className="avatar-md bg-gray-200 flex items-center justify-center">
                       <span className="text-gray-500">👤</span>
                     </div>
                   )}

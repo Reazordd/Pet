@@ -1,4 +1,5 @@
 /* frontend/src/styles/Chat.css */
+
 .chat-page {
   background: #f9fafb;
   min-height: 100vh;
@@ -86,10 +87,34 @@
   }
 }
 
+/* Изображения в сообщениях */
 .chat-image {
   max-height: 200px;
   object-fit: cover;
   width: auto;
   max-width: 100%;
   height: auto;
+  border-radius: 8px;
+}
+
+/* Аватарка в чате */
+.avatar-xs {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1px solid #e0e0e0;
+}
+
+.avatar-placeholder-xs {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #e0e0e0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: bold;
+  color: #666;
 }

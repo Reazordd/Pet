@@ -5,8 +5,7 @@ import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
 import Lightbox from '../components/Lightbox';
-import { buildImageUrl } from '../utils/image'; // ← добавлено
-import '../styles/PetDetail.css';
+import { buildImageUrl } from '../utils/image';
 import { jwtDecode } from 'jwt-decode';
 
 const SPECIES_LABELS = {
@@ -148,10 +147,9 @@ function PetDetail() {
         ← Назад к объявлениям
       </button>
 
-      {/* ✅ Avito-стиль: одна строка — фото слева, текст справа */}
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          {/* Левая часть — фото */}
+          {/* Фото */}
           <div className="md:w-1/2 p-6">
             {images.length > 0 ? (
               <div
@@ -159,7 +157,7 @@ function PetDetail() {
                 onClick={() => openLightbox(buildImageUrl(images[0].image))}
               >
                 <img
-                  src={buildImageUrl(images[0].image)} // ← исправлено
+                  src={buildImageUrl(images[0].image)}
                   alt={pet.name || 'Питомец'}
                   className="w-full h-full object-cover"
                   onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
@@ -180,7 +178,7 @@ function PetDetail() {
                     onClick={() => openLightbox(buildImageUrl(img.image))}
                   >
                     <img
-                      src={buildImageUrl(img.image)} // ← исправлено
+                      src={buildImageUrl(img.image)}
                       alt={`Фото ${idx + 2}`}
                       className="w-full h-full object-cover"
                       onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
@@ -191,7 +189,7 @@ function PetDetail() {
             )}
           </div>
 
-          {/* Правая часть — текст */}
+          {/* Текст */}
           <div className="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-200">
             <h1 className="text-2xl font-bold mb-1">
               {pet.name || 'Без имени'} — {SPECIES_LABELS[pet.species]}
