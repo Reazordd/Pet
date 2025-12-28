@@ -1,11 +1,13 @@
 # backend/chat/models.py
 from django.db import models
 from django.conf import settings
+from ads.models import Pet
 
 User = settings.AUTH_USER_MODEL
 
 class Chat(models.Model):
     users = models.ManyToManyField(User, related_name='chats')
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, null=True, blank=True)  # ← новое поле
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -18,8 +20,8 @@ class Chat(models.Model):
 class Message(models.Model):
     chat = models.ForeignKey(Chat, related_name='messages', on_delete=models.CASCADE)
     sender = models.ForeignKey(User, on_delete=models.CASCADE)
-    content = models.TextField(blank=True, null=True)  # Может быть пустым, если отправлено фото
-    file = models.FileField(upload_to='chat_files/', blank=True, null=True)  # Новое поле для фото
+    content = models.TextField(blank=True, null=True)
+    file = models.FileField(upload_to='chat_files/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:

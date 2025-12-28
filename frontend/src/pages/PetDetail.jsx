@@ -5,7 +5,7 @@ import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
 import Lightbox from '../components/Lightbox';
-import ViewStatsChart from '../components/ViewStatsChart'; // ← НОВОЕ
+import ViewStatsChart from '../components/ViewStatsChart';
 import { buildImageUrl } from '../utils/image';
 import { jwtDecode } from 'jwt-decode';
 
@@ -49,7 +49,6 @@ function PetDetail() {
     fetchPet();
   }, [id]);
 
-  // 🔥 Добавление в историю просмотров
   useEffect(() => {
     if (pet && currentUserId) {
       api.post(`/history/add/${id}/`).catch(err => console.warn('History error:', err));
@@ -116,8 +115,10 @@ function PetDetail() {
     }
 
     try {
+      // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: передаём pet_id
       const res = await api.post('/chat/create/', {
-        target_user_id: sellerId
+        target_user_id: sellerId,
+        pet_id: pet.id  // ← добавлено!
       });
       const chatId = res.data.id;
       navigate(`/chat/${chatId}`);
@@ -325,7 +326,6 @@ function PetDetail() {
             </p>
           )}
 
-          {/* ✅ ГРАФИК ПРОСМОТРОВ */}
           <ViewStatsChart petId={pet.id} />
         </div>
       )}

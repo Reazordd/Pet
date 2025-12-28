@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
-import { checkToken, logout } from '../utils/auth';
+import { logout } from '../utils/auth';
 
 function Login() {
     const [credentials, setCredentials] = useState({
@@ -12,11 +12,6 @@ function Login() {
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
-    if (checkToken()) {
-        navigate('/');
-        return null;
-    }
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -31,7 +26,7 @@ function Login() {
         setLoading(true);
 
         try {
-            // 🔥 Исправлено: теперь будет POST /api/token/
+            // ✅ Правильный путь: /api/token/ (baseURL уже включает /api)
             const response = await api.post('/token/', credentials);
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
@@ -39,10 +34,13 @@ function Login() {
             toast.success('Вход выполнен успешно!');
             navigate('/');
         } catch (error) {
+            console.error('Login error:', error);
             if (error.response?.data?.detail) {
                 toast.error(error.response.data.detail);
+            } else if (error.response?.status === 401) {
+                toast.error('Неверный логин или пароль');
             } else {
-                toast.error('Ошибка входа. Проверьте данные и соединение.');
+                toast.error('Ошибка подключения к серверу');
             }
             logout();
         } finally {
@@ -98,11 +96,6 @@ function Login() {
                         Нет аккаунта?{' '}
                         <Link to="/register" className="auth-link">
                             Зарегистрироваться
-                        </Link>
-                    </p>
-                    <p>
-                        <Link to="/password-reset" className="auth-link">
-                            Забыли пароль?
                         </Link>
                     </p>
                 </div>

@@ -19,7 +19,9 @@ class MessageSerializer(serializers.ModelSerializer):
 
     def get_file_url(self, obj):
         if obj.file and hasattr(obj.file, 'url'):
-            return obj.file.url
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.file.url)
         return None
 
 
@@ -27,10 +29,21 @@ class ChatSerializer(serializers.ModelSerializer):
     other_user = serializers.SerializerMethodField()
     last_message_preview = serializers.SerializerMethodField()
     last_message_time = serializers.SerializerMethodField()
+    pet_title = serializers.SerializerMethodField()
+    pet_price = serializers.SerializerMethodField()
+    pet_image = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
-        fields = ['id', 'other_user', 'last_message_preview', 'last_message_time']
+        fields = [
+            'id',
+            'other_user',
+            'last_message_preview',
+            'last_message_time',
+            'pet_title',
+            'pet_price',
+            'pet_image'
+        ]
 
     def get_other_user(self, obj):
         request = self.context.get('request')
@@ -41,10 +54,11 @@ class ChatSerializer(serializers.ModelSerializer):
         if not other:
             return None
 
-        # 🔥 Безопасное получение аватара — без ошибки, если нет profile
         avatar_url = None
-        if hasattr(other, 'avatar') and other.avatar:  # ← User имеет avatar напрямую!
-            avatar_url = other.avatar.url
+        if hasattr(other, 'avatar') and other.avatar:
+            request = self.context.get('request')
+            if request:
+                avatar_url = request.build_absolute_uri(other.avatar.url)
 
         return {
             'id': other.id,
@@ -64,3 +78,18 @@ class ChatSerializer(serializers.ModelSerializer):
     def get_last_message_time(self, obj):
         last_msg = obj.messages.order_by('-created_at').first()
         return last_msg.created_at.isoformat() if last_msg else None
+
+    def get_pet_title(self, obj):
+        # ✅ ИСПРАВЛЕНО: используем 'name', а не 'title'
+        return obj.pet.name if obj.pet else None
+
+    def get_pet_price(self, obj):
+        return str(obj.pet.price) if obj.pet and obj.pet.price is not None else None
+
+    def get_pet_image(self, obj):
+        if obj.pet and obj.pet.images.exists():
+            image = obj.pet.images.first().image
+            request = self.context.get('request')
+            if request and image:
+                return request.build_absolute_uri(image.url)
+        return None
