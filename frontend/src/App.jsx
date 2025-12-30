@@ -12,7 +12,7 @@ import Home from './pages/Home';
 import PetsList from './pages/PetsList';
 import PetDetail from './pages/PetDetail';
 import CreatePet from './pages/CreatePet';
-import EditPet from './pages/EditPet'; // ← НОВОЕ
+import EditPet from './pages/EditPet';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import FavoritesPage from './pages/FavoritesPage';
@@ -24,6 +24,7 @@ import AdminAds from './pages/AdminAds';
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
+import Reviews from './pages/Reviews'; // ← ИМПОРТ СТРАНИЦЫ ОТЗЫВОВ
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -39,7 +40,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/pets" element={<PetsList />} />
               <Route path="/pets/:id" element={<PetDetail />} />
-              <Route path="/pets/:id/edit" element={ // ← НОВЫЙ МАРШРУТ
+              <Route path="/pets/:id/edit" element={
                 <ProtectedRoute>
                   <EditPet />
                 </ProtectedRoute>
@@ -79,6 +80,12 @@ function App() {
               <Route path="/profile/:id" element={
                 <ProtectedRoute>
                   <ProfilePage />
+                </ProtectedRoute>
+              } />
+              {/* 🔥 НОВЫЙ МАРШРУТ ДЛЯ ОТЗЫВОВ */}
+              <Route path="/reviews/user/:id" element={
+                <ProtectedRoute>
+                  <Reviews />
                 </ProtectedRoute>
               } />
               <Route path="/forum" element={<Forum />} />

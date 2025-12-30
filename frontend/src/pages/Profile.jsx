@@ -6,7 +6,8 @@ import api from "../utils/api";
 import { checkToken, logout } from "../utils/auth";
 import { buildImageUrl } from "../utils/image";
 import PetCard from "../components/PetCard";
-import "../styles/Avatar.css"; // ← ключевое: общие стили аватарок
+import MessagesList from "../components/MessagesList";
+import "../styles/Avatar.css";
 
 function Profile() {
   const navigate = useNavigate();
@@ -24,6 +25,12 @@ function Profile() {
     new_password: "",
     new_password2: "",
   });
+
+  // 🔥 Состояния для отзывов
+  const [receivedReviews, setReceivedReviews] = useState([]);
+  const [givenReviews, setGivenReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [activeReviewTab, setActiveReviewTab] = useState('received'); // 'received' или 'given'
 
   useEffect(() => {
     if (!checkToken()) return logout();
@@ -63,9 +70,36 @@ function Profile() {
     }
   };
 
+  // 🔥 Загрузка отзывов
+  const fetchReviews = async () => {
+    if (!userData.id) return;
+    setReviewsLoading(true);
+    try {
+      const [receivedRes, givenRes] = await Promise.all([
+        api.get(`/reviews/user/${userData.id}/reviews/`),
+        api.get(`/reviews/user/${userData.id}/given-reviews/`)
+      ]);
+      setReceivedReviews(receivedRes.data.reviews || []);
+      setGivenReviews(givenRes.data.reviews || []);
+    } catch (err) {
+      console.error("Ошибка загрузки отзывов:", err);
+      toast.error("Не удалось загрузить отзывы");
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchMyAds();
   }, [page]);
+
+  useEffect(() => {
+    if ((activeTab === "reviews" || activeTab === "messages") && userData.id) {
+      if (activeTab === "reviews") {
+        fetchReviews();
+      }
+    }
+  }, [activeTab, userData.id]);
 
   const handleChange = (e) => setUserData({ ...userData, [e.target.name]: e.target.value });
 
@@ -128,7 +162,16 @@ function Profile() {
     }
   };
 
+  const getReviewText = (count) => {
+    if (count === 0) return 'отзывов';
+    if (count % 10 === 1 && count % 100 !== 11) return 'отзыв';
+    if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'отзыва';
+    return 'отзывов';
+  };
+
   if (loading && !userData.username) return <div className="text-center mt-10">Загрузка...</div>;
+
+  const reviewCount = userData.review_count || 0;
 
   return (
     <div className="profile-container min-h-screen bg-gray-50 py-6">
@@ -157,6 +200,21 @@ function Profile() {
             </div>
             <div className="text-center md:text-left">
               <h1 className="text-2xl font-bold text-gray-900">{userData.username}</h1>
+
+              {/* 🔥 Блок рейтинга: 5.0 ★★★★★ 1 отзыв */}
+              {reviewCount > 0 && (
+                <div className="mt-2 flex items-center">
+                  <span className="text-lg font-bold text-gray-900">5.0</span>
+                  <span className="text-yellow-400 ml-1">★★★★★</span>
+                  <button
+                    onClick={() => setActiveTab("reviews")}
+                    className="text-blue-600 font-medium ml-2 hover:underline"
+                  >
+                    {reviewCount} {getReviewText(reviewCount)}
+                  </button>
+                </div>
+              )}
+
               {userData.email && <p className="text-gray-600">{userData.email}</p>}
               {userData.location && <p className="text-gray-600">📍 {userData.location}</p>}
               {userData.bio && <p className="mt-2 text-gray-700 max-w-2xl">{userData.bio}</p>}
@@ -170,6 +228,7 @@ function Profile() {
             {[
               { id: "ads", label: "Мои объявления" },
               { id: "messages", label: "Сообщения" },
+              { id: "reviews", label: `Отзывы (${reviewCount})` },
               { id: "settings", label: "Настройки профиля" },
               { id: "security", label: "Безопасность" }
             ].map(tab => (
@@ -206,7 +265,6 @@ function Profile() {
                 ))}
               </div>
 
-              {/* ✅ Используем PetCard с size="small" */}
               {myAds.length ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {myAds.map((ad) => (
@@ -250,17 +308,102 @@ function Profile() {
           )}
 
           {activeTab === "messages" && (
-            <div className="messages-tab">
+            <div>
               <h2 className="text-xl font-semibold mb-4">Сообщения</h2>
-              <p className="text-gray-600">
-                Перейдите в раздел{" "}
+              {/* 🔥 Сразу встраиваем список чатов */}
+              <MessagesList />
+            </div>
+          )}
+
+          {activeTab === "reviews" && (
+            <div>
+              <h2 className="text-xl font-semibold mb-4">Отзывы</h2>
+
+              {/* Переключатель между полученными и оставленными */}
+              <div className="flex border-b mb-4">
                 <button
-                  onClick={() => navigate('/messages')}
-                  className="text-blue-600 underline font-medium"
+                  className={`px-4 py-2 font-medium ${
+                    activeReviewTab === 'received'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveReviewTab('received')}
                 >
-                  все сообщения
-                </button> для полного списка.
-              </p>
+                  Полученные ({userData.review_count || 0})
+                </button>
+                <button
+                  className={`px-4 py-2 font-medium ${
+                    activeReviewTab === 'given'
+                      ? 'text-blue-600 border-b-2 border-blue-600'
+                      : 'text-gray-500 hover:text-gray-700'
+                  }`}
+                  onClick={() => setActiveReviewTab('given')}
+                >
+                  Оставленные ({givenReviews.length})
+                </button>
+              </div>
+
+              {reviewsLoading ? (
+                <p>Загрузка отзывов...</p>
+              ) : activeReviewTab === 'received' ? (
+                receivedReviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {receivedReviews.map((rev) => (
+                      <div key={rev.id} className="border-b pb-4">
+                        <div className="flex justify-between">
+                          <span className="font-medium">{rev.reviewer?.username || "Аноним"}</span>
+                          <div className="flex items-center">
+                            <span className="text-yellow-500">{"★".repeat(rev.rating)}</span>
+                            <span className="text-gray-500 text-sm ml-2">
+                              {new Date(rev.created_at).toLocaleDateString("ru-RU", {
+                                day: 'numeric',
+                                month: 'long'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        {rev.pet && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Сделка состоялась · {rev.pet.name || rev.pet.title}
+                          </p>
+                        )}
+                        <p className="mt-2 text-gray-800">{rev.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Нет полученных отзывов</p>
+                )
+              ) : (
+                givenReviews.length > 0 ? (
+                  <div className="space-y-4">
+                    {givenReviews.map((rev) => (
+                      <div key={rev.id} className="border-b pb-4">
+                        <div className="flex justify-between">
+                          <span className="font-medium">Для: {rev.reviewed?.username || "Аноним"}</span>
+                          <div className="flex items-center">
+                            <span className="text-yellow-500">{"★".repeat(rev.rating)}</span>
+                            <span className="text-gray-500 text-sm ml-2">
+                              {new Date(rev.created_at).toLocaleDateString("ru-RU", {
+                                day: 'numeric',
+                                month: 'long'
+                              })}
+                            </span>
+                          </div>
+                        </div>
+                        {rev.pet && (
+                          <p className="text-sm text-gray-600 mt-1">
+                            Сделка состоялась · {rev.pet.name || rev.pet.title}
+                          </p>
+                        )}
+                        <p className="mt-2 text-gray-800">{rev.comment}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">Вы ещё не оставили отзывов</p>
+                )
+              )}
             </div>
           )}
 

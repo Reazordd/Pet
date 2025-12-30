@@ -1,12 +1,12 @@
 // frontend/src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
-import PetCard from '../components/PetCard'; // ← теперь принимает size
+import PetCard from '../components/PetCard';
 import { buildImageUrl } from '../utils/image';
-import '../styles/Avatar.css'; // ← новое
+import '../styles/Avatar.css';
 
 function ProfilePage() {
   const { id: user_id_str } = useParams();
@@ -19,6 +19,7 @@ function ProfilePage() {
   const [pets, setPets] = useState([]);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [activeTab, setActiveTab] = useState('pets');
 
   useEffect(() => {
     if (!user_id || isNaN(user_id) || user_id <= 0) {
@@ -27,16 +28,18 @@ function ProfilePage() {
       return;
     }
     fetchProfile();
-  }, [user_id, page]);
+  }, [user_id, page, activeTab]);
 
   const fetchProfile = async () => {
     try {
       const profileRes = await api.get(`/profile/${user_id}/`);
       setUser(profileRes.data);
 
-      const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}`);
-      setPets(petsRes.data.results || []);
-      setTotalPages(Math.ceil((petsRes.data.count || 0) / 12));
+      if (activeTab === 'pets') {
+        const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}`);
+        setPets(petsRes.data.results || []);
+        setTotalPages(Math.ceil((petsRes.data.count || 0) / 12));
+      }
     } catch (err) {
       console.error('Ошибка загрузки профиля:', err.response || err);
       setError('Профиль не найден');
@@ -63,8 +66,11 @@ function ProfilePage() {
         return;
       }
 
+      // 🔥 Добавлена привязка к первому объявлению (если есть)
+      const petId = pets.length > 0 ? pets[0].id : null;
       const res = await api.post('/chat/create/', {
-        target_user_id: user_id
+        target_user_id: user_id,
+        pet_id: petId
       });
 
       const chatId = res.data.id;
@@ -80,17 +86,20 @@ function ProfilePage() {
   if (error) return <div className="max-w-4xl mx-auto p-4"><p className="text-center mt-10 text-red-500">{error}</p></div>;
   if (!user) return null;
 
-  const badges = user.badges || [
-    { title: "Надёжный продавец", bgColor: "#E6F6FF", textColor: "#0071F0" },
-    user.avito_delivery_count > 0 && {
-      title: `${user.avito_delivery_count} покупок с Авито Доставкой`,
-      bgColor: "#FFF8E6",
-      textColor: "#FFA800"
-    }
-  ].filter(Boolean);
+  // 🔥 Используем данные из API
+  const badges = user.badges || [];
+  const reviewCount = user.review_count || 0;
+
+  // Функция склонения слова "отзыв"
+  const getReviewText = (count) => {
+    if (count === 0) return 'отзывов';
+    if (count % 10 === 1 && count % 100 !== 11) return 'отзыв';
+    if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'отзыва';
+    return 'отзывов';
+  };
 
   return (
-    <div className="seller-profile">
+    <div className="seller-profile max-w-4xl mx-auto p-4">
       <div className="seller-header">
         <div className="seller-avatar">
           {user.avatar ? (
@@ -107,6 +116,18 @@ function ProfilePage() {
         </div>
         <div className="seller-info">
           <h1>{user.username}</h1>
+
+          {/* 🔥 Блок рейтинга как у Avito — ПРЯМО ПОД ИМЕНЕМ */}
+          {reviewCount > 0 && (
+            <div className="mt-1">
+              <Link
+                to={`/reviews/user/${user_id}`}
+                className="text-blue-600 hover:underline text-sm font-medium"
+              >
+                {reviewCount} {getReviewText(reviewCount)}
+              </Link>
+            </div>
+          )}
 
           <div className="mb-3">
             {badges.map((badge, idx) => (
@@ -130,46 +151,74 @@ function ProfilePage() {
         </div>
       </div>
 
-      <div className="seller-pets">
-        <h2>Объявления пользователя</h2>
-        {pets.length > 0 ? (
-          <div className="pets-grid">
-            {pets.map((pet) => (
-              <PetCard key={pet.id} pet={pet} size="small" />
-            ))}
-          </div>
-        ) : (
-          <div className="empty-state">
-            <p>У пользователя пока нет объявлений</p>
-          </div>
-        )}
-
-        {totalPages > 1 && (
-          <div className="pagination">
-            <button
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              disabled={page === 1}
-            >
-              &lt;
-            </button>
-            {[...Array(totalPages)].map((_, i) => (
-              <button
-                key={i + 1}
-                onClick={() => setPage(i + 1)}
-                className={page === i + 1 ? 'active' : ''}
-              >
-                {i + 1}
-              </button>
-            ))}
-            <button
-              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-            >
-              &gt;
-            </button>
-          </div>
-        )}
+      {/* Вкладки — без изменений */}
+      <div className="profile-tabs mt-6 border-b border-gray-200">
+        <nav className="-mb-px flex space-x-8">
+          <button
+            onClick={() => setActiveTab('pets')}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === 'pets'
+                ? 'border-blue-500 text-blue-600'
+                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            }`}
+          >
+            Объявления
+          </button>
+          <Link
+            to={`/reviews/user/${user_id}`}
+            className="py-2 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
+          >
+            Отзывы ({reviewCount})
+          </Link>
+        </nav>
       </div>
+
+      {activeTab === 'pets' && (
+        <div className="seller-pets mt-6">
+          <h2>Объявления пользователя</h2>
+          {pets.length > 0 ? (
+            <div className="pets-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pets.map((pet) => (
+                <PetCard key={pet.id} pet={pet} size="small" />
+              ))}
+            </div>
+          ) : (
+            <div className="empty-state py-8 text-center">
+              <p>У пользователя пока нет объявлений</p>
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <div className="pagination flex justify-center space-x-2 mt-6">
+              <button
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="px-3 py-1 rounded border hover:bg-gray-100 disabled:opacity-50"
+              >
+                &lt;
+              </button>
+              {[...Array(totalPages)].map((_, i) => (
+                <button
+                  key={i + 1}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-3 py-1 rounded border ${
+                    page === i + 1 ? 'bg-blue-100 border-blue-500' : 'hover:bg-gray-100'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="px-3 py-1 rounded border hover:bg-gray-100 disabled:opacity-50"
+              >
+                &gt;
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }

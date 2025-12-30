@@ -1,17 +1,84 @@
-/*frontend/src/styles/Reviews.css*/
-
+/* frontend/src/styles/Reviews.css */
 .reviews-page {
   max-width: 700px;
   margin: 40px auto;
   padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.rating-summary {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 30px;
+  text-align: center;
+}
+
+.avg-rating {
+  font-size: 3rem;
+  font-weight: bold;
+  color: #0071f0;
+  line-height: 1;
+}
+
+.rating-text {
+  color: #444;
+  margin: 8px 0 20px;
+  font-size: 1rem;
+}
+
+.rating-distribution {
+  text-align: left;
+  max-width: 300px;
+  margin: 0 auto 15px;
+}
+
+.rating-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.star-count {
+  font-weight: bold;
+  width: 16px;
+  text-align: right;
+}
+
+.bar-container {
+  flex: 1;
+  height: 6px;
+  background: #e0e0e0;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  background: #0071f0;
+  border-radius: 3px;
+}
+
+.review-count {
+  width: 20px;
+  text-align: right;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.rating-info {
+  font-size: 0.9rem;
+  color: #666;
+  margin-top: 15px;
 }
 
 .review-form {
-  background: var(--card-bg);
+  background: #fff;
   padding: 20px;
   border-radius: 12px;
   margin-bottom: 30px;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 
 .rating-group {
@@ -42,15 +109,17 @@
   font-size: 0.95rem;
 }
 
-.review-form .btn {
-  width: 100%;
+.reviews-info {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
 }
 
 .reviews-list .review-item {
-  background: var(--card-bg);
+  background: #fff;
   border-radius: 12px;
   padding: 15px 20px;
-  box-shadow: var(--card-shadow);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   margin-bottom: 15px;
 }
 
@@ -62,16 +131,35 @@
 
 .review-user {
   font-weight: 600;
-  color: var(--text-main);
+  color: #111;
 }
 
 .review-stars {
   color: #ffb400;
+  font-size: 1.1rem;
+}
+
+.review-pet {
+  color: #444;
+  margin-bottom: 8px;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.review-pet-image {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  object-fit: cover;
+  margin-left: 8px;
 }
 
 .review-text {
-  color: var(--text-secondary);
+  color: #333;
   margin-bottom: 5px;
+  line-height: 1.4;
 }
 
 .review-date {
