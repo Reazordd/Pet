@@ -55,7 +55,8 @@ export default function EditPet() {
         city: pet.city,
         description: pet.description || '',
       });
-      setImages(pet.images || []);
+      const imageUrls = pet.images.map(img => img.image);
+      setImages(imageUrls);
     } catch (err) {
       toast.error('Не удалось загрузить объявление');
       navigate('/pets');
@@ -69,28 +70,53 @@ export default function EditPet() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleImageChange = (e) => {
-    setImages(Array.from(e.target.files));
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (images.length + files.length > 5) {
+      alert('Можно загрузить максимум 5 фото');
+      return;
+    }
+
+    const validFiles = files.filter(file => {
+      if (file.size > 5 * 1024 * 1024) {
+        alert(`Файл "${file.name}" больше 5 МБ и будет пропущен.`);
+        return false;
+      }
+      if (!file.type.startsWith('image/')) {
+        alert(`Файл "${file.name}" не является изображением.`);
+        return false;
+      }
+      return true;
+    });
+
+    setImages(prev => [...prev, ...validFiles]);
+  };
+
+  const removeImage = (index) => {
+    setImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (images.length === 0) {
+      toast.error('Добавьте хотя бы одно фото');
+      return;
+    }
+
     setSubmitting(true);
     try {
       const data = new FormData();
 
-      // Добавляем текстовые поля
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'price' && formData.offer_type !== 'sale') return;
         if (value !== '') data.append(key, value);
       });
 
-      // Добавляем новые фото
-      images.forEach(img => {
-        if (img instanceof File) {
-          data.append('images', img);
-        }
-      });
+      const newFiles = images.filter(img => img instanceof File);
+      if (newFiles.length > 0) {
+        newFiles.forEach(img => data.append('images', img));
+      }
 
       await api.put(`/pets/${id}/`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -111,8 +137,83 @@ export default function EditPet() {
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Редактировать объявление</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* 🔥 Блок загрузки фото — Avito стиль */}
         <div>
-          <label className="block mb-1">Имя питомца</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Фотографии (максимум 5)
+          </label>
+          <div className="flex flex-wrap gap-2">
+            {images.map((file, index) => (
+              <div
+                key={`photo-${index}`}
+                className="relative"
+                style={{ width: '80px', height: '80px' }}
+              >
+                <img
+                  src={typeof file === 'string' ? file : URL.createObjectURL(file)}
+                  alt={`Фото ${index + 1}`}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover',
+                    borderRadius: '4px',
+                    border: '1px solid #e5e7eb'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(index)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs z-10"
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+
+            {Array.from({ length: 5 - images.length }).map((_, i) => (
+              <div
+                key={`placeholder-${i}`}
+                style={{
+                  width: '80px',
+                  height: '80px',
+                  border: '2px dashed #d1d5db',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                  />
+                </svg>
+              </div>
+            ))}
+          </div>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleFileChange}
+            className="mt-2"
+          />
+          <p className="text-xs text-gray-500 mt-1">
+            Поддерживаются JPG, PNG. Макс. размер файла — 5 МБ.
+          </p>
+        </div>
+
+        {/* Поля формы */}
+        <div>
           <input
             name="name"
             value={formData.name}
@@ -211,22 +312,6 @@ export default function EditPet() {
             className="w-full p-2 border rounded"
             rows="4"
           />
-        </div>
-
-        <div>
-          <label className="block mb-1">Фото (можно заменить)</label>
-          <input
-            type="file"
-            multiple
-            accept="image/*"
-            onChange={handleImageChange}
-            className="w-full p-2 border rounded"
-          />
-          {images.length > 0 && (
-            <div className="mt-2 text-sm text-gray-600">
-              Загружено {images.length} файлов
-            </div>
-          )}
         </div>
 
         <div className="flex gap-3 pt-4">

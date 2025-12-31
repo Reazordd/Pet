@@ -115,10 +115,9 @@ function PetDetail() {
     }
 
     try {
-      // 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: передаём pet_id
       const res = await api.post('/chat/create/', {
         target_user_id: sellerId,
-        pet_id: pet.id  // ← добавлено!
+        pet_id: pet.id
       });
       const chatId = res.data.id;
       navigate(`/chat/${chatId}`);
@@ -183,38 +182,70 @@ function PetDetail() {
 
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          {/* Фото */}
+          {/* Фото — ИСПРАВЛЕНО: ЧЕТКОЕ разделение */}
           <div className="md:w-1/2 p-6">
+            {/* Основное фото — ГАРАНТИРОВАННО 400px */}
             {images.length > 0 ? (
               <div
-                className="w-full h-96 bg-gray-100 rounded-lg overflow-hidden cursor-pointer"
                 onClick={() => openLightbox(buildImageUrl(images[0].image))}
+                style={{
+                  width: '100%',
+                  height: '400px',
+                  marginBottom: '12px',
+                  backgroundColor: '#f3f4f6',
+                  borderRadius: '0.5rem',
+                  overflow: 'hidden',
+                  cursor: 'pointer'
+                }}
               >
                 <img
                   src={buildImageUrl(images[0].image)}
                   alt={pet.name || 'Питомец'}
-                  className="w-full h-full object-cover"
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'cover'
+                  }}
                   onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
                 />
               </div>
             ) : (
-              <div className="w-full h-96 bg-gray-100 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                <span className="text-gray-500 text-2xl">🖼️ Нет фото</span>
+              <div
+                style={{
+                  width: '100%',
+                  height: '400px',
+                  marginBottom: '12px',
+                  backgroundColor: '#f3f4f6',
+                  border: '2px dashed #d1d5db',
+                  borderRadius: '0.5rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                <span style={{ color: '#9ca3af', fontSize: '2rem' }}>🖼️ Нет фото</span>
               </div>
             )}
 
+            {/* Миниатюры — ТОЛЬКО ЕСЛИ ЕСТЬ >1 ФОТО */}
             {images.length > 1 && (
-              <div className="grid grid-cols-4 gap-2 mt-3">
-                {images.slice(1).map((img, idx) => (
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {images.slice(1, 6).map((img, idx) => (
                   <div
-                    key={idx}
-                    className="w-full h-20 bg-gray-100 rounded overflow-hidden cursor-pointer"
+                    key={'thumb-' + idx}
+                    style={{
+                      width: '60px',
+                      height: '60px',
+                      overflow: 'hidden',
+                      borderRadius: '4px',
+                      cursor: 'pointer'
+                    }}
                     onClick={() => openLightbox(buildImageUrl(img.image))}
                   >
                     <img
                       src={buildImageUrl(img.image)}
                       alt={`Фото ${idx + 2}`}
-                      className="w-full h-full object-cover"
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
                     />
                   </div>
@@ -286,7 +317,7 @@ function PetDetail() {
         </div>
       </div>
 
-      {/* Панель управления с графиком */}
+      {/* Панель управления */}
       {isOwner && (
         <div className="pet-management bg-blue-50 p-4 rounded-lg mt-6">
           <h3 className="font-bold text-lg mb-3">Управление объявлением</h3>
