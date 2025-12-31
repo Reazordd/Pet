@@ -34,6 +34,8 @@ function PetDetail() {
   const [isFavorite, setIsFavorite] = useState(false);
   const [error, setError] = useState(null);
   const [lightboxImage, setLightboxImage] = useState(null);
+  const [allImages, setAllImages] = useState([]);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
@@ -154,12 +156,21 @@ function PetDetail() {
     }
   };
 
+  // 🔥 ИСПРАВЛЕНО: Защита от null
   const openLightbox = (src) => {
+    if (!pet || !pet.images) return;
+    const imageUrls = pet.images.map(img => buildImageUrl(img.image));
+    const index = imageUrls.indexOf(src);
+    if (index === -1) return;
+    setAllImages(imageUrls);
+    setCurrentImageIndex(index);
     setLightboxImage(src);
   };
 
   const closeLightbox = () => {
     setLightboxImage(null);
+    setAllImages([]);
+    setCurrentImageIndex(0);
   };
 
   if (loading) return <p className="text-center mt-10">Загрузка...</p>;
@@ -182,9 +193,7 @@ function PetDetail() {
 
       <div className="bg-white rounded-lg shadow-sm overflow-hidden">
         <div className="flex flex-col md:flex-row">
-          {/* Фото — ИСПРАВЛЕНО: ЧЕТКОЕ разделение */}
           <div className="md:w-1/2 p-6">
-            {/* Основное фото — ГАРАНТИРОВАННО 400px */}
             {images.length > 0 ? (
               <div
                 onClick={() => openLightbox(buildImageUrl(images[0].image))}
@@ -227,7 +236,6 @@ function PetDetail() {
               </div>
             )}
 
-            {/* Миниатюры — ТОЛЬКО ЕСЛИ ЕСТЬ >1 ФОТО */}
             {images.length > 1 && (
               <div style={{ display: 'flex', gap: '8px' }}>
                 {images.slice(1, 6).map((img, idx) => (
@@ -254,7 +262,6 @@ function PetDetail() {
             )}
           </div>
 
-          {/* Текст */}
           <div className="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-200">
             <h1 className="text-2xl font-bold mb-1">
               {pet.name || 'Без имени'} — {SPECIES_LABELS[pet.species]}
@@ -317,7 +324,6 @@ function PetDetail() {
         </div>
       </div>
 
-      {/* Панель управления */}
       {isOwner && (
         <div className="pet-management bg-blue-50 p-4 rounded-lg mt-6">
           <h3 className="font-bold text-lg mb-3">Управление объявлением</h3>
@@ -366,6 +372,8 @@ function PetDetail() {
           src={lightboxImage}
           alt="Фото питомца"
           onClose={closeLightbox}
+          images={allImages}
+          currentIndex={currentImageIndex}
         />
       )}
 
