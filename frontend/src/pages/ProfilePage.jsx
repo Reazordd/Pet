@@ -66,7 +66,6 @@ function ProfilePage() {
         return;
       }
 
-      // 🔥 Добавлена привязка к первому объявлению (если есть)
       const petId = pets.length > 0 ? pets[0].id : null;
       const res = await api.post('/chat/create/', {
         target_user_id: user_id,
@@ -86,11 +85,9 @@ function ProfilePage() {
   if (error) return <div className="max-w-4xl mx-auto p-4"><p className="text-center mt-10 text-red-500">{error}</p></div>;
   if (!user) return null;
 
-  // 🔥 Используем данные из API
   const badges = user.badges || [];
   const reviewCount = user.review_count || 0;
 
-  // Функция склонения слова "отзыв"
   const getReviewText = (count) => {
     if (count === 0) return 'отзывов';
     if (count % 10 === 1 && count % 100 !== 11) return 'отзыв';
@@ -117,12 +114,14 @@ function ProfilePage() {
         <div className="seller-info">
           <h1>{user.username}</h1>
 
-          {/* 🔥 Блок рейтинга как у Avito — ПРЯМО ПОД ИМЕНЕМ */}
+          {/* 🔥 ЕДИНСТВЕННЫЙ блок отзывов — как у Avito */}
           {reviewCount > 0 && (
-            <div className="mt-1">
+            <div className="mt-1 flex items-center">
+              <span className="text-lg font-bold text-gray-900">5.0</span>
+              <span className="text-yellow-400 ml-1">★★★★★</span>
               <Link
                 to={`/reviews/user/${user_id}`}
-                className="text-blue-600 hover:underline text-sm font-medium"
+                className="text-blue-600 font-medium ml-2 hover:underline"
               >
                 {reviewCount} {getReviewText(reviewCount)}
               </Link>
@@ -151,7 +150,7 @@ function ProfilePage() {
         </div>
       </div>
 
-      {/* Вкладки — без изменений */}
+      {/* 🔥 ТОЛЬКО ОДНА ВКЛАДКА: "Объявления" */}
       <div className="profile-tabs mt-6 border-b border-gray-200">
         <nav className="-mb-px flex space-x-8">
           <button
@@ -164,12 +163,7 @@ function ProfilePage() {
           >
             Объявления
           </button>
-          <Link
-            to={`/reviews/user/${user_id}`}
-            className="py-2 px-1 border-b-2 font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300"
-          >
-            Отзывы ({reviewCount})
-          </Link>
+          {/* ❌ УДАЛЕНО: <Link to="/reviews/...">Отзывы</Link> */}
         </nav>
       </div>
 
