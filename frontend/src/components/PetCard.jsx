@@ -1,4 +1,4 @@
-// PetCard.jsx
+// frontend/src/components/PetCard.jsx
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -20,7 +20,7 @@ const PetCard = ({ pet, size = 'default' }) => {
 
   const toggleFavorite = async () => {
     try {
-      if (isFavorite) {
+      if (is_favorite) {
         await api.delete(`/pets/${pet.id}/favorite/`);
         setIsFavorite(false);
         toast.info('Удалено из избранного');
@@ -39,13 +39,13 @@ const PetCard = ({ pet, size = 'default' }) => {
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
-  const imageUrl = pet.images?.length > 0
+  // 🔥 ИСПРАВЛЕНО: Защита от пустых/недостающих изображений
+  const imageUrl = pet.images && pet.images.length > 0 && pet.images[0]?.image
     ? buildImageUrl(pet.images[0].image)
     : '/images/placeholder-pet.jpg';
 
   return (
     <div className={`pet-card ${size === 'small' ? 'pet-card-small' : ''}`}>
-      {/* ✅ НОВАЯ ОБЁРТКА */}
       <div className="pet-image-container">
         <Link to={`/pets/${pet.id}`} className="pet-card-link">
           <div className="pet-image">

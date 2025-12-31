@@ -1,9 +1,9 @@
 // frontend/src/pages/FavoritesPage.jsx
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
-import '../styles/FavoritesPage.css'; // ✅ Теперь файл существует
+import PetCard from '../components/PetCard';
+import '../styles/FavoritesPage.css';
 
 const FavoritesPage = () => {
   const [favorites, setFavorites] = useState([]);
@@ -16,9 +16,12 @@ const FavoritesPage = () => {
   const fetchFavorites = async () => {
     try {
       const response = await api.get('/favorites/');
-      setFavorites(response.data.results || response.data);
+      // Поддержка обоих форматов: { results: [...] } и [...]
+      const data = Array.isArray(response.data) ? response.data : (response.data.results || []);
+      setFavorites(data);
     } catch (err) {
       toast.error('Не удалось загрузить избранное');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -45,13 +48,11 @@ const FavoritesPage = () => {
         <div className="favorites-grid">
           {favorites.map(fav => (
             <div key={fav.id} className="favorite-item">
-              <Link to={`/pets/${fav.pet.id}`}>
-                <img src={fav.pet.image} alt={fav.pet.name} />
-                <h3>{fav.pet.name}</h3>
-                <p>{fav.pet.city}</p>
-                <p>{fav.pet.price ? `${fav.pet.price} ₽` : 'Бесплатно'}</p>
-              </Link>
-              <button onClick={() => removeFromFavorites(fav.pet.id)}>
+              <PetCard pet={fav.pet} />
+              <button
+                className="remove-favorite-btn"
+                onClick={() => removeFromFavorites(fav.pet.id)}
+              >
                 Удалить из избранного
               </button>
             </div>
