@@ -38,8 +38,8 @@ class Pet(models.Model):
     is_approved = models.BooleanField('Одобрено', default=False)
     is_hidden = models.BooleanField('Скрыто', default=False)
 
-    # 🔥 НОВОЕ: для поднятия
-    last_raised_at = models.DateTimeField(default=timezone.now)
+    # 🔥 ВАЖНО: last_raised_at обновляется ТОЛЬКО при ручном поднятии
+    last_raised_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ['-created_at']
@@ -55,15 +55,34 @@ class Pet(models.Model):
         super().save(*args, **kwargs)
 
     def can_be_raised(self):
-        """Можно поднять, если прошло >=7 дней"""
+        """Можно поднять, если прошло >=7 дней с последнего поднятия"""
+        if self.last_raised_at is None:
+            return True
         return timezone.now() - self.last_raised_at >= timedelta(days=7)
 
     def get_next_raise_date(self):
         """Дата следующего поднятия"""
+        if self.last_raised_at is None:
+            return timezone.now()
         return self.last_raised_at + timedelta(days=7)
 
+    def raise_ad_now(self):
+        """Поднять объявление — ОБНОВЛЯЕТ last_raised_at"""
+        self.last_raised_at = timezone.now()
+        self.is_active = True  # на случай, если было снято
+        self.save(update_fields=['last_raised_at', 'is_active'])
 
-# 🔥 НОВОЕ: статистика просмотров
+    def deactivate(self):
+        """Снять с публикации — НЕ трогает last_raised_at"""
+        self.is_active = False
+        self.save(update_fields=['is_active'])
+
+    def activate(self):
+        """Вернуть в публикацию — НЕ трогает last_raised_at"""
+        self.is_active = True
+        self.save(update_fields=['is_active'])
+
+
 class ViewHistory(models.Model):
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='views')
     viewed_at = models.DateTimeField(auto_now_add=True)

@@ -9,7 +9,7 @@ from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Count
 from .models import Pet, Favorite, PetImage
-from history.models import ViewHistory  # ← Используем из приложения history
+from history.models import ViewHistory
 from .serializers import PetSerializer, FavoriteSerializer
 from .filters import PetFilter
 from notifications.models import Notification
@@ -79,14 +79,13 @@ class PetViewSet(viewsets.ModelViewSet):
             if not instance.is_approved or instance.is_hidden:
                 from django.http import Http404
                 raise Http404()
-            # 🔥 Фиксируем просмотр через history.ViewHistory
             if request.user.is_authenticated:
                 ViewHistory.objects.get_or_create(user=request.user, pet=instance)
 
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
 
-    # 🔥 Управление объявлением (без изменений)
+    # 🔥 ИСПРАВЛЕНО: Управление объявлением — логика как у Avito
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def raise_ad(self, request, pk=None):
         pet = self.get_object()
@@ -99,6 +98,7 @@ class PetViewSet(viewsets.ModelViewSet):
                 'error': 'Можно поднять только раз в 7 дней',
                 'next_raise_allowed_at': pet.get_next_raise_date().isoformat()
             }, status=status.HTTP_400_BAD_REQUEST)
+        # 🔥 Обновляем last_raised_at ТОЛЬКО при ручном поднятии
         pet.last_raised_at = timezone.now()
         pet.save(update_fields=['last_raised_at'])
         return Response({'last_raised_at': pet.last_raised_at.isoformat()})
@@ -117,9 +117,9 @@ class PetViewSet(viewsets.ModelViewSet):
         pet = self.get_object()
         if pet.user != request.user:
             return Response({'error': 'Только владелец может управлять объявлением'}, status=status.HTTP_403_FORBIDDEN)
+        # 🔥 ВАЖНО: НЕ обновляем last_raised_at при активации!
         pet.is_active = True
-        pet.last_raised_at = timezone.now()
-        pet.save(update_fields=['is_active', 'last_raised_at'])
+        pet.save(update_fields=['is_active'])
         return Response({'is_active': True})
 
     @action(detail=True, methods=['post', 'delete'], url_path='favorite')
@@ -163,7 +163,6 @@ class PetViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-# 🔥 НОВЫЙ: Эндпоинт статистики (вне класса, как standalone API)
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_pet_view_stats(request, pet_id):
@@ -181,7 +180,6 @@ def get_pet_view_stats(request, pet_id):
         select={'date': "date(viewed_at)"}
     ).values('date').annotate(count=Count('id')).order_by('date')
 
-    # Заполнить все дни (включая нули)
     all_dates = [(week_ago + timedelta(days=i)).date() for i in range(8)]
     result = {item['date']: item['count'] for item in stats}
     filled = [{'date': d.isoformat(), 'count': result.get(d, 0)} for d in all_dates]
