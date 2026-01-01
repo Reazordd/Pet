@@ -3,13 +3,13 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from rest_framework.validators import UniqueValidator
-from reviews.models import Review  # ← импорт модели отзывов
+from reviews.models import Review
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     badges = serializers.SerializerMethodField()
-    review_count = serializers.SerializerMethodField()  # ← новое поле
+    review_count = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -17,7 +17,7 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name', 'phone',
             'avatar', 'bio', 'location', 'date_joined',
             'is_trusted_seller', 'avito_delivery_count', 'is_company_verified',
-            'badges', 'review_count'  # ← добавлено в список
+            'badges', 'review_count'
         ]
         read_only_fields = ['id', 'date_joined', 'badges', 'review_count']
 
@@ -44,5 +44,4 @@ class UserSerializer(serializers.ModelSerializer):
         return badges
 
     def get_review_count(self, obj):
-        # Возвращаем количество полученных отзывов
         return obj.received_reviews.count()

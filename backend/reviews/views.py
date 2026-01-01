@@ -74,7 +74,6 @@ def create_or_update_review(request, user_id):
     if request.user == reviewed_user:
         return Response({'error': 'Нельзя оставить отзыв самому себе'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Проверяем существующий отзыв
     existing_review = Review.objects.filter(
         reviewer=request.user,
         reviewed=reviewed_user
@@ -90,14 +89,12 @@ def create_or_update_review(request, user_id):
             pass
 
     if existing_review:
-        # Редактируем существующий отзыв
         serializer = ReviewSerializer(existing_review, data=request.data, partial=True, context={'request': request})
         if serializer.is_valid():
             serializer.save(pet=pet)
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     else:
-        # Создаём новый отзыв
         serializer = ReviewSerializer(data=request.data, context={'request': request})
         if serializer.is_valid():
             review = serializer.save(
