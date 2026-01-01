@@ -19,9 +19,8 @@ const PetCard = ({ pet, size = 'default' }) => {
   const [isFavorite, setIsFavorite] = useState(pet.is_favorite);
 
   const toggleFavorite = async () => {
-    // 🔥 ИСПРАВЛЕНО: is_favorite → isFavorite
     const willBeFavorite = !isFavorite;
-    setIsFavorite(willBeFavorite); // оптимистичное обновление
+    setIsFavorite(willBeFavorite);
 
     try {
       if (willBeFavorite) {
@@ -32,10 +31,7 @@ const PetCard = ({ pet, size = 'default' }) => {
         toast.info('Удалено из избранного');
       }
     } catch (err) {
-      // Возврат при ошибке
       setIsFavorite(isFavorite);
-      console.error('Ошибка избранного:', err.response || err);
-
       if (err.response?.status === 400) {
         toast.error('Уже в избранном');
       } else if (err.response?.status === 404) {
@@ -55,6 +51,9 @@ const PetCard = ({ pet, size = 'default' }) => {
     ? buildImageUrl(pet.images[0].image)
     : '/images/placeholder-pet.jpg';
 
+  // 🔥 Отображаем имя или породу
+  const petName = pet.name || pet.breed || 'Питомец';
+
   return (
     <div className={`pet-card ${size === 'small' ? 'pet-card-small' : ''}`}>
       <div className="pet-image-container">
@@ -62,14 +61,15 @@ const PetCard = ({ pet, size = 'default' }) => {
           <div className="pet-image">
             <img
               src={imageUrl}
-              alt={pet.name || 'Питомец'}
+              alt={petName}
               onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
             />
           </div>
         </Link>
       </div>
       <div className="pet-info">
-        <h3 className="pet-name">{pet.name || 'Без имени'}</h3>
+        {/* 🔥 ИСПРАВЛЕНО: имя или порода */}
+        <h3 className="pet-name">{petName}</h3>
         <p className="pet-city">{pet.city}</p>
         <p className="pet-price">{formatPrice(pet.price)}</p>
       </div>

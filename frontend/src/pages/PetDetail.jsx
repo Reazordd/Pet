@@ -124,8 +124,7 @@ function PetDetail() {
       const chatId = res.data.id;
       navigate(`/chat/${chatId}`);
     } catch (err) {
-      console.error('Ошибка отправки:', err);
-      const errorMsg = err.response?.data?.error || 'Не удалось начать чат';
+      console.error('Ошибка отправки:', err.response?.data?.error || 'Не удалось начать чат');
       toast.error(errorMsg);
     }
   };
@@ -184,6 +183,11 @@ function PetDetail() {
   const images = pet.images || [];
   const isOwner = currentUserId && pet.user && (pet.user.id === currentUserId || pet.user === currentUserId);
 
+  // 🔥 Получаем отображаемое имя: имя → порода → "Питомец"
+  const getPetName = () => {
+    return pet.name || pet.breed || 'Питомец';
+  };
+
   return (
     <div className="pet-detail max-w-4xl mx-auto p-4">
       <button onClick={() => navigate(-1)} className="mb-6 text-blue-600 hover:underline font-medium">
@@ -208,7 +212,7 @@ function PetDetail() {
               >
                 <img
                   src={buildImageUrl(images[0].image)}
-                  alt={pet.name || 'Питомец'}
+                  alt={getPetName()}
                   style={{
                     width: '100%',
                     height: '100%',
@@ -262,11 +266,11 @@ function PetDetail() {
           </div>
 
           <div className="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-200">
+            {/* 🔥 ИСПРАВЛЕНО: имя или порода */}
             <h1 className="text-2xl font-bold mb-1">
-              {pet.name || 'Без имени'} — {SPECIES_LABELS[pet.species]}
+              {getPetName()} — {SPECIES_LABELS[pet.species]}
             </h1>
             {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
-            {/* 🔥 ЗАМЕНЕНО: Возраст → Дата рождения */}
             {pet.birth_date && (
               <p className="text-gray-700">
                 Дата рождения: {new Date(pet.birth_date).toLocaleDateString('ru-RU')}

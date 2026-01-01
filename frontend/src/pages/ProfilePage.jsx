@@ -153,6 +153,17 @@ function ProfilePage() {
 
   const canLeaveReview = currentUserId && currentUserId !== user_id;
 
+  // 🔥 Получаем отображаемое имя
+  const getDisplayName = (user) => {
+    if (user.first_name || user.last_name) {
+      return `${user.first_name} ${user.last_name}`.trim();
+    }
+    if (user.username.includes('@')) {
+      return user.username.split('@')[0];
+    }
+    return user.username || 'Пользователь';
+  };
+
   return (
     <div className="seller-profile max-w-4xl mx-auto p-4">
       <div className="seller-header">
@@ -160,17 +171,18 @@ function ProfilePage() {
           {user.avatar ? (
             <img
               src={buildImageUrl(user.avatar)}
-              alt={user.username}
+              alt={getDisplayName(user)}
               className="avatar-lg"
             />
           ) : (
             <div className="avatar-placeholder">
-              {user.username?.[0]?.toUpperCase() || '?'}
+              {getDisplayName(user)?.[0]?.toUpperCase() || '?'}
             </div>
           )}
         </div>
         <div className="seller-info">
-          <h1>{user.username}</h1>
+          {/* 🔥 ИСПРАВЛЕНО: имя вместо email */}
+          <h1>{getDisplayName(user)}</h1>
 
           <div className="mt-1 flex items-center">
             {reviewCount > 0 ? (
@@ -272,7 +284,7 @@ function ProfilePage() {
       {/* Список отзывов */}
       {reviews.length > 0 && (
         <div className="mt-6">
-          <h3 className="font-bold text-lg mb-3">Отзывы о {user.username}</h3>
+          <h3 className="font-bold text-lg mb-3">Отзывы о {getDisplayName(user)}</h3>
           <div className="space-y-3">
             {reviews.map((review) => (
               <div key={review.id} className="p-3 border rounded">
