@@ -52,23 +52,15 @@ function Home() {
     }
   };
 
-  // 🔥 Исправленный вызов
   const fetchCategories = async () => {
     try {
-      const response = await api.get('/categories/'); // вызывает наш новый эндпоинт
+      const response = await api.get('/categories/');
       setCategories(response.data);
     } catch (err) {
       console.error('Ошибка при загрузке категорий:', err);
       toast.error('Ошибка при загрузке категорий');
-      // Добавим fallback категории
-      setCategories([
-        {"id": 1, "name": "Собаки", "icon": "🐶", "pet_count": 120},
-        {"id": 2, "name": "Кошки", "icon": "🐱", "pet_count": 95},
-        {"id": 3, "name": "Птицы", "icon": "🐦", "pet_count": 30},
-        {"id": 4, "name": "Грызуны", "icon": "🐹", "pet_count": 25},
-        {"id": 5, "name": "Рыбы", "icon": "🐠", "pet_count": 15},
-        {"id": 6, "name": "Рептилии", "icon": "🦎", "pet_count": 10},
-      ]);
+      // Без fallback — оставим пустой массив
+      setCategories([]);
     }
   };
 
@@ -105,7 +97,11 @@ function Home() {
         <h2>Популярные категории</h2>
         <div className="categories-grid">
           {categories.slice(0, 6).map((cat) => (
-            <Link key={cat.id} to={`/pets?category=${cat.id}`} className="category-card">
+            <Link
+              key={cat.id}
+              to={`/pets?species=${cat.id}`}  // ← ИСПРАВЛЕНО: species вместо category
+              className="category-card"
+            >
               <div className="category-icon">{cat.icon || '🐾'}</div>
               <div className="category-name">{cat.name}</div>
               <div className="category-count">{cat.pet_count || 0} объявлений</div>

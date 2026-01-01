@@ -1,17 +1,16 @@
 // frontend/src/components/SearchFilters.jsx
-
 import React, { useState } from 'react';
 import '../styles/Filters.css';
 
 function SearchFilters({ onFilter, loading }) {
   const [filters, setFilters] = useState({
     search: '',
-    breed: '',
+    species: '',  // ← ИСПРАВЛЕНО: species вместо breed
     minPrice: '',
     maxPrice: '',
   });
 
-  const breedOptions = [
+  const speciesOptions = [  // ← ИСПРАВЛЕНО: speciesOptions
     { value: '', label: 'Все животные' },
     { value: 'dog', label: 'Собаки' },
     { value: 'cat', label: 'Кошки' },
@@ -29,7 +28,7 @@ function SearchFilters({ onFilter, loading }) {
   };
 
   const clearFilters = () => {
-    const reset = { search: '', breed: '', minPrice: '', maxPrice: '' };
+    const reset = { search: '', species: '', minPrice: '', maxPrice: '' }; // ← ИСПРАВЛЕНО
     setFilters(reset);
     onFilter(reset);
   };
@@ -57,10 +56,10 @@ function SearchFilters({ onFilter, loading }) {
         <div className="filter-item">
           <label>Тип животного</label>
           <select
-            value={filters.breed}
-            onChange={(e) => handleChange('breed', e.target.value)}
+            value={filters.species}  // ← ИСПРАВЛЕНО
+            onChange={(e) => handleChange('species', e.target.value)}  // ← ИСПРАВЛЕНО
           >
-            {breedOptions.map((opt) => (
+            {speciesOptions.map((opt) => (  // ← ИСПРАВЛЕНО
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>

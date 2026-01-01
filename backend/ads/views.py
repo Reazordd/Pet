@@ -239,14 +239,63 @@ class AdminPetModerationViewSet(viewsets.ModelViewSet):
         return Response({'is_active': False}, status=status.HTTP_204_NO_CONTENT)
 
 
+# 🔥 НОВЫЙ: Динамические категории с реальным количеством
+from django.db.models import Count
+
 @api_view(['GET'])
 def get_categories(request):
-    categories = [
-        {"id": 1, "name": "Собаки", "icon": "🐶", "pet_count": 120},
-        {"id": 2, "name": "Кошки", "icon": "🐱", "pet_count": 95},
-        {"id": 3, "name": "Птицы", "icon": "🐦", "pet_count": 30},
-        {"id": 4, "name": "Грызуны", "icon": "🐹", "pet_count": 25},
-        {"id": 5, "name": "Рыбы", "icon": "🐠", "pet_count": 15},
-        {"id": 6, "name": "Рептилии", "icon": "🦎", "pet_count": 10},
-    ]
+    """Получить категории с реальным количеством активных объявлений"""
+    species_labels = {
+        'dog': 'Собаки',
+        'cat': 'Кошки',
+        'bird': 'Птицы',
+        'rodent': 'Грызуны',
+        'fish': 'Рыбы',
+        'reptile': 'Рептилии',
+        'other': 'Другое',
+    }
+
+    species_icons = {
+        'dog': '🐶',
+        'cat': '🐱',
+        'bird': '🐦',
+        'rodent': '🐹',
+        'fish': '🐠',
+        'reptile': '🦎',
+        'other': '🐾',
+    }
+
+    # Считаем только активные, одобренные, не скрытые объявления
+    counts = Pet.objects.filter(
+        is_active=True,
+        is_approved=True,
+        is_hidden=False
+    ).values('species').annotate(
+        pet_count=Count('id')
+    ).order_by('-pet_count')
+
+    # Преобразуем в список категорий
+    categories = []
+    for item in counts:
+        species = item['species']
+        if species in species_labels:
+            categories.append({
+                "id": species,
+                "name": species_labels[species],
+                "icon": species_icons[species],
+                "pet_count": item['pet_count']
+            })
+
+    # Добавляем категории с 0, если их нет в counts
+    for species, name in species_labels.items():
+        if not any(c['id'] == species for c in categories):
+            categories.append({
+                "id": species,
+                "name": name,
+                "icon": species_icons[species],
+                "pet_count": 0
+            })
+
+    # Сортируем по убыванию количества
+    categories.sort(key=lambda x: x['pet_count'], reverse=True)
     return Response(categories)
