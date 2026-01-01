@@ -6,7 +6,6 @@ from datetime import timedelta
 
 User = settings.AUTH_USER_MODEL
 
-
 class Pet(models.Model):
     SPECIES_CHOICES = [
         ('dog', 'Собака'),
@@ -28,7 +27,8 @@ class Pet(models.Model):
     name = models.CharField('Имя питомца', max_length=100, blank=True)
     species = models.CharField('Вид', max_length=20, choices=SPECIES_CHOICES)
     breed = models.CharField('Порода', max_length=100, blank=True)
-    age = models.PositiveSmallIntegerField('Возраст (лет)', null=True, blank=True)
+    # УДАЛЕНО: age = models.PositiveSmallIntegerField('Возраст (лет)', null=True, blank=True)
+    birth_date = models.DateField('Дата рождения', null=True, blank=True)  # ← НОВОЕ ПОЛЕ
     price = models.DecimalField('Цена (₽)', max_digits=10, decimal_places=2, null=True, blank=True)
     offer_type = models.CharField('Тип объявления', max_length=10, choices=OFFER_TYPE_CHOICES, default='sale')
     city = models.CharField('Город', max_length=100)
@@ -37,8 +37,6 @@ class Pet(models.Model):
     is_active = models.BooleanField(default=True)
     is_approved = models.BooleanField('Одобрено', default=False)
     is_hidden = models.BooleanField('Скрыто', default=False)
-
-    # 🔥 ВАЖНО: last_raised_at обновляется ТОЛЬКО при ручном поднятии
     last_raised_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
@@ -55,33 +53,27 @@ class Pet(models.Model):
         super().save(*args, **kwargs)
 
     def can_be_raised(self):
-        """Можно поднять, если прошло >=7 дней с последнего поднятия"""
         if self.last_raised_at is None:
             return True
         return timezone.now() - self.last_raised_at >= timedelta(days=7)
 
     def get_next_raise_date(self):
-        """Дата следующего поднятия"""
         if self.last_raised_at is None:
             return timezone.now()
         return self.last_raised_at + timedelta(days=7)
 
     def raise_ad_now(self):
-        """Поднять объявление — ОБНОВЛЯЕТ last_raised_at"""
         self.last_raised_at = timezone.now()
-        self.is_active = True  # на случай, если было снято
+        self.is_active = True
         self.save(update_fields=['last_raised_at', 'is_active'])
 
     def deactivate(self):
-        """Снять с публикации — НЕ трогает last_raised_at"""
         self.is_active = False
         self.save(update_fields=['is_active'])
 
     def activate(self):
-        """Вернуть в публикацию — НЕ трогает last_raised_at"""
         self.is_active = True
         self.save(update_fields=['is_active'])
-
 
 class ViewHistory(models.Model):
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='views')
@@ -92,7 +84,6 @@ class ViewHistory(models.Model):
         verbose_name = 'Просмотр'
         verbose_name_plural = 'Просмотры'
 
-
 class PetImage(models.Model):
     pet = models.ForeignKey(Pet, on_delete=models.CASCADE, related_name='images')
     image = models.ImageField('Фото', upload_to='pet_images/')
@@ -100,7 +91,6 @@ class PetImage(models.Model):
 
     def __str__(self):
         return f"Image for {self.pet.name or 'Pet'}"
-
 
 class Favorite(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='favorites')

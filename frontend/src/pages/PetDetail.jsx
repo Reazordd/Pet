@@ -156,7 +156,6 @@ function PetDetail() {
     }
   };
 
-  // 🔥 ИСПРАВЛЕНО: Защита от null
   const openLightbox = (src) => {
     if (!pet || !pet.images) return;
     const imageUrls = pet.images.map(img => buildImageUrl(img.image));
@@ -267,7 +266,12 @@ function PetDetail() {
               {pet.name || 'Без имени'} — {SPECIES_LABELS[pet.species]}
             </h1>
             {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
-            {pet.age !== null && <p className="text-gray-700">Возраст: {pet.age} лет</p>}
+            {/* 🔥 ЗАМЕНЕНО: Возраст → Дата рождения */}
+            {pet.birth_date && (
+              <p className="text-gray-700">
+                Дата рождения: {new Date(pet.birth_date).toLocaleDateString('ru-RU')}
+              </p>
+            )}
 
             <div className="flex items-center justify-between my-2">
               <p className="text-xl font-semibold">{formatPrice(pet.price)}</p>
