@@ -19,18 +19,30 @@ const PetCard = ({ pet, size = 'default' }) => {
   const [isFavorite, setIsFavorite] = useState(pet.is_favorite);
 
   const toggleFavorite = async () => {
+    // 🔥 ИСПРАВЛЕНО: is_favorite → isFavorite
+    const willBeFavorite = !isFavorite;
+    setIsFavorite(willBeFavorite); // оптимистичное обновление
+
     try {
-      if (is_favorite) {
-        await api.delete(`/pets/${pet.id}/favorite/`);
-        setIsFavorite(false);
-        toast.info('Удалено из избранного');
-      } else {
+      if (willBeFavorite) {
         await api.post(`/pets/${pet.id}/favorite/`);
-        setIsFavorite(true);
         toast.success('Добавлено в избранное');
+      } else {
+        await api.delete(`/pets/${pet.id}/favorite/`);
+        toast.info('Удалено из избранного');
       }
     } catch (err) {
-      toast.error('Ошибка при обновлении избранного');
+      // Возврат при ошибке
+      setIsFavorite(isFavorite);
+      console.error('Ошибка избранного:', err.response || err);
+
+      if (err.response?.status === 400) {
+        toast.error('Уже в избранном');
+      } else if (err.response?.status === 404) {
+        toast.error('Объявление не найдено');
+      } else {
+        toast.error('Не удалось обновить избранное');
+      }
     }
   };
 
@@ -39,7 +51,6 @@ const PetCard = ({ pet, size = 'default' }) => {
     return new Intl.NumberFormat('ru-RU').format(price) + ' ₽';
   };
 
-  // 🔥 ИСПРАВЛЕНО: Защита от пустых/недостающих изображений
   const imageUrl = pet.images && pet.images.length > 0 && pet.images[0]?.image
     ? buildImageUrl(pet.images[0].image)
     : '/images/placeholder-pet.jpg';

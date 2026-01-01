@@ -42,20 +42,52 @@ const NotificationsPage = () => {
     }
   };
 
+  // 🔥 НОВОЕ: Удаление одного уведомления
+  const deleteNotification = async (id) => {
+    try {
+      await api.delete(`/notifications/delete/${id}/`);
+      setNotifications(notifications.filter(n => n.id !== id));
+    } catch (err) {
+      toast.error('Не удалось удалить уведомление');
+    }
+  };
+
+  // 🔥 НОВОЕ: Удаление всех уведомлений
+  const clearAllNotifications = async () => {
+    if (!window.confirm('Удалить все уведомления? Это действие нельзя отменить.')) return;
+    try {
+      await api.delete('/notifications/clear-all/');
+      setNotifications([]);
+      toast.success('Все уведомления удалены');
+    } catch (err) {
+      toast.error('Не удалось очистить уведомления');
+    }
+  };
+
   if (loading) return <p className="text-center mt-10">Загрузка...</p>;
 
   return (
     <div className="notifications-page max-w-2xl mx-auto p-4">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold">Уведомления</h1>
-        {notifications.some(n => !n.is_read) && (
-          <button
-            onClick={markAllAsRead}
-            className="text-blue-600 hover:underline text-sm"
-          >
-            Отметить всё как прочитанное
-          </button>
-        )}
+        <div className="flex gap-3">
+          {notifications.some(n => !n.is_read) && (
+            <button
+              onClick={markAllAsRead}
+              className="text-blue-600 hover:underline text-sm"
+            >
+              Отметить всё как прочитанное
+            </button>
+          )}
+          {notifications.length > 0 && (
+            <button
+              onClick={clearAllNotifications}
+              className="text-red-600 hover:text-red-800 text-sm"
+            >
+              Очистить всё
+            </button>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (
@@ -65,23 +97,39 @@ const NotificationsPage = () => {
           {notifications.map((n) => (
             <div
               key={n.id}
-              className={`p-4 border rounded-lg ${n.is_read ? 'bg-gray-50' : 'bg-blue-50'}`}
+              className={`p-4 border rounded-lg relative ${
+                n.is_read ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'
+              }`}
             >
-              <div className="flex justify-between">
+              {/* 🔥 Кнопка удаления */}
+              <button
+                onClick={() => deleteNotification(n.id)}
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
+                aria-label="Удалить уведомление"
+              >
+                &times;
+              </button>
+
+              <div className="pr-6">
                 <p>
                   <strong>{n.actor?.username || 'Система'}</strong> {n.description || n.get_verb_display()}
                 </p>
                 {!n.is_read && (
                   <button
                     onClick={() => markAsRead(n.id)}
-                    className="text-sm text-blue-600 hover:underline"
+                    className="text-sm text-blue-600 hover:underline mt-1"
                   >
                     Прочитано
                   </button>
                 )}
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {new Date(n.created_at).toLocaleString()}
+              <p className="text-xs text-gray-500 mt-2">
+                {new Date(n.created_at).toLocaleString('ru-RU', {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
               </p>
             </div>
           ))}

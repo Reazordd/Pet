@@ -35,3 +35,21 @@ def mark_as_read(request, notification_id):
 def mark_all_as_read(request):
     Notification.objects.filter(recipient=request.user, is_read=False).update(is_read=True)
     return Response({'message': 'Все уведомления помечены как прочитанные'})
+
+# 🔥 НОВОЕ: Удаление одного уведомления
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def delete_notification(request, notification_id):
+    try:
+        notification = Notification.objects.get(id=notification_id, recipient=request.user)
+        notification.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    except Notification.DoesNotExist:
+        return Response({'error': 'Уведомление не найдено'}, status=status.HTTP_404_NOT_FOUND)
+
+# 🔥 НОВОЕ: Удаление всех уведомлений
+@api_view(['DELETE'])
+@permission_classes([IsAuthenticated])
+def clear_all_notifications(request):
+    Notification.objects.filter(recipient=request.user).delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
