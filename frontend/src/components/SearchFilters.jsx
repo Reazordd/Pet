@@ -1,16 +1,18 @@
 // frontend/src/components/SearchFilters.jsx
 import React, { useState } from 'react';
+import BreedAutocomplete from './BreedAutocomplete'; // 🔥 ИМПОРТ НОВОГО КОМПОНЕНТА
 import '../styles/Filters.css';
 
 function SearchFilters({ onFilter, loading }) {
   const [filters, setFilters] = useState({
     search: '',
-    species: '',  // ← ИСПРАВЛЕНО: species вместо breed
+    species: 'dog', // ← по умолчанию "Собаки"
+    breed: '',
     minPrice: '',
     maxPrice: '',
   });
 
-  const speciesOptions = [  // ← ИСПРАВЛЕНО: speciesOptions
+  const speciesOptions = [
     { value: '', label: 'Все животные' },
     { value: 'dog', label: 'Собаки' },
     { value: 'cat', label: 'Кошки' },
@@ -28,7 +30,7 @@ function SearchFilters({ onFilter, loading }) {
   };
 
   const clearFilters = () => {
-    const reset = { search: '', species: '', minPrice: '', maxPrice: '' }; // ← ИСПРАВЛЕНО
+    const reset = { search: '', species: 'dog', breed: '', minPrice: '', maxPrice: '' };
     setFilters(reset);
     onFilter(reset);
   };
@@ -56,15 +58,26 @@ function SearchFilters({ onFilter, loading }) {
         <div className="filter-item">
           <label>Тип животного</label>
           <select
-            value={filters.species}  // ← ИСПРАВЛЕНО
-            onChange={(e) => handleChange('species', e.target.value)}  // ← ИСПРАВЛЕНО
+            value={filters.species}
+            onChange={(e) => handleChange('species', e.target.value)}
           >
-            {speciesOptions.map((opt) => (  // ← ИСПРАВЛЕНО
+            {speciesOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
               </option>
             ))}
           </select>
+        </div>
+
+        {/* 🔥 НОВОЕ: Поле автокомплита по породам */}
+        <div className="filter-item">
+          <label>Порода</label>
+          <BreedAutocomplete
+            species={filters.species || 'dog'}
+            value={filters.breed}
+            onChange={(breed) => handleChange('breed', breed)}
+            placeholder="Порода (например: Лабрадор)"
+          />
         </div>
 
         <div className="filter-item">
