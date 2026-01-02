@@ -1,5 +1,6 @@
 # backend/ads/views.py
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from django.http import Http404
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.response import Response
@@ -13,6 +14,11 @@ from history.models import ViewHistory
 from .serializers import PetSerializer, FavoriteSerializer
 from .filters import PetFilter
 from notifications.models import Notification
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+BAN_WORDS = ['дешево', 'скидка', 'телефон', 'в лс', 'whatsapp', 'телеграм', 'номер', 'звонить', 'лс']
 
 
 class PetViewSet(viewsets.ModelViewSet):
@@ -24,34 +30,44 @@ class PetViewSet(viewsets.ModelViewSet):
     ordering = ['-created_at']
 
     def get_queryset(self):
-        user_id_param = self.request.query_params.get('user')
-        if user_id_param is not None:
+        # 🔥 1. Для retrieve — возвращаем ВСЕ объявления
+        if self.action == 'retrieve':
+            return Pet.objects.prefetch_related('images')
+
+        # 🔥 2. Для "Мои объявления": ?owner=true → ТОЛЬКО СВОИ
+        owner_filter = self.request.query_params.get('owner')
+        if owner_filter == 'true':
+            if self.request.user.is_authenticated:
+                return Pet.objects.filter(
+                    user=self.request.user,
+                    moderation_status='approved',
+                    is_active=True
+                ).prefetch_related('images')
+            else:
+                return Pet.objects.none().prefetch_related('images')
+
+        # 🔥 3. Для профиля другого пользователя: ?user=ID
+        if 'user' in self.request.query_params:
             try:
-                user_id = int(user_id_param)
+                user_id = int(self.request.query_params['user'])
                 return Pet.objects.filter(
                     user_id=user_id,
-                    is_approved=True,
-                    is_hidden=False,
+                    moderation_status='approved',
                     is_active=True
                 ).prefetch_related('images')
             except (TypeError, ValueError):
                 return Pet.objects.none().prefetch_related('images')
 
-        owner_filter = self.request.query_params.get('owner', None)
-        if owner_filter == 'true':
-            if self.request.user.is_authenticated:
-                return Pet.objects.filter(user=self.request.user).prefetch_related('images')
-            else:
-                return Pet.objects.none().prefetch_related('images')
+        # 🔥 4. Для общего списка (/pets/) — только одобренные
+        base_q = Pet.objects.prefetch_related('images')
 
         if self.request.user.is_staff:
-            return Pet.objects.all().prefetch_related('images')
+            return base_q
 
-        return Pet.objects.filter(
-            is_approved=True,
-            is_hidden=False,
+        return base_q.filter(
+            moderation_status='approved',
             is_active=True
-        ).prefetch_related('images')
+        )
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -59,10 +75,18 @@ class PetViewSet(viewsets.ModelViewSet):
         return context
 
     def perform_create(self, serializer):
-        pet = serializer.save(user=self.request.user)
+        pet = serializer.save(
+            user=self.request.user,
+            moderation_status='pending'  # всегда на модерацию
+        )
         images = self.request.FILES.getlist('images')
         for image in images:
             PetImage.objects.create(pet=pet, image=image)
+
+        # Автоматическая модерация
+        self.auto_moderate(pet)
+        if pet.moderation_status == 'pending':
+            self.notify_moderators(pet)
 
     def perform_update(self, serializer):
         pet = serializer.save()
@@ -75,17 +99,98 @@ class PetViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        if not request.user.is_staff:
-            if not instance.is_approved or instance.is_hidden:
-                from django.http import Http404
-                raise Http404()
-            if request.user.is_authenticated:
+        # Публичный доступ: только одобренные и активные
+        if instance.moderation_status == 'approved' and instance.is_active:
+            if request.user.is_authenticated and request.user != instance.user:
                 ViewHistory.objects.get_or_create(user=request.user, pet=instance)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
 
-        serializer = self.get_serializer(instance)
-        return Response(serializer.data)
+        # Приватный доступ: владелец и модератор
+        if request.user == instance.user or request.user.is_staff:
+            if request.user.is_authenticated and request.user != instance.user:
+                ViewHistory.objects.get_or_create(user=request.user, pet=instance)
+            serializer = self.get_serializer(instance)
+            return Response(serializer.data)
 
-    # 🔥 ИСПРАВЛЕНО: Управление объявлением — логика как у Avito
+        # Иначе — 404
+        raise Http404()
+
+    def auto_moderate(self, pet):
+        text = f"{pet.name or ''} {pet.description or ''}".lower()
+        for word in BAN_WORDS:
+            if word in text:
+                pet.moderation_status = 'rejected'
+                pet.rejection_reason = f'Обнаружено запрещённое слово: "{word}"'
+                pet.save()
+                return
+
+    def notify_moderators(self, pet):
+        # Уведомляем первого модератора
+        moderator = User.objects.filter(is_staff=True).first()
+        if moderator:
+            Notification.objects.create(
+                recipient=moderator,
+                actor=pet.user,
+                verb='moderation_pending',
+                description=f'Новое объявление на модерацию: {pet.name or "Без имени"}'
+            )
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def approve(self, request, pk=None):
+        pet = self.get_object()
+        if pet.moderation_status == 'approved':
+            return Response({'error': 'Уже одобрено'}, status=status.HTTP_400_BAD_REQUEST)
+        pet.moderation_status = 'approved'
+        pet.save()
+        Notification.objects.create(
+            recipient=pet.user,
+            actor=request.user,
+            verb='moderation_approved',
+            description='Ваше объявление одобрено и опубликовано'
+        )
+        return Response({'status': 'approved'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAdminUser])
+    def reject(self, request, pk=None):
+        pet = self.get_object()
+        reason = request.data.get('reason', 'Не соответствует правилам')
+        if pet.moderation_status == 'rejected':
+            return Response({'error': 'Уже отклонено'}, status=status.HTTP_400_BAD_REQUEST)
+        pet.moderation_status = 'rejected'
+        pet.rejection_reason = reason
+        pet.save()
+        Notification.objects.create(
+            recipient=pet.user,
+            actor=request.user,
+            verb='moderation_rejected',
+            description=f'Ваше объявление отклонено: {reason}'
+        )
+        return Response({'status': 'rejected'})
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def report(self, request, pk=None):
+        pet = self.get_object()
+        reason = request.data.get('reason', '').strip()
+        if not reason:
+            return Response({'error': 'Укажите причину'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 🔥 УЛУЧШЕНО: кликабельная ссылка и понятный заголовок
+        pet_title = pet.name or pet.breed or 'Без имени'
+        description = f'Жалоба на объявление "[{pet_title}](/pets/{pet.id}/)": {reason}'
+
+        # Уведомляем ВСЕХ модераторов
+        moderators = User.objects.filter(is_staff=True)
+        for moderator in moderators:
+            Notification.objects.create(
+                recipient=moderator,
+                actor=request.user,
+                verb='report',
+                description=description
+            )
+        return Response({'status': 'reported'})
+
+    # 🔥 Остальные action без изменений
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def raise_ad(self, request, pk=None):
         pet = self.get_object()
@@ -98,7 +203,6 @@ class PetViewSet(viewsets.ModelViewSet):
                 'error': 'Можно поднять только раз в 7 дней',
                 'next_raise_allowed_at': pet.get_next_raise_date().isoformat()
             }, status=status.HTTP_400_BAD_REQUEST)
-        # 🔥 Обновляем last_raised_at ТОЛЬКО при ручном поднятии
         pet.last_raised_at = timezone.now()
         pet.save(update_fields=['last_raised_at'])
         return Response({'last_raised_at': pet.last_raised_at.isoformat()})
@@ -117,7 +221,6 @@ class PetViewSet(viewsets.ModelViewSet):
         pet = self.get_object()
         if pet.user != request.user:
             return Response({'error': 'Только владелец может управлять объявлением'}, status=status.HTTP_403_FORBIDDEN)
-        # 🔥 ВАЖНО: НЕ обновляем last_raised_at при активации!
         pet.is_active = True
         pet.save(update_fields=['is_active'])
         return Response({'is_active': True})
@@ -126,10 +229,8 @@ class PetViewSet(viewsets.ModelViewSet):
     def favorite(self, request, pk=None):
         pet = get_object_or_404(Pet, pk=pk)
         user = request.user
-
         if not user.is_authenticated:
             return Response({'error': 'Authentication required'}, status=status.HTTP_401_UNAUTHORIZED)
-
         if request.method == 'POST':
             favorite, created = Favorite.objects.get_or_create(user=user, pet=pet)
             if created and pet.user != user:
@@ -140,7 +241,6 @@ class PetViewSet(viewsets.ModelViewSet):
                     description=f'Пользователь {user.username} добавил ваше объявление в избранное'
                 )
             return Response({'is_favorite': True}, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
-
         elif request.method == 'DELETE':
             try:
                 favorite = Favorite.objects.get(user=user, pet=pet)
@@ -166,12 +266,10 @@ class PetViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_pet_view_stats(request, pet_id):
-    """Статистика просмотров за последние 7 дней (только для владельца)"""
     try:
         pet = Pet.objects.get(id=pet_id, user=request.user)
     except Pet.DoesNotExist:
         return Response({'error': 'Нет доступа'}, status=status.HTTP_403_FORBIDDEN)
-
     week_ago = timezone.now() - timedelta(days=7)
     stats = ViewHistory.objects.filter(
         pet=pet,
@@ -179,11 +277,9 @@ def get_pet_view_stats(request, pet_id):
     ).extra(
         select={'date': "date(viewed_at)"}
     ).values('date').annotate(count=Count('id')).order_by('date')
-
     all_dates = [(week_ago + timedelta(days=i)).date() for i in range(8)]
     result = {item['date']: item['count'] for item in stats}
     filled = [{'date': d.isoformat(), 'count': result.get(d, 0)} for d in all_dates]
-
     return Response(filled)
 
 
@@ -193,88 +289,31 @@ class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        return Favorite.objects.filter(user=user).select_related('pet').prefetch_related('pet__images') if user.is_authenticated else Favorite.objects.none()
+        return Favorite.objects.filter(user=user).select_related('pet').prefetch_related(
+            'pet__images') if user.is_authenticated else Favorite.objects.none()
 
 
-from rest_framework.permissions import IsAdminUser
-
-
-class AdminPetModerationViewSet(viewsets.ModelViewSet):
-    permission_classes = [IsAdminUser]
-    serializer_class = PetSerializer
-    filter_backends = [DjangoFilterBackend]
-    filterset_class = PetFilter
-    ordering_fields = ['created_at', 'price']
-    ordering = ['-created_at']
-
-    def get_queryset(self):
-        return Pet.objects.all().select_related('user').prefetch_related('images')
-
-    @action(detail=True, methods=['post'])
-    def approve(self, request, pk=None):
-        pet = get_object_or_404(Pet, pk=pk)
-        pet.is_approved = True
-        pet.save(update_fields=['is_approved'])
-        return Response({'is_approved': True})
-
-    @action(detail=True, methods=['post'])
-    def hide(self, request, pk=None):
-        pet = get_object_or_404(Pet, pk=pk)
-        pet.is_hidden = True
-        pet.save(update_fields=['is_hidden'])
-        return Response({'is_hidden': True})
-
-    @action(detail=True, methods=['post'])
-    def show(self, request, pk=None):
-        pet = get_object_or_404(Pet, pk=pk)
-        pet.is_hidden = False
-        pet.save(update_fields=['is_hidden'])
-        return Response({'is_hidden': False})
-
-    @action(detail=True, methods=['post'])
-    def delete(self, request, pk=None):
-        pet = get_object_or_404(Pet, pk=pk)
-        pet.is_active = False
-        pet.save(update_fields=['is_active'])
-        return Response({'is_active': False}, status=status.HTTP_204_NO_CONTENT)
+# 🔥 AdminPetModerationViewSet УДАЛЁН — теперь используется PetViewSet с @action
 
 
 # 🔥 НОВЫЙ: Динамические категории с реальным количеством
 from django.db.models import Count
 
+
 @api_view(['GET'])
 def get_categories(request):
-    """Получить категории с реальным количеством активных объявлений"""
     species_labels = {
-        'dog': 'Собаки',
-        'cat': 'Кошки',
-        'bird': 'Птицы',
-        'rodent': 'Грызуны',
-        'fish': 'Рыбы',
-        'reptile': 'Рептилии',
-        'other': 'Другое',
+        'dog': 'Собаки', 'cat': 'Кошки', 'bird': 'Птицы',
+        'rodent': 'Грызуны', 'fish': 'Рыбы', 'reptile': 'Рептилии', 'other': 'Другое',
     }
-
     species_icons = {
-        'dog': '🐶',
-        'cat': '🐱',
-        'bird': '🐦',
-        'rodent': '🐹',
-        'fish': '🐠',
-        'reptile': '🦎',
-        'other': '🐾',
+        'dog': '🐶', 'cat': '🐱', 'bird': '🐦', 'rodent': '🐹',
+        'fish': '🐠', 'reptile': '🦎', 'other': '🐾',
     }
-
-    # Считаем только активные, одобренные, не скрытые объявления
     counts = Pet.objects.filter(
-        is_active=True,
-        is_approved=True,
-        is_hidden=False
-    ).values('species').annotate(
-        pet_count=Count('id')
-    ).order_by('-pet_count')
-
-    # Преобразуем в список категорий
+        moderation_status='approved',
+        is_active=True
+    ).values('species').annotate(pet_count=Count('id')).order_by('-pet_count')
     categories = []
     for item in counts:
         species = item['species']
@@ -285,17 +324,10 @@ def get_categories(request):
                 "icon": species_icons[species],
                 "pet_count": item['pet_count']
             })
-
-    # Добавляем категории с 0, если их нет в counts
     for species, name in species_labels.items():
         if not any(c['id'] == species for c in categories):
             categories.append({
-                "id": species,
-                "name": name,
-                "icon": species_icons[species],
-                "pet_count": 0
+                "id": species, "name": name, "icon": species_icons[species], "pet_count": 0
             })
-
-    # Сортируем по убыванию количества
     categories.sort(key=lambda x: x['pet_count'], reverse=True)
     return Response(categories)

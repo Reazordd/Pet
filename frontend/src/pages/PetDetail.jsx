@@ -97,25 +97,21 @@ function PetDetail() {
 
   const handleSendMessage = async () => {
     if (!pet) return;
-
     const token = localStorage.getItem('access_token');
     if (!token) {
       toast.error('Войдите в аккаунт, чтобы написать продавцу');
       navigate('/login');
       return;
     }
-
     let sellerId = pet.user?.id || pet.user;
     if (!sellerId) {
       toast.error('Невозможно определить продавца');
       return;
     }
-
     if (currentUserId === sellerId) {
       toast.warn('Нельзя написать самому себе');
       return;
     }
-
     try {
       const res = await api.post('/chat/create/', {
         target_user_id: sellerId,
@@ -125,7 +121,20 @@ function PetDetail() {
       navigate(`/chat/${chatId}`);
     } catch (err) {
       console.error('Ошибка отправки:', err.response?.data?.error || 'Не удалось начать чат');
-      toast.error(errorMsg);
+      toast.error('Не удалось начать чат');
+    }
+  };
+
+  // 🔥 НОВАЯ ФУНКЦИЯ: Пожаловаться
+  const handleReport = () => {
+    const reason = prompt('Укажите причину жалобы (например: "спам", "мошенничество", "неприемлемый контент"):');
+    if (reason && reason.trim()) {
+      api.post(`/pets/${id}/report/`, { reason: reason.trim() })
+        .then(() => toast.success('Жалоба отправлена на модерацию'))
+        .catch(err => {
+          console.error(err);
+          toast.error('Не удалось отправить жалобу');
+        });
     }
   };
 
@@ -183,7 +192,6 @@ function PetDetail() {
   const images = pet.images || [];
   const isOwner = currentUserId && pet.user && (pet.user.id === currentUserId || pet.user === currentUserId);
 
-  // 🔥 Получаем отображаемое имя: имя → порода → "Питомец"
   const getPetName = () => {
     return pet.name || pet.breed || 'Питомец';
   };
@@ -266,7 +274,6 @@ function PetDetail() {
           </div>
 
           <div className="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-200">
-            {/* 🔥 ИСПРАВЛЕНО: имя или порода */}
             <h1 className="text-2xl font-bold mb-1">
               {getPetName()} — {SPECIES_LABELS[pet.species]}
             </h1>
@@ -304,12 +311,21 @@ function PetDetail() {
 
             <div className="mt-6 flex flex-wrap gap-3">
               {pet.offer_type !== 'search' && (
-                <button
-                  onClick={handleSendMessage}
-                  className="flex-1 min-w-[120px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                >
-                  💬 Написать
-                </button>
+                <>
+                  {/* 🔥 КНОПКА "ПОЖАЛОВАТЬСЯ" */}
+                  <button
+                    onClick={handleReport}
+                    className="flex-1 min-w-[120px] px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
+                  >
+                    🚩 Пожаловаться
+                  </button>
+                  <button
+                    onClick={handleSendMessage}
+                    className="flex-1 min-w-[120px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                  >
+                    💬 Написать
+                  </button>
+                </>
               )}
 
               <Link

@@ -3,6 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 
+// 🔥 Вспомогательная функция для преобразования markdown-ссылок в HTML
+const renderMarkdownLink = (text) => {
+  if (!text) return text;
+  return text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$1</a>');
+};
+
 const NotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -42,7 +48,6 @@ const NotificationsPage = () => {
     }
   };
 
-  // 🔥 НОВОЕ: Удаление одного уведомления
   const deleteNotification = async (id) => {
     try {
       await api.delete(`/notifications/delete/${id}/`);
@@ -52,7 +57,6 @@ const NotificationsPage = () => {
     }
   };
 
-  // 🔥 НОВОЕ: Удаление всех уведомлений
   const clearAllNotifications = async () => {
     if (!window.confirm('Удалить все уведомления? Это действие нельзя отменить.')) return;
     try {
@@ -101,7 +105,6 @@ const NotificationsPage = () => {
                 n.is_read ? 'bg-gray-50 border-gray-200' : 'bg-blue-50 border-blue-200'
               }`}
             >
-              {/* 🔥 Кнопка удаления */}
               <button
                 onClick={() => deleteNotification(n.id)}
                 className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
@@ -111,9 +114,11 @@ const NotificationsPage = () => {
               </button>
 
               <div className="pr-6">
-                <p>
-                  <strong>{n.actor?.username || 'Система'}</strong> {n.description || n.get_verb_display()}
-                </p>
+                <p
+                  dangerouslySetInnerHTML={{
+                    __html: `<strong>${n.actor?.username || 'Система'}</strong> ${renderMarkdownLink(n.description || n.get_verb_display())}`
+                  }}
+                />
                 {!n.is_read && (
                   <button
                     onClick={() => markAsRead(n.id)}

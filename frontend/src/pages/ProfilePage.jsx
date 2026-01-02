@@ -60,24 +60,35 @@ function ProfilePage() {
     }
     fetchProfile();
     fetchReviews(user_id);
-  }, [user_id, page, activeTab]);
+    if (activeTab === 'pets') {
+      fetchPets(); // ← ВОЗВРАЩЕНО
+    }
+  }, [user_id, activeTab, page]);
 
   const fetchProfile = async () => {
     try {
       const profileRes = await api.get(`/profile/${user_id}/`);
       setUser(profileRes.data);
-
-      if (activeTab === 'pets') {
-        const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}`);
-        setPets(petsRes.data.results || []);
-        setTotalPages(Math.ceil((petsRes.data.count || 0) / 12));
-      }
     } catch (err) {
       console.error('Ошибка загрузки профиля:', err.response || err);
       setError('Профиль не найден');
       toast.error('Не удалось загрузить профиль');
     } finally {
       setLoading(false);
+    }
+  };
+
+  // 🔥 ИСПРАВЛЕНО: добавлен токен в запрос
+  const fetchPets = async () => {
+    try {
+      const token = localStorage.getItem('access_token');
+      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+
+      const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}&page_size=12`, config);
+      setPets(petsRes.data.results || []);
+      setTotalPages(Math.ceil((petsRes.data.count || 0) / 12));
+    } catch (err) {
+      console.error('Ошибка загрузки объявлений:', err);
     }
   };
 
@@ -181,7 +192,6 @@ function ProfilePage() {
           )}
         </div>
         <div className="seller-info">
-          {/* 🔥 ИСПРАВЛЕНО: имя вместо email */}
           <h1>{getDisplayName(user)}</h1>
 
           <div className="mt-1 flex items-center">
@@ -218,7 +228,6 @@ function ProfilePage() {
 
           {user.location && <p className="seller-location">📍 {user.location}</p>}
 
-          {/* 🔥 ПРАВИЛЬНЫЙ ПАДЕЖ */}
           <p className="text-gray-600">
             На PetMarket с {getRussianMonthYear(user.date_joined)}
           </p>
@@ -335,13 +344,13 @@ function ProfilePage() {
           {totalPages > 1 && (
             <div className="pagination flex justify-center space-x-2 mt-6">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
                 disabled={page === 1}
                 className="px-3 py-1 rounded border hover:bg-gray-100 disabled:opacity-50"
               >
                 &lt;
               </button>
-              {[...Array(totalPages)].map((_, i) => (
+              {[...Array(Math.min(5, totalPages))].map((_, i) => (
                 <button
                   key={i + 1}
                   onClick={() => setPage(i + 1)}
@@ -353,7 +362,7 @@ function ProfilePage() {
                 </button>
               ))}
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
                 disabled={page === totalPages}
                 className="px-3 py-1 rounded border hover:bg-gray-100 disabled:opacity-50"
               >
