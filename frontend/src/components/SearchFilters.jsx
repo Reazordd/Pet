@@ -1,14 +1,15 @@
 // frontend/src/components/SearchFilters.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BreedAutocomplete from './BreedAutocomplete';
 import '../styles/Filters.css';
 
 function SearchFilters({ onFilter, loading }) {
   const [filters, setFilters] = useState({
     search: '',
+    city: '', // ← ДОБАВЛЕНО
     species: 'dog',
     breed: '',
-    age_group: '', // ← ДОБАВЛЕНО
+    age_group: '',
     minPrice: '',
     maxPrice: '',
   });
@@ -24,7 +25,6 @@ function SearchFilters({ onFilter, loading }) {
     { value: 'other', label: 'Другое' },
   ];
 
-  // 🔥 НОВОЕ: варианты возраста
   const ageOptions = [
     { value: '', label: 'Любой возраст' },
     { value: 'puppy', label: 'До 1 года' },
@@ -33,6 +33,20 @@ function SearchFilters({ onFilter, loading }) {
     { value: 'senior', label: 'Старше 7 лет' },
   ];
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const initial = {
+      search: urlParams.get('search') || '',
+      city: urlParams.get('city') || '', // ← ДОБАВЛЕНО
+      species: urlParams.get('species') || 'dog',
+      breed: urlParams.get('breed') || '',
+      age_group: urlParams.get('age_group') || '',
+      minPrice: urlParams.get('min_price') || '',
+      maxPrice: urlParams.get('max_price') || '',
+    };
+    setFilters(initial);
+  }, []);
+
   const handleChange = (name, value) => {
     const updated = { ...filters, [name]: value };
     setFilters(updated);
@@ -40,7 +54,15 @@ function SearchFilters({ onFilter, loading }) {
   };
 
   const clearFilters = () => {
-    const reset = { search: '', species: 'dog', breed: '', age_group: '', minPrice: '', maxPrice: '' };
+    const reset = {
+      search: '',
+      city: '', // ← ДОБАВЛЕНО
+      species: 'dog',
+      breed: '',
+      age_group: '',
+      minPrice: '',
+      maxPrice: ''
+    };
     setFilters(reset);
     onFilter(reset);
   };
@@ -59,9 +81,20 @@ function SearchFilters({ onFilter, loading }) {
           <label>Поиск</label>
           <input
             type="text"
-            placeholder="Введите имя или описание"
+            placeholder="Имя или описание"
             value={filters.search}
             onChange={(e) => handleChange('search', e.target.value)}
+          />
+        </div>
+
+        {/* 🔥 НОВОЕ: Поле "Город" */}
+        <div className="filter-item">
+          <label>Город</label>
+          <input
+            type="text"
+            placeholder="Например: Москва"
+            value={filters.city}
+            onChange={(e) => handleChange('city', e.target.value)}
           />
         </div>
 
@@ -89,7 +122,6 @@ function SearchFilters({ onFilter, loading }) {
           />
         </div>
 
-        {/* 🔥 НОВОЕ: Выпадающий список возраста */}
         <div className="filter-item">
           <label>Возраст</label>
           <select

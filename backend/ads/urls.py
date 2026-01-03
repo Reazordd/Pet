@@ -10,7 +10,10 @@ router.register(r'favorites', views.FavoriteViewSet, basename='favorite')
 urlpatterns = [
     path('categories/', views.get_categories, name='categories'),
     path('pets/<int:pet_id>/stats/', views.get_pet_view_stats, name='pet-stats'),
-    path('breeds/', views.get_breeds, name='breeds'),  # 🔥 НОВЫЙ МАРШРУТ
+    path('breeds/', views.get_breeds, name='breeds'),
+    # 🔥 НОВЫЕ МАРШРУТЫ
+    path('city/<str:city_slug>/', views.get_city_pets, name='city-pets'),
+    path('city/<str:city_slug>/<str:species>/', views.get_city_pets, name='city-pets-species'),
 ]
 
 urlpatterns += router.urls

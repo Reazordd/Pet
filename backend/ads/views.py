@@ -5,6 +5,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import api_view, action, permission_classes
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
@@ -19,6 +20,52 @@ from django.contrib.auth import get_user_model
 User = get_user_model()
 
 BAN_WORDS = ['дешево', 'скидка', 'телефон', 'в лс', 'whatsapp', 'телеграм', 'номер', 'звонить', 'лс']
+
+
+# 🔥 НОВЫЙ: Эндпоинт для городских страниц
+@api_view(['GET'])
+def get_city_pets(request, city_slug, species=None):
+    """Получить объявления по городу и виду"""
+    base_q = Pet.objects.filter(
+        moderation_status='approved',
+        is_active=True,
+        city_slug=city_slug
+    ).prefetch_related('images')
+
+    if species and species in dict(Pet.SPECIES_CHOICES):
+        base_q = base_q.filter(species=species)
+
+    # Применяем фильтры (цена, порода, возраст)
+    filterset = PetFilter(request.GET, queryset=base_q)
+    if not filterset.is_valid():
+        return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
+    pets = filterset.qs
+
+    # Пагинация
+    paginator = PageNumberPagination()
+    paginator.page_size = 12
+    result_page = paginator.paginate_queryset(pets, request)
+    serializer = PetSerializer(result_page, many=True, context={'request': request})
+
+    # SEO-данные
+    city_display = city_slug.replace('-', ' ').title()
+    species_labels = {
+        'dog': 'собаки', 'cat': 'кошки', 'bird': 'птицы',
+        'rodent': 'грызуны', 'fish': 'рыбы', 'reptile': 'рептилии', 'other': 'другие'
+    }
+    species_display = species_labels.get(species, 'все животные') if species else 'все животные'
+
+    seo = {
+        'title': f'Купить или отдать {species_display} в {city_display} — PetMarket',
+        'description': f'Объявления о животных в {city_display}: {species_display}, цены от 0 ₽. Безопасная сделка, проверенные продавцы.',
+        'city': city_display,
+        'species': species_display,
+    }
+
+    return paginator.get_paginated_response({
+        'pets': serializer.data,
+        'seo': seo,
+    })
 
 
 class PetViewSet(viewsets.ModelViewSet):

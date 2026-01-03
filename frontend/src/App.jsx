@@ -20,11 +20,12 @@ import ProfilePage from './pages/ProfilePage';
 import Profile from './pages/Profile';
 import Forum from './pages/Forum';
 import AdminAds from './pages/AdminAds';
+import CityPage from './pages/CityPage'; // 🔥 ИМПОРТНОВОЙ СТРАНИЦЫ
 
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
-import Reviews from './pages/Reviews'; // ← ИМПОРТ СТРАНИЦЫ ОТЗЫВОВ
+import Reviews from './pages/Reviews';
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -38,6 +39,10 @@ function App() {
           <main className="content">
             <Routes>
               <Route path="/" element={<Home />} />
+              {/* 🔥 НОВЫЕ МАРШРУТЫ ДОЛЖНЫ БЫТЬ В НАЧАЛЕ */}
+              <Route path="/:citySlug" element={<CityPage />} />
+              <Route path="/:citySlug/:species" element={<CityPage />} />
+
               <Route path="/pets" element={<PetsList />} />
               <Route path="/pets/:id" element={<PetDetail />} />
               <Route path="/pets/:id/edit" element={
@@ -82,7 +87,6 @@ function App() {
                   <ProfilePage />
                 </ProtectedRoute>
               } />
-              {/* 🔥 НОВЫЙ МАРШРУТ ДЛЯ ОТЗЫВОВ */}
               <Route path="/reviews/user/:id" element={
                 <ProtectedRoute>
                   <Reviews />

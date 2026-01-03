@@ -2,6 +2,8 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from django.utils.text import slugify
+from unidecode import unidecode
 from datetime import timedelta
 
 User = settings.AUTH_USER_MODEL
@@ -37,10 +39,10 @@ class Pet(models.Model):
     price = models.DecimalField('Цена (₽)', max_digits=10, decimal_places=2, null=True, blank=True)
     offer_type = models.CharField('Тип объявления', max_length=10, choices=OFFER_TYPE_CHOICES, default='sale')
     city = models.CharField('Город', max_length=100)
+    city_slug = models.SlugField('Слаг города', max_length=100, blank=True)
     description = models.TextField('Описание', blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     is_active = models.BooleanField(default=True)
-    # УДАЛЕНО: is_approved, is_hidden
     moderation_status = models.CharField(
         max_length=20,
         choices=MODERATION_STATUS_CHOICES,
@@ -60,6 +62,13 @@ class Pet(models.Model):
     def save(self, *args, **kwargs):
         if self.offer_type != 'sale':
             self.price = None
+        if self.city:
+            # 🔥 ВСЕГДА пересчитываем city_slug на основе текущего city
+            city_ascii = unidecode(self.city.strip())
+            new_slug = slugify(city_ascii.lower())
+            # Обновляем только если изменился
+            if self.city_slug != new_slug:
+                self.city_slug = new_slug
         super().save(*args, **kwargs)
 
     def can_be_raised(self):

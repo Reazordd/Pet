@@ -1,7 +1,9 @@
 # backend/ads/filters.py
 import django_filters
 from datetime import date
+from django.db.models import Q
 from .models import Pet
+
 
 class PetFilter(django_filters.FilterSet):
     species = django_filters.ChoiceFilter(choices=Pet.SPECIES_CHOICES)
@@ -11,7 +13,7 @@ class PetFilter(django_filters.FilterSet):
     max_price = django_filters.NumberFilter(field_name='price', lookup_expr='lte')
     breed = django_filters.CharFilter(lookup_expr='icontains')
 
-    # 🔥 НОВЫЙ: фильтр по возрасту
+    # 🔥 Фильтр по возрасту
     age_group = django_filters.ChoiceFilter(
         method='filter_by_age_group',
         choices=[
@@ -21,6 +23,9 @@ class PetFilter(django_filters.FilterSet):
             ('senior', 'Старше 7 лет'),
         ]
     )
+
+    # 🔥 Глобальный поиск по имени, описанию и породе
+    search = django_filters.CharFilter(method='filter_by_search')
 
     def filter_by_age_group(self, queryset, name, value):
         today = date.today()
@@ -40,6 +45,15 @@ class PetFilter(django_filters.FilterSet):
             return queryset.filter(birth_date__lte=today.replace(year=today.year - 7))
         return queryset
 
+    def filter_by_search(self, queryset, name, value):
+        if value:
+            return queryset.filter(
+                Q(name__icontains=value) |
+                Q(description__icontains=value) |
+                Q(breed__icontains=value)
+            )
+        return queryset
+
     class Meta:
         model = Pet
-        fields = ['species', 'offer_type', 'city', 'min_price', 'max_price', 'breed', 'age_group']
+        fields = ['species', 'offer_type', 'city', 'min_price', 'max_price', 'breed', 'age_group', 'search']

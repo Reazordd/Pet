@@ -28,18 +28,17 @@ function Home() {
       const loadingType = pageNum === 1 ? setLoading : setFilterLoading;
       loadingType(true);
 
-      // 🔥 Преобразуем camelCase → snake_case для цены
-      const { minPrice, maxPrice, ...restFilters } = currentFilters;
+      // 🔥 Преобразуем camelCase → snake_case для цены и выносим city
+      const { minPrice, maxPrice, city, ...restFilters } = currentFilters;
       const params = new URLSearchParams({
         page: pageNum,
         page_size: 12,
       });
 
-      // Добавляем цену в snake_case
       if (minPrice) params.append('min_price', minPrice);
       if (maxPrice) params.append('max_price', maxPrice);
+      if (city) params.append('city', city); // ← ДОБАВЛЕНО
 
-      // Добавляем остальные фильтры
       Object.keys(restFilters).forEach(key => {
         if (restFilters[key]) params.append(key, restFilters[key]);
       });
