@@ -99,17 +99,17 @@ class PetViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
+        # 🔥 Единственное место для логирования просмотра
+        if request.user.is_authenticated and request.user != instance.user:
+            ViewHistory.objects.get_or_create(user=request.user, pet=instance)
+
         # Публичный доступ: только одобренные и активные
         if instance.moderation_status == 'approved' and instance.is_active:
-            if request.user.is_authenticated and request.user != instance.user:
-                ViewHistory.objects.get_or_create(user=request.user, pet=instance)
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 
         # Приватный доступ: владелец и модератор
         if request.user == instance.user or request.user.is_staff:
-            if request.user.is_authenticated and request.user != instance.user:
-                ViewHistory.objects.get_or_create(user=request.user, pet=instance)
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 

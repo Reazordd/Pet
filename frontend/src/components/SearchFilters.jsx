@@ -1,13 +1,14 @@
 // frontend/src/components/SearchFilters.jsx
 import React, { useState } from 'react';
-import BreedAutocomplete from './BreedAutocomplete'; // 🔥 ИМПОРТ НОВОГО КОМПОНЕНТА
+import BreedAutocomplete from './BreedAutocomplete';
 import '../styles/Filters.css';
 
 function SearchFilters({ onFilter, loading }) {
   const [filters, setFilters] = useState({
     search: '',
-    species: 'dog', // ← по умолчанию "Собаки"
+    species: 'dog',
     breed: '',
+    age_group: '', // ← ДОБАВЛЕНО
     minPrice: '',
     maxPrice: '',
   });
@@ -23,6 +24,15 @@ function SearchFilters({ onFilter, loading }) {
     { value: 'other', label: 'Другое' },
   ];
 
+  // 🔥 НОВОЕ: варианты возраста
+  const ageOptions = [
+    { value: '', label: 'Любой возраст' },
+    { value: 'puppy', label: 'До 1 года' },
+    { value: 'young', label: '1–3 года' },
+    { value: 'adult', label: '3–7 лет' },
+    { value: 'senior', label: 'Старше 7 лет' },
+  ];
+
   const handleChange = (name, value) => {
     const updated = { ...filters, [name]: value };
     setFilters(updated);
@@ -30,7 +40,7 @@ function SearchFilters({ onFilter, loading }) {
   };
 
   const clearFilters = () => {
-    const reset = { search: '', species: 'dog', breed: '', minPrice: '', maxPrice: '' };
+    const reset = { search: '', species: 'dog', breed: '', age_group: '', minPrice: '', maxPrice: '' };
     setFilters(reset);
     onFilter(reset);
   };
@@ -69,7 +79,6 @@ function SearchFilters({ onFilter, loading }) {
           </select>
         </div>
 
-        {/* 🔥 НОВОЕ: Поле автокомплита по породам */}
         <div className="filter-item">
           <label>Порода</label>
           <BreedAutocomplete
@@ -78,6 +87,21 @@ function SearchFilters({ onFilter, loading }) {
             onChange={(breed) => handleChange('breed', breed)}
             placeholder="Порода (например: Лабрадор)"
           />
+        </div>
+
+        {/* 🔥 НОВОЕ: Выпадающий список возраста */}
+        <div className="filter-item">
+          <label>Возраст</label>
+          <select
+            value={filters.age_group}
+            onChange={(e) => handleChange('age_group', e.target.value)}
+          >
+            {ageOptions.map((opt) => (
+              <option key={opt.value} value={opt.value}>
+                {opt.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         <div className="filter-item">

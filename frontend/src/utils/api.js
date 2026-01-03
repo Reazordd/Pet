@@ -5,17 +5,31 @@ const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
 const api = axios.create({
   baseURL: BASE,
-  // 🔥 УДАЛЕНО: withCredentials: true — не совместимо с JWT в заголовке
   headers: {
     "Accept": "application/json",
   },
 });
 
+// 🔥 ИСПРАВЛЕНО: убрали /profile/ — все профильные запросы требуют токен
+const PUBLIC_ENDPOINTS = [
+  '/register/',
+  '/login/',
+  '/categories/',
+  '/breeds/',
+];
+
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("access_token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+  const isPublic = PUBLIC_ENDPOINTS.some(endpoint =>
+    config.url.startsWith(endpoint)
+  );
+
+  if (!isPublic) {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
   }
+
   return config;
 });
 

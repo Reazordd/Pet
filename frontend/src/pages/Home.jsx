@@ -28,14 +28,20 @@ function Home() {
       const loadingType = pageNum === 1 ? setLoading : setFilterLoading;
       loadingType(true);
 
+      // 🔥 Преобразуем camelCase → snake_case для цены
+      const { minPrice, maxPrice, ...restFilters } = currentFilters;
       const params = new URLSearchParams({
         page: pageNum,
         page_size: 12,
-        ...currentFilters,
       });
 
-      Object.keys(currentFilters).forEach((key) => {
-        if (!currentFilters[key]) params.delete(key);
+      // Добавляем цену в snake_case
+      if (minPrice) params.append('min_price', minPrice);
+      if (maxPrice) params.append('max_price', maxPrice);
+
+      // Добавляем остальные фильтры
+      Object.keys(restFilters).forEach(key => {
+        if (restFilters[key]) params.append(key, restFilters[key]);
       });
 
       const response = await api.get(`/pets/?${params}`);
@@ -59,7 +65,6 @@ function Home() {
     } catch (err) {
       console.error('Ошибка при загрузке категорий:', err);
       toast.error('Ошибка при загрузке категорий');
-      // Без fallback — оставим пустой массив
       setCategories([]);
     }
   };
@@ -99,7 +104,7 @@ function Home() {
           {categories.slice(0, 6).map((cat) => (
             <Link
               key={cat.id}
-              to={`/pets?species=${cat.id}`}  // ← ИСПРАВЛЕНО: species вместо category
+              to={`/pets?species=${cat.id}`}
               className="category-card"
             >
               <div className="category-icon">{cat.icon || '🐾'}</div>

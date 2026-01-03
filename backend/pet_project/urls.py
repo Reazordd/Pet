@@ -8,19 +8,19 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 urlpatterns = [
     path('admin/', admin.site.urls),
 
-    # 🔥 Сначала токены
+    # Токены
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 
-    # 🔥 Потом — чат с префиксом /chat/
-    path('api/chat/', include('chat.urls')),  # ✅ Вот так
+    # Чат
+    path('api/chat/', include('chat.urls')),
 
-    # Остальные — без chat
+    # Основные модули (важен порядок!)
     path('api/', include('users.urls')),
     path('api/', include('ads.urls')),
     path('api/', include('forum.urls')),
     path('api/notifications/', include('notifications.urls')),
-    path('api/', include('history.urls')),
+    path('api/history/', include('history.urls')),  # ✅ Правильно: /api/history/
     path('api/reviews/', include('reviews.urls')),
 ]
 
