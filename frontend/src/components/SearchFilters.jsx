@@ -6,8 +6,8 @@ import '../styles/Filters.css';
 function SearchFilters({ onFilter, loading }) {
   const [filters, setFilters] = useState({
     search: '',
-    city: '', // ← ДОБАВЛЕНО
-    species: 'dog',
+    city: '',
+    species: '', // ← по умолчанию "Все животные" (пустая строка)
     breed: '',
     age_group: '',
     minPrice: '',
@@ -37,8 +37,8 @@ function SearchFilters({ onFilter, loading }) {
     const urlParams = new URLSearchParams(window.location.search);
     const initial = {
       search: urlParams.get('search') || '',
-      city: urlParams.get('city') || '', // ← ДОБАВЛЕНО
-      species: urlParams.get('species') || 'dog',
+      city: urlParams.get('city') || '',
+      species: urlParams.get('species') || '',
       breed: urlParams.get('breed') || '',
       age_group: urlParams.get('age_group') || '',
       minPrice: urlParams.get('min_price') || '',
@@ -49,6 +49,12 @@ function SearchFilters({ onFilter, loading }) {
 
   const handleChange = (name, value) => {
     const updated = { ...filters, [name]: value };
+
+    // 🔥 Сбрасываем породу при смене вида
+    if (name === 'species') {
+      updated.breed = '';
+    }
+
     setFilters(updated);
     onFilter(updated);
   };
@@ -56,8 +62,8 @@ function SearchFilters({ onFilter, loading }) {
   const clearFilters = () => {
     const reset = {
       search: '',
-      city: '', // ← ДОБАВЛЕНО
-      species: 'dog',
+      city: '',
+      species: '',
       breed: '',
       age_group: '',
       minPrice: '',
@@ -87,7 +93,6 @@ function SearchFilters({ onFilter, loading }) {
           />
         </div>
 
-        {/* 🔥 НОВОЕ: Поле "Город" */}
         <div className="filter-item">
           <label>Город</label>
           <input
@@ -115,10 +120,10 @@ function SearchFilters({ onFilter, loading }) {
         <div className="filter-item">
           <label>Порода</label>
           <BreedAutocomplete
-            species={filters.species || 'dog'}
+            species={filters.species || ''} // ← Передаём пустую строку
             value={filters.breed}
             onChange={(breed) => handleChange('breed', breed)}
-            placeholder="Порода (например: Лабрадор)"
+            placeholder="Сначала выберите тип животного"
           />
         </div>
 

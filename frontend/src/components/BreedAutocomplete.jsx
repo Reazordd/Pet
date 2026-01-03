@@ -9,7 +9,6 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
   const [isLoading, setIsLoading] = useState(false);
   const wrapperRef = useRef(null);
 
-  // Закрываем выпадающий список при клике вне компонента
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
@@ -20,7 +19,6 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Загружаем породы при изменении inputValue или species
   useEffect(() => {
     if (!species || !isOpen) return;
 
@@ -60,7 +58,12 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
   };
 
   const handleFocus = () => {
-    if (species && inputValue.trim()) {
+    // 🔥 Не открываем автокомплит, если не выбран вид
+    if (!species || species === '') {
+      setIsOpen(false);
+      return;
+    }
+    if (inputValue.trim()) {
       setIsOpen(true);
     }
   };
@@ -75,6 +78,7 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
         placeholder={placeholder}
         className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         autoComplete="off"
+        disabled={!species || species === ''} // ← Делаем неактивным
       />
       {isOpen && (
         <ul className="absolute z-10 w-full bg-white border rounded shadow-lg mt-1 max-h-60 overflow-auto">

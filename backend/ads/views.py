@@ -380,14 +380,14 @@ def get_categories(request):
     return Response(categories)
 
 
-# 🔥 НОВЫЙ: Эндпоинт для автокомплита пород
+# 🔥 ИСПРАВЛЕННЫЙ: Эндпоинт для автокомплита пород
 @api_view(['GET'])
 def get_breeds(request):
     """Возвращает список пород с автокомплитом"""
     query = request.query_params.get('q', '').strip().lower()
-    species = request.query_params.get('species', 'dog')  # по умолчанию — собаки
+    species = request.query_params.get('species', '')  # ← УБРАНО 'dog' по умолчанию
 
-    # Список популярных пород (можно вынести в БД позже)
+    # Список популярных пород
     popular_breeds = {
         'dog': [
             'Лабрадор', 'Немецкая овчарка', 'Такса', 'Хаски', 'Бульдог', 'Пудель',
@@ -417,8 +417,11 @@ def get_breeds(request):
         ],
     }
 
-    breeds = popular_breeds.get(species, popular_breeds['dog'])
+    # 🔥 Если вид не выбран — возвращаем пустой список
+    if not species or species not in popular_breeds:
+        return Response([])
 
+    breeds = popular_breeds[species]
     if query:
         breeds = [b for b in breeds if query in b.lower()]
 
