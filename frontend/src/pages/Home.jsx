@@ -18,17 +18,11 @@ function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  useEffect(() => {
-    fetchData();
-    fetchCategories();
-  }, []);
-
-  const fetchData = async (pageNum = 1, currentFilters = {}) => {
+  const fetchData = useCallback(async (pageNum = 1, currentFilters = {}) => {
     try {
       const loadingType = pageNum === 1 ? setLoading : setFilterLoading;
       loadingType(true);
 
-      // 🔥 Преобразуем camelCase → snake_case для цены и выносим city
       const { minPrice, maxPrice, city, ...restFilters } = currentFilters;
       const params = new URLSearchParams({
         page: pageNum,
@@ -37,7 +31,7 @@ function Home() {
 
       if (minPrice) params.append('min_price', minPrice);
       if (maxPrice) params.append('max_price', maxPrice);
-      if (city) params.append('city', city); // ← ДОБАВЛЕНО
+      if (city) params.append('city', city);
 
       Object.keys(restFilters).forEach(key => {
         if (restFilters[key]) params.append(key, restFilters[key]);
@@ -46,18 +40,19 @@ function Home() {
       const response = await api.get(`/pets/?${params}`);
       const newPets = response.data.results || response.data;
 
-      setPets(pageNum === 1 ? newPets : [...pets, ...newPets]);
+      setPets(prev => pageNum === 1 ? newPets : [...prev, ...newPets]);
       setHasMore(newPets.length === 12);
       setPage(pageNum);
-    } catch {
+    } catch (err) {
+      console.error('Ошибка загрузки объявлений:', err);
       toast.error('Ошибка при загрузке объявлений');
     } finally {
       setLoading(false);
       setFilterLoading(false);
     }
-  };
+  }, []);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const response = await api.get('/categories/');
       setCategories(response.data);
@@ -66,15 +61,22 @@ function Home() {
       toast.error('Ошибка при загрузке категорий');
       setCategories([]);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    fetchCategories();
+  }, [fetchData, fetchCategories]);
 
   const handleFilter = useCallback((newFilters) => {
     setFilters(newFilters);
     fetchData(1, newFilters);
-  }, []);
+  }, [fetchData]);
 
   const loadMore = () => {
-    if (!filterLoading && hasMore) fetchData(page + 1, filters);
+    if (!filterLoading && hasMore) {
+      fetchData(page + 1, filters);
+    }
   };
 
   return (
@@ -86,7 +88,7 @@ function Home() {
           <p>Тысячи объявлений о животных по всей России. Удобный поиск, честные продавцы, безопасные сделки.</p>
           <div className="hero-buttons">
             <Link to="/create" className="btn btn-primary">Разместить объявление</Link>
-            <Link to="/pets" className="btn btn-outline">Посмотреть все</Link>
+            <Link to="/" className="btn btn-outline">Посмотреть все</Link>
           </div>
         </div>
       </section>
@@ -103,7 +105,7 @@ function Home() {
           {categories.slice(0, 6).map((cat) => (
             <Link
               key={cat.id}
-              to={`/pets?species=${cat.id}`}
+              to={`/?species=${cat.id}`}
               className="category-card"
             >
               <div className="category-icon">{cat.icon || '🐾'}</div>

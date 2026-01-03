@@ -4,7 +4,6 @@ import { Link, useLocation } from "react-router-dom";
 import { checkToken, logout } from "../utils/auth";
 import { useTheme } from "../context/ThemeContext";
 import api from "../utils/api";
-import { toast } from "react-toastify";
 import "../styles/Navbar.css";
 
 function Navbar() {
@@ -34,7 +33,7 @@ function Navbar() {
     };
 
     fetchUnreadCount();
-    const interval = setInterval(fetchUnreadCount, 10000); // каждые 10 сек
+    const interval = setInterval(fetchUnreadCount, 10000);
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
@@ -46,11 +45,9 @@ function Navbar() {
         </Link>
 
         <nav className="nav-links">
+          {/* 🔥 УДАЛЕНО: дублирующая ссылка "Объявления" */}
           <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
             Главная
-          </Link>
-          <Link className={`nav-link ${location.pathname.startsWith("/pets") ? "active" : ""}`} to="/pets">
-            Объявления
           </Link>
           <Link className={`nav-link ${location.pathname === "/forum" ? "active" : ""}`} to="/forum">
             Форум

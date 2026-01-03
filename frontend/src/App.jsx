@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom'; // ← ДОБАВЛЕН Navigate
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -9,7 +9,6 @@ import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './components/NotFound';
 
 import Home from './pages/Home';
-import PetsList from './pages/PetsList';
 import PetDetail from './pages/PetDetail';
 import CreatePet from './pages/CreatePet';
 import EditPet from './pages/EditPet';
@@ -20,7 +19,7 @@ import ProfilePage from './pages/ProfilePage';
 import Profile from './pages/Profile';
 import Forum from './pages/Forum';
 import AdminAds from './pages/AdminAds';
-import CityPage from './pages/CityPage'; // 🔥 ИМПОРТНОВОЙ СТРАНИЦЫ
+import CityPage from './pages/CityPage';
 
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
@@ -39,17 +38,23 @@ function App() {
           <main className="content">
             <Routes>
               <Route path="/" element={<Home />} />
-              {/* 🔥 НОВЫЕ МАРШРУТЫ ДОЛЖНЫ БЫТЬ В НАЧАЛЕ */}
+
+              {/* 🔥 РЕДИРЕКТ: /pets → / */}
+              <Route path="/pets" element={<Navigate to="/" replace />} />
+
+              {/* SEO-страницы */}
               <Route path="/:citySlug" element={<CityPage />} />
               <Route path="/:citySlug/:species" element={<CityPage />} />
 
-              <Route path="/pets" element={<PetsList />} />
+              {/* Детали объявления */}
               <Route path="/pets/:id" element={<PetDetail />} />
               <Route path="/pets/:id/edit" element={
                 <ProtectedRoute>
                   <EditPet />
                 </ProtectedRoute>
               } />
+
+              {/* Остальные страницы */}
               <Route path="/create" element={
                 <ProtectedRoute>
                   <CreatePet />
