@@ -106,14 +106,14 @@ TEMPLATES = [
 # Используем WSGI (без Channels)
 WSGI_APPLICATION = "pet_project.wsgi.application"
 
-# База данных — твои имена переменных + пароль 5v1234567
+# База данных
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": env("POSTGRES_DB", "petdb"),
         "USER": env("POSTGRES_USER", "petuser"),
-        "PASSWORD": env("POSTGRES_PASSWORD", "5v1234567"),  # ← ПРАВИЛЬНЫЙ ПАРОЛЬ
-        "HOST": env("DB_HOST", "localhost"),  # ← localhost, не "db"
+        "PASSWORD": env("POSTGRES_PASSWORD", "5v1234567"),
+        "HOST": env("DB_HOST", "localhost"),
         "PORT": env("DB_PORT", "5432"),
     }
 }
@@ -141,7 +141,6 @@ REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    # 🔥 ИСПРАВЛЕНО: разрешаем доступ к открытым эндпоинтам
     "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 12,
@@ -166,9 +165,15 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
-EMAIL_BACKEND = env("EMAIL_BACKEND", "django.core.mail.backends.console.EmailBackend")
-DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", "webmaster@localhost")
-FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
+# 🔥 Настройки почты (обновлено для Яндекса)
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.yandex.ru"
+EMAIL_PORT = 465
+EMAIL_USE_SSL = True
+EMAIL_HOST_USER = "reazordd@yandex.ru"
+EMAIL_HOST_PASSWORD = "bpelzaibnborpvxa"  # ← твой пароль приложения
+DEFAULT_FROM_EMAIL = "reazordd@yandex.ru"
+FRONTEND_URL = "http://localhost:3000"
 
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
@@ -184,7 +189,7 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-# Celery (оставлено, но можно игнорировать)
+# Celery
 REDIS_HOST = env("REDIS_HOST", "localhost")
 REDIS_PORT = int(env("REDIS_PORT", 6379))
 CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
