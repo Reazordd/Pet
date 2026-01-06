@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom'; // ← ДОБАВЛЕН Navigate
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
@@ -20,6 +20,11 @@ import Profile from './pages/Profile';
 import Forum from './pages/Forum';
 import AdminAds from './pages/AdminAds';
 import CityPage from './pages/CityPage';
+
+// 🔥 НОВЫЕ СТРАНИЦЫ
+import ActivateAccount from './pages/ActivateAccount';
+import PasswordResetRequest from './pages/PasswordResetRequest';
+import PasswordResetConfirm from './pages/PasswordResetConfirm';
 
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
@@ -41,6 +46,11 @@ function App() {
 
               {/* 🔥 РЕДИРЕКТ: /pets → / */}
               <Route path="/pets" element={<Navigate to="/" replace />} />
+
+              {/* 🔥 НОВЫЕ МАРШРУТЫ */}
+              <Route path="/activate/:uidb64/:token" element={<ActivateAccount />} />
+              <Route path="/password-reset" element={<PasswordResetRequest />} />
+              <Route path="/reset-password/:uidb64/:token" element={<PasswordResetConfirm />} />
 
               {/* SEO-страницы */}
               <Route path="/:citySlug" element={<CityPage />} />

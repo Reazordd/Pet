@@ -1,19 +1,22 @@
 // frontend/src/pages/PasswordResetRequest.jsx
-
 import React, { useState } from "react";
-import axios from "axios";
+import { Link, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import api from "../utils/api"; // ← ИСПОЛЬЗУЕМ ТВОЙ api.js
 
 function PasswordResetRequest() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post("/api/password-reset/", { email });
+      // 🔥 ПРАВИЛЬНЫЙ ЭНДПОИНТ
+      await api.post('/auth/password/reset/', { email });
       toast.success("Ссылка для сброса отправлена на почту!");
+      navigate('/login');
     } catch {
       toast.error("Ошибка: проверьте email.");
     } finally {
@@ -22,29 +25,34 @@ function PasswordResetRequest() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md w-full max-w-md"
-      >
-        <h2 className="text-xl font-bold mb-4 text-center text-gray-800 dark:text-gray-100">
-          Восстановление пароля
-        </h2>
-        <input
-          type="email"
-          placeholder="Введите ваш email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="w-full mb-4 p-3 border rounded-lg dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full bg-blue-500 hover:bg-blue-600 text-white p-3 rounded-lg font-medium"
-        >
-          {loading ? "Отправка..." : "Отправить ссылку"}
-        </button>
-      </form>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Восстановление пароля</h2>
+        <form onSubmit={handleSubmit} className="auth-form">
+          <div className="form-group">
+            <input
+              type="email"
+              placeholder="Введите ваш email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 mb-4 border rounded-lg"
+              required
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn-primary btn-full"
+          >
+            {loading ? "Отправка..." : "Отправить ссылку"}
+          </button>
+        </form>
+        <div className="auth-links">
+          <Link to="/login" className="auth-link">
+            Вернуться ко входу
+          </Link>
+        </div>
+      </div>
     </div>
   );
 }

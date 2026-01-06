@@ -15,13 +15,15 @@ urlpatterns = [
     # Чат
     path('api/chat/', include('chat.urls')),
 
-    # Основные модули (важен порядок!)
-    path('api/', include('users.urls')),
+    # Основные модули
     path('api/', include('ads.urls')),
     path('api/', include('forum.urls')),
     path('api/notifications/', include('notifications.urls')),
-    path('api/history/', include('history.urls')),  # ✅ Правильно: /api/history/
+    path('api/history/', include('history.urls')),
     path('api/reviews/', include('reviews.urls')),
+
+    # 🔥 ИСПРАВЛЕНО: пользователи теперь под /api/auth/
+    path('api/auth/', include('users.urls')),
 ]
 
 if settings.DEBUG:

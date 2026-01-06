@@ -26,7 +26,6 @@ function Login() {
         setLoading(true);
 
         try {
-            // ✅ Правильный путь: /api/token/ (baseURL уже включает /api)
             const response = await api.post('/token/', credentials);
             localStorage.setItem('access_token', response.data.access);
             localStorage.setItem('refresh_token', response.data.refresh);
@@ -91,11 +90,16 @@ function Login() {
                     </button>
                 </form>
 
-                <div className="auth-links">
+                <div className="auth-links mt-4 text-center">
                     <p>
                         Нет аккаунта?{' '}
                         <Link to="/register" className="auth-link">
                             Зарегистрироваться
+                        </Link>
+                    </p>
+                    <p className="mt-2">
+                        <Link to="/password-reset" className="text-blue-600 hover:underline text-sm">
+                            Забыли пароль?
                         </Link>
                     </p>
                 </div>

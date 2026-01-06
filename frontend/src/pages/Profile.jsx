@@ -26,11 +26,10 @@ function Profile() {
     new_password2: "",
   });
 
-  // 🔥 Состояния для отзывов
   const [receivedReviews, setReceivedReviews] = useState([]);
   const [givenReviews, setGivenReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(false);
-  const [activeReviewTab, setActiveReviewTab] = useState('received'); // 'received' или 'given'
+  const [activeReviewTab, setActiveReviewTab] = useState('received');
 
   useEffect(() => {
     if (!checkToken()) return logout();
@@ -41,7 +40,7 @@ function Profile() {
 
   const fetchProfile = async () => {
     try {
-      const res = await api.get("/profile/me/");
+      const res = await api.get("/auth/profile/me/");
       setUserData(res.data);
     } catch (err) {
       console.error(err);
@@ -51,7 +50,7 @@ function Profile() {
 
   const fetchStats = async () => {
     try {
-      const res = await api.get("/profile/stats/");
+      const res = await api.get("/auth/profile/stats/");
       setStats(res.data);
     } catch (err) {
       console.error("Ошибка при загрузке статистики:", err);
@@ -70,7 +69,6 @@ function Profile() {
     }
   };
 
-  // 🔥 Загрузка отзывов
   const fetchReviews = async () => {
     if (!userData.id) return;
     setReviewsLoading(true);
@@ -127,7 +125,7 @@ function Profile() {
         }
       });
 
-      const res = await api.put("/profile/me/update/", data, {
+      const res = await api.put("/auth/profile/me/update/", data, {
         headers: { "Content-Type": "multipart/form-data" }
       });
       setUserData(res.data);
@@ -144,21 +142,30 @@ function Profile() {
 
   const handlePasswordChange = async (e) => {
     e.preventDefault();
+
+    if (passwords.new_password.length < 6) {
+      toast.error("Пароль должен содержать минимум 6 символов");
+      return;
+    }
+
     if (passwords.new_password !== passwords.new_password2) {
       toast.error("Пароли не совпадают");
       return;
     }
+
     try {
-      await api.post("/password-change/", {
+      await api.post("/auth/password/change/", {
         old_password: passwords.old_password,
         new_password: passwords.new_password,
-        new_password_confirm: passwords.new_password2
       });
       toast.success("Пароль успешно изменён!");
       setPasswords({ old_password: "", new_password: "", new_password2: "" });
     } catch (err) {
-      console.error(err);
-      toast.error("Ошибка при смене пароля");
+      if (err.response?.data?.error) {
+        toast.error(err.response.data.error);
+      } else {
+        toast.error("Ошибка при смене пароля");
+      }
     }
   };
 
@@ -201,7 +208,6 @@ function Profile() {
             <div className="text-center md:text-left">
               <h1 className="text-2xl font-bold text-gray-900">{userData.username}</h1>
 
-              {/* 🔥 Блок рейтинга: 5.0 ★★★★★ 1 отзыв */}
               {reviewCount > 0 && (
                 <div className="mt-2 flex items-center">
                   <span className="text-lg font-bold text-gray-900">5.0</span>
@@ -310,7 +316,6 @@ function Profile() {
           {activeTab === "messages" && (
             <div>
               <h2 className="text-xl font-semibold mb-4">Сообщения</h2>
-              {/* 🔥 Сразу встраиваем список чатов */}
               <MessagesList />
             </div>
           )}
@@ -319,7 +324,6 @@ function Profile() {
             <div>
               <h2 className="text-xl font-semibold mb-4">Отзывы</h2>
 
-              {/* Переключатель между полученными и оставленными */}
               <div className="flex border-b mb-4">
                 <button
                   className={`px-4 py-2 font-medium ${
@@ -552,6 +556,8 @@ function Profile() {
                   Изменить пароль
                 </button>
               </form>
+
+              {/* 🔥 УДАЛЕНА ССЫЛКА НА СБРОС ИЗ ПРОФИЛЯ */}
             </div>
           )}
         </div>

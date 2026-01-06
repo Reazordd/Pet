@@ -47,22 +47,24 @@ function Register() {
         setLoading(true);
 
         try {
-            // 🔥 Исправлено: теперь будет POST /api/register/
-            const response = await api.post('/register/', formData);
+            // 🔥 ИСПРАВЛЕНО: правильный путь /auth/register/
+            const response = await api.post('/auth/register/', formData);
 
-            // После регистрации — получаем токены которые вернул сервер
-            const { access, refresh } = response.data;
-            if (access && refresh) {
-                localStorage.setItem('access_token', access);
-                localStorage.setItem('refresh_token', refresh);
+            if (response.data.message === "Проверьте email для подтверждения") {
+                toast.info('Регистрация прошла успешно! Проверьте email для подтверждения.');
+                navigate('/login');
+            } else {
+                const { access, refresh } = response.data;
+                if (access && refresh) {
+                    localStorage.setItem('access_token', access);
+                    localStorage.setItem('refresh_token', refresh);
+                }
+                toast.success('Регистрация прошла успешно!');
+                navigate('/');
             }
-
-            toast.success('Регистрация прошла успешно!');
-            navigate('/');
         } catch (error) {
             if (error.response?.data) {
                 const data = error.response.data;
-                // Может быть объект полей или список ошибок
                 if (typeof data === 'object') {
                     Object.entries(data).forEach(([key, val]) => {
                         if (Array.isArray(val)) val.forEach(v => toast.error(`${key}: ${v}`));
