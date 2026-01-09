@@ -17,7 +17,8 @@ import Register from './pages/Register';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
 import Profile from './pages/Profile';
-import Forum from './pages/Forum';
+// 🔥 ФОРУМ ВРЕМЕННО УДАЛЁН
+// import Forum from './pages/Forum';
 import AdminAds from './pages/AdminAds';
 import CityPage from './pages/CityPage';
 
@@ -107,7 +108,8 @@ function App() {
                   <Reviews />
                 </ProtectedRoute>
               } />
-              <Route path="/forum" element={<Forum />} />
+              {/* 🔥 ФОРУМ ВРЕМЕННО УДАЛЁН */}
+              {/* <Route path="/forum" element={<Forum />} /> */}
               <Route path="/admin/ads" element={
                 <ProtectedRoute>
                   <AdminAds />

@@ -17,9 +17,8 @@ function Profile() {
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState("ads");
   const [stats, setStats] = useState({});
-  const [myAds, setMyAds] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
+
+  // УДАЛЕНО: myAds, page, totalPages — не нужны!
   const [passwords, setPasswords] = useState({
     old_password: "",
     new_password: "",
@@ -35,7 +34,7 @@ function Profile() {
     if (!checkToken()) return logout();
     fetchProfile();
     fetchStats();
-    fetchMyAds();
+    // УДАЛЕНО: fetchMyAds()
   }, []);
 
   const fetchProfile = async () => {
@@ -58,16 +57,7 @@ function Profile() {
     }
   };
 
-  const fetchMyAds = async () => {
-    try {
-      const res = await api.get(`/pets/?owner=true&page=${page}`);
-      setMyAds(res.data.results || []);
-      setTotalPages(Math.ceil((res.data.count || 0) / 12));
-    } catch (err) {
-      console.error("Ошибка при загрузке объявлений:", err);
-      setMyAds([]);
-    }
-  };
+  // УДАЛЕНА функция fetchMyAds()
 
   const fetchReviews = async () => {
     if (!userData.id) return;
@@ -87,9 +77,7 @@ function Profile() {
     }
   };
 
-  useEffect(() => {
-    fetchMyAds();
-  }, [page]);
+  // УДАЛЕН useEffect для fetchMyAds
 
   useEffect(() => {
     if ((activeTab === "reviews" || activeTab === "messages") && userData.id) {
@@ -179,6 +167,7 @@ function Profile() {
   if (loading && !userData.username) return <div className="text-center mt-10">Загрузка...</div>;
 
   const reviewCount = userData.review_count || 0;
+  const myAds = userData.pets || []; // ✅ Берём объявления из профиля!
 
   return (
     <div className="profile-container min-h-screen bg-gray-50 py-6">
@@ -281,35 +270,7 @@ function Profile() {
                 <p className="text-gray-500 text-center py-8">Нет объявлений</p>
               )}
 
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-8 space-x-2">
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-1.5 border rounded disabled:opacity-50"
-                  >
-                    Назад
-                  </button>
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i + 1}
-                      onClick={() => setPage(i + 1)}
-                      className={`px-3 py-1.5 rounded ${
-                        page === i + 1 ? 'bg-blue-600 text-white' : 'border'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-1.5 border rounded disabled:opacity-50"
-                  >
-                    Вперёд
-                  </button>
-                </div>
-              )}
+              {/* УДАЛЕНА пагинация — она не нужна, так как все объявления уже загружены */}
             </div>
           )}
 
@@ -556,8 +517,6 @@ function Profile() {
                   Изменить пароль
                 </button>
               </form>
-
-              {/* 🔥 УДАЛЕНА ССЫЛКА НА СБРОС ИЗ ПРОФИЛЯ */}
             </div>
           )}
         </div>

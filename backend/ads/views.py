@@ -22,7 +22,6 @@ User = get_user_model()
 BAN_WORDS = ['дешево', 'скидка', 'телефон', 'в лс', 'whatsapp', 'телеграм', 'номер', 'звонить', 'лс']
 
 
-# 🔥 НОВЫЙ: Эндпоинт для городских страниц
 @api_view(['GET'])
 def get_city_pets(request, city_slug, species=None):
     """Получить объявления по городу и виду"""
@@ -35,19 +34,16 @@ def get_city_pets(request, city_slug, species=None):
     if species and species in dict(Pet.SPECIES_CHOICES):
         base_q = base_q.filter(species=species)
 
-    # Применяем фильтры (цена, порода, возраст)
     filterset = PetFilter(request.GET, queryset=base_q)
     if not filterset.is_valid():
         return Response(filterset.errors, status=status.HTTP_400_BAD_REQUEST)
     pets = filterset.qs
 
-    # Пагинация
     paginator = PageNumberPagination()
     paginator.page_size = 12
     result_page = paginator.paginate_queryset(pets, request)
     serializer = PetSerializer(result_page, many=True, context={'request': request})
 
-    # SEO-данные
     city_display = city_slug.replace('-', ' ').title()
     species_labels = {
         'dog': 'собаки', 'cat': 'кошки', 'bird': 'птицы',
@@ -70,30 +66,34 @@ def get_city_pets(request, city_slug, species=None):
 
 class PetViewSet(viewsets.ModelViewSet):
     serializer_class = PetSerializer
-    permission_classes = [AllowAny]
     filter_backends = [DjangoFilterBackend]
     filterset_class = PetFilter
     ordering_fields = ['created_at', 'price']
     ordering = ['-created_at']
 
+    def get_permissions(self):
+        if self.action == 'create':
+            permission_classes = [IsAuthenticated]
+        else:
+            permission_classes = [AllowAny]
+        return [permission() for permission in permission_classes]
+
     def get_queryset(self):
-        # 🔥 1. Для retrieve — возвращаем ВСЕ объявления
+        # Для детального просмотра — показываем все (владелец и модератор увидят даже rejected)
         if self.action == 'retrieve':
             return Pet.objects.prefetch_related('images')
 
-        # 🔥 2. Для "Мои объявления": ?owner=true → ТОЛЬКО СВОИ
+        # 🔥 ИСПРАВЛЕНО: "Мои объявления" — показываем ВСЕ объявления пользователя
         owner_filter = self.request.query_params.get('owner')
         if owner_filter == 'true':
             if self.request.user.is_authenticated:
                 return Pet.objects.filter(
-                    user=self.request.user,
-                    moderation_status='approved',
-                    is_active=True
+                    user=self.request.user
                 ).prefetch_related('images')
             else:
                 return Pet.objects.none().prefetch_related('images')
 
-        # 🔥 3. Для профиля другого пользователя: ?user=ID
+        # Просмотр объявлений другого пользователя — только approved + active
         if 'user' in self.request.query_params:
             try:
                 user_id = int(self.request.query_params['user'])
@@ -105,12 +105,10 @@ class PetViewSet(viewsets.ModelViewSet):
             except (TypeError, ValueError):
                 return Pet.objects.none().prefetch_related('images')
 
-        # 🔥 4. Для общего списка (/pets/) — только одобренные
+        # Общий список — только approved + active (или всё для staff)
         base_q = Pet.objects.prefetch_related('images')
-
         if self.request.user.is_staff:
             return base_q
-
         return base_q.filter(
             moderation_status='approved',
             is_active=True
@@ -124,13 +122,12 @@ class PetViewSet(viewsets.ModelViewSet):
     def perform_create(self, serializer):
         pet = serializer.save(
             user=self.request.user,
-            moderation_status='pending'  # всегда на модерацию
+            moderation_status='pending'
         )
         images = self.request.FILES.getlist('images')
         for image in images:
             PetImage.objects.create(pet=pet, image=image)
 
-        # Автоматическая модерация
         self.auto_moderate(pet)
         if pet.moderation_status == 'pending':
             self.notify_moderators(pet)
@@ -146,21 +143,19 @@ class PetViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
-        # 🔥 Единственное место для логирования просмотра
         if request.user.is_authenticated and request.user != instance.user:
             ViewHistory.objects.get_or_create(user=request.user, pet=instance)
 
-        # Публичный доступ: только одобренные и активные
+        # Публичный доступ: только approved + active
         if instance.moderation_status == 'approved' and instance.is_active:
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 
-        # Приватный доступ: владелец и модератор
+        # Приватный доступ: владелец или модератор — видят всё
         if request.user == instance.user or request.user.is_staff:
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 
-        # Иначе — 404
         raise Http404()
 
     def auto_moderate(self, pet):
@@ -169,11 +164,10 @@ class PetViewSet(viewsets.ModelViewSet):
             if word in text:
                 pet.moderation_status = 'rejected'
                 pet.rejection_reason = f'Обнаружено запрещённое слово: "{word}"'
-                pet.save()
+                pet.save(update_fields=['moderation_status', 'rejection_reason'])
                 return
 
     def notify_moderators(self, pet):
-        # Уведомляем первого модератора
         moderator = User.objects.filter(is_staff=True).first()
         if moderator:
             Notification.objects.create(
@@ -189,7 +183,7 @@ class PetViewSet(viewsets.ModelViewSet):
         if pet.moderation_status == 'approved':
             return Response({'error': 'Уже одобрено'}, status=status.HTTP_400_BAD_REQUEST)
         pet.moderation_status = 'approved'
-        pet.save()
+        pet.save(update_fields=['moderation_status'])
         Notification.objects.create(
             recipient=pet.user,
             actor=request.user,
@@ -206,7 +200,7 @@ class PetViewSet(viewsets.ModelViewSet):
             return Response({'error': 'Уже отклонено'}, status=status.HTTP_400_BAD_REQUEST)
         pet.moderation_status = 'rejected'
         pet.rejection_reason = reason
-        pet.save()
+        pet.save(update_fields=['moderation_status', 'rejection_reason'])
         Notification.objects.create(
             recipient=pet.user,
             actor=request.user,
@@ -222,11 +216,9 @@ class PetViewSet(viewsets.ModelViewSet):
         if not reason:
             return Response({'error': 'Укажите причину'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # 🔥 УЛУЧШЕНО: кликабельная ссылка и понятный заголовок
         pet_title = pet.name or pet.breed or 'Без имени'
         description = f'Жалоба на объявление "[{pet_title}](/pets/{pet.id}/)": {reason}'
 
-        # Уведомляем ВСЕХ модераторов
         moderators = User.objects.filter(is_staff=True)
         for moderator in moderators:
             Notification.objects.create(
@@ -237,7 +229,6 @@ class PetViewSet(viewsets.ModelViewSet):
             )
         return Response({'status': 'reported'})
 
-    # 🔥 Остальные action без изменений
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def raise_ad(self, request, pk=None):
         pet = self.get_object()
@@ -340,13 +331,6 @@ class FavoriteViewSet(viewsets.ReadOnlyModelViewSet):
             'pet__images') if user.is_authenticated else Favorite.objects.none()
 
 
-# 🔥 AdminPetModerationViewSet УДАЛЁН — теперь используется PetViewSet с @action
-
-
-# 🔥 НОВЫЙ: Динамические категории с реальным количеством
-from django.db.models import Count
-
-
 @api_view(['GET'])
 def get_categories(request):
     species_labels = {
@@ -380,14 +364,11 @@ def get_categories(request):
     return Response(categories)
 
 
-# 🔥 ИСПРАВЛЕННЫЙ: Эндпоинт для автокомплита пород
 @api_view(['GET'])
 def get_breeds(request):
-    """Возвращает список пород с автокомплитом"""
     query = request.query_params.get('q', '').strip().lower()
-    species = request.query_params.get('species', '')  # ← УБРАНО 'dog' по умолчанию
+    species = request.query_params.get('species', '')
 
-    # Список популярных пород
     popular_breeds = {
         'dog': [
             'Лабрадор', 'Немецкая овчарка', 'Такса', 'Хаски', 'Бульдог', 'Пудель',
@@ -417,7 +398,6 @@ def get_breeds(request):
         ],
     }
 
-    # 🔥 Если вид не выбран — возвращаем пустой список
     if not species or species not in popular_breeds:
         return Response([])
 

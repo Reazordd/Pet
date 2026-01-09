@@ -1,6 +1,6 @@
 // frontend/src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
@@ -38,6 +38,7 @@ function ProfilePage() {
   const [reviewStats, setReviewStats] = useState({ avg_rating: 0, total_reviews: 0 });
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showReviews, setShowReviews] = useState(false); // ← НОВОЕ: управление видимостью отзывов
   const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
@@ -59,7 +60,7 @@ function ProfilePage() {
       return;
     }
     fetchProfile();
-    fetchReviews(user_id);
+    // 🔥 УБРАНО: fetchReviews — грузим только при клике
     if (activeTab === 'pets') {
       fetchPets();
     }
@@ -67,7 +68,6 @@ function ProfilePage() {
 
   const fetchProfile = async () => {
     try {
-      // 🔥 ИСПРАВЛЕНО: правильный эндпоинт
       const profileRes = await api.get(`/auth/profile/${user_id}/`);
       setUser(profileRes.data);
     } catch (err) {
@@ -79,7 +79,6 @@ function ProfilePage() {
     }
   };
 
-  // 🔥 УДАЛЕНА ручная передача токена — теперь api.js сам добавляет его
   const fetchPets = async () => {
     try {
       const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}&page_size=12`);
@@ -90,14 +89,24 @@ function ProfilePage() {
     }
   };
 
-  const fetchReviews = async (userId) => {
-    try {
-      const res = await api.get(`/reviews/user/${userId}/reviews/`);
-      setReviews(res.data.reviews);
-      setReviewStats(res.data.rating_stats);
-    } catch (err) {
-      console.error('Ошибка загрузки отзывов:', err);
+  // 🔥 ЛЕНИВАЯ ЗАГРУЗКА ОТЗЫВОВ
+  const loadReviews = async () => {
+    if (reviews.length === 0 && reviewStats.total_reviews > 0) {
+      try {
+        const res = await api.get(`/reviews/user/${user_id}/reviews/`);
+        setReviews(res.data.reviews);
+        setReviewStats(res.data.rating_stats);
+      } catch (err) {
+        console.error('Ошибка загрузки отзывов:', err);
+      }
     }
+  };
+
+  const toggleReviews = () => {
+    if (!showReviews) {
+      loadReviews(); // Грузим только при первом открытии
+    }
+    setShowReviews(!showReviews);
   };
 
   const handleSendMessage = async () => {
@@ -139,7 +148,9 @@ function ProfilePage() {
       toast.success('Отзыв оставлен!');
       setShowReviewForm(false);
       setReviewForm({ rating: 5, comment: '' });
-      fetchReviews(user_id);
+      // Обновляем статистику после нового отзыва
+      const res = await api.get(`/reviews/user/${user_id}/reviews/`);
+      setReviewStats(res.data.rating_stats);
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Ошибка при создании отзыва';
       toast.error(errorMsg);
@@ -198,9 +209,14 @@ function ProfilePage() {
                   {reviewStats.avg_rating.toFixed(1)}
                 </span>
                 <span className="text-yellow-400 ml-1">★★★★★</span>
-                <span className="text-blue-600 font-medium ml-2">
+                {/* 🔥 КЛИКАБЕЛЬНАЯ ССЫЛКА */}
+                <button
+                  onClick={toggleReviews}
+                  className="text-blue-600 font-medium ml-2 hover:underline flex items-center"
+                >
                   {reviewCount} {getReviewText(reviewCount)}
-                </span>
+                  <span className="ml-1">{showReviews ? '▲' : '▼'}</span>
+                </button>
               </>
             ) : (
               <span className="text-gray-500">Пока нет отзывов</span>
@@ -287,11 +303,11 @@ function ProfilePage() {
         </div>
       )}
 
-      {/* Список отзывов */}
-      {reviews.length > 0 && (
+      {/* Список отзывов — ПОКАЗЫВАЕТСЯ ТОЛЬКО ПРИ showReviews */}
+      {showReviews && reviews.length > 0 && (
         <div className="mt-6">
           <h3 className="font-bold text-lg mb-3">Отзывы о {getDisplayName(user)}</h3>
-          <div className="space-y-3">
+          <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
             {reviews.map((review) => (
               <div key={review.id} className="p-3 border rounded">
                 <div className="flex items-center gap-2">

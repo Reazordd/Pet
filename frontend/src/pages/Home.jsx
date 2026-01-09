@@ -1,6 +1,6 @@
 // frontend/src/pages/Home.jsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
@@ -10,6 +10,7 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import '../styles/Home.css';
 
 function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [pets, setPets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -18,27 +19,39 @@ function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
+  // Инициализация фильтров из URL
+  const initFilters = () => {
+    return {
+      search: searchParams.get('search') || '',
+      city: searchParams.get('city') || '',
+      species: searchParams.get('species') || '',
+      breed: searchParams.get('breed') || '',
+      age_group: searchParams.get('age_group') || '',
+      minPrice: searchParams.get('min_price') || '',
+      maxPrice: searchParams.get('max_price') || '',
+    };
+  };
+
   const fetchData = useCallback(async (pageNum = 1, currentFilters = {}) => {
     try {
-      const loadingType = pageNum === 1 ? setLoading : setFilterLoading;
-      loadingType(true);
+      const loadingSetter = pageNum === 1 ? setLoading : setFilterLoading;
+      loadingSetter(true);
 
-      const { minPrice, maxPrice, city, ...restFilters } = currentFilters;
       const params = new URLSearchParams({
         page: pageNum,
         page_size: 12,
       });
 
-      if (minPrice) params.append('min_price', minPrice);
-      if (maxPrice) params.append('max_price', maxPrice);
-      if (city) params.append('city', city);
-
-      Object.keys(restFilters).forEach(key => {
-        if (restFilters[key]) params.append(key, restFilters[key]);
+      // Добавляем фильтры в запрос
+      Object.entries(currentFilters).forEach(([key, value]) => {
+        if (value !== '') {
+          const paramName = key === 'minPrice' ? 'min_price' : key === 'maxPrice' ? 'max_price' : key;
+          params.append(paramName, value);
+        }
       });
 
-      const response = await api.get(`/pets/?${params}`);
-      const newPets = response.data.results || response.data;
+      const response = await api.get(`/pets/?${params.toString()}`);
+      const newPets = response.data.results || [];
 
       setPets(prev => pageNum === 1 ? newPets : [...prev, ...newPets]);
       setHasMore(newPets.length === 12);
@@ -64,14 +77,28 @@ function Home() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    const initialFilters = initFilters();
+    setFilters(initialFilters);
+    fetchData(1, initialFilters);
     fetchCategories();
   }, [fetchData, fetchCategories]);
 
   const handleFilter = useCallback((newFilters) => {
     setFilters(newFilters);
+
+    // Обновляем URL-параметры
+    const params = new URLSearchParams();
+    Object.entries(newFilters).forEach(([key, value]) => {
+      if (value) {
+        const paramName = key === 'minPrice' ? 'min_price' : key === 'maxPrice' ? 'max_price' : key;
+        params.set(paramName, value);
+      }
+    });
+    setSearchParams(params, { replace: true });
+
+    // Сбрасываем страницу и загружаем новые данные
     fetchData(1, newFilters);
-  }, [fetchData]);
+  }, [fetchData, setSearchParams]);
 
   const loadMore = () => {
     if (!filterLoading && hasMore) {
@@ -94,7 +121,7 @@ function Home() {
       </section>
 
       {/* Filters */}
-      <div className="filters-section">
+      <div className="filters-section mb-6">
         <SearchFilters onFilter={handleFilter} loading={filterLoading} />
       </div>
 
@@ -105,7 +132,7 @@ function Home() {
           {categories.slice(0, 6).map((cat) => (
             <Link
               key={cat.id}
-              to={`/?species=${cat.id}`}
+              to={`/?species=${cat.slug}`}
               className="category-card"
             >
               <div className="category-icon">{cat.icon || '🐾'}</div>

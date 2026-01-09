@@ -45,13 +45,13 @@ function Navbar() {
         </Link>
 
         <nav className="nav-links">
-          {/* 🔥 УДАЛЕНО: дублирующая ссылка "Объявления" */}
           <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
             Главная
           </Link>
-          <Link className={`nav-link ${location.pathname === "/forum" ? "active" : ""}`} to="/forum">
+          {/* 🔥 ФОРУМ ВРЕМЕННО УДАЛЁН */}
+          {/* <Link className={`nav-link ${location.pathname === "/forum" ? "active" : ""}`} to="/forum">
             Форум
-          </Link>
+          </Link> */}
 
           {isAuthenticated ? (
             <>

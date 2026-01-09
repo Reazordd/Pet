@@ -10,54 +10,44 @@ const api = axios.create({
   },
 });
 
-// 🔥 УМНАЯ ПРОВЕРКА: только точно публичные эндпоинты
-const isPublicEndpoint = (url) => {
+// Эндпоинты, где 401 = настоящий логаут (профиль, чаты, управление)
+const CRITICAL_AUTH_ENDPOINTS = [
+  '/auth/',
+  '/me/',
+  '/profile/',
+  '/chats/',
+  '/favorites/',
+  '/pets/', // потому что create/update/delete требуют авторизации
+];
+
+const isCriticalAuthEndpoint = (url) => {
   if (!url) return false;
-
-  // Полностью публичные
-  if (
-    url.startsWith('/token/') ||
-    url.startsWith('/auth/register/') ||
-    url.startsWith('/auth/activate/') ||
-    url.startsWith('/auth/password/reset/') ||
-    url.startsWith('/categories/') ||
-    url.startsWith('/breeds/')
-  ) {
-    return true;
-  }
-
-  // /pets/ — список (публичный)
-  if (url === '/pets/' || url === '/pets') {
-    return true;
-  }
-
-  // /pets/123/ — детали объявления (публичные)
-  if (/^\/pets\/\d+\/?$/.test(url)) {
-    return true;
-  }
-
-  // ВСЁ ОСТАЛЬНОЕ — требует авторизации
-  return false;
+  const cleanUrl = url.split('?')[0];
+  return CRITICAL_AUTH_ENDPOINTS.some(prefix => cleanUrl.startsWith(prefix));
 };
 
+// Interceptor: автоматически добавляем токен, если он есть
 api.interceptors.request.use((config) => {
-  if (!isPublicEndpoint(config.url)) {
-    const token = localStorage.getItem("access_token");
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
+  const token = localStorage.getItem("access_token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });
 
-// Обработка ошибок 401 (неавторизован)
+// Interceptor: умный логаут только на критичных эндпоинтах
 api.interceptors.response.use(
-  response => response,
-  error => {
+  (response) => response,
+  (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem("access_token");
-      localStorage.removeItem("refresh_token");
-      window.location.href = "/login";
+      const originalRequest = error.config;
+      if (isCriticalAuthEndpoint(originalRequest?.url)) {
+        // Только здесь — полный логаут
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        window.location.href = "/login";
+      }
+      // Иначе — просто пробрасываем ошибку (например, /stats/)
     }
     return Promise.reject(error);
   }

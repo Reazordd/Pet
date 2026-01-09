@@ -16,13 +16,14 @@ export default function CityPage() {
 
   const initialFilters = {
     search: searchParams.get('search') || '',
-    city: searchParams.get('city') || '', // ← ДОБАВЛЕНО
-    species: searchParams.get('species') || '',
+    city: citySlug.replace(/-/g, ' '), // ← автоматически подставляем город из URL
+    species: species || '',
     breed: searchParams.get('breed') || '',
     age_group: searchParams.get('age_group') || '',
     minPrice: searchParams.get('min_price') || '',
     maxPrice: searchParams.get('max_price') || '',
   };
+
   const [filters, setFilters] = useState(initialFilters);
 
   useEffect(() => {
@@ -35,7 +36,6 @@ export default function CityPage() {
 
         const params = new URLSearchParams();
         if (filters.search) params.append('search', filters.search);
-        if (filters.city) params.append('city', filters.city); // ← ДОБАВЛЕНО
         if (filters.breed) params.append('breed', filters.breed);
         if (filters.age_group) params.append('age_group', filters.age_group);
         if (filters.minPrice) params.append('min_price', filters.minPrice);
@@ -44,16 +44,26 @@ export default function CityPage() {
         const queryString = params.toString() ? `?${params.toString()}` : '';
         const res = await api.get(`${url}${queryString}`);
 
-        const { pets: petsData, seo: seoData } = res.data.results;
+        const data = res.data.results || res.data;
+        const petsData = data.pets || [];
+        const seoData = data.seo || { title: '', description: '' };
+
         setPets(petsData);
         setSeo(seoData);
-        document.title = seoData.title;
+        document.title = seoData.title || `Объявления в ${citySlug.replace('-', ' ')}`;
       } catch (err) {
         console.error('Ошибка загрузки:', err);
-        const cityDisplay = citySlug.replace('-', ' ').title();
-        const speciesDisplay = species ?
-          ({'dog':'собаки','cat':'кошки','bird':'птицы','rodent':'грызуны','fish':'рыбы','reptile':'рептилии','other':'другие'})[species]
-          : 'все животные';
+        const cityDisplay = citySlug.replace('-', ' ');
+        const speciesLabels = {
+          dog: 'собаки',
+          cat: 'кошки',
+          bird: 'птицы',
+          rodent: 'грызуны',
+          fish: 'рыбы',
+          reptile: 'рептилии',
+          other: 'другие'
+        };
+        const speciesDisplay = species ? speciesLabels[species] || 'животные' : 'все животные';
         setSeo({
           title: `Объявления в ${cityDisplay} — PetMarket`,
           description: ''
@@ -70,7 +80,6 @@ export default function CityPage() {
     setFilters(newFilters);
     const params = new URLSearchParams();
     if (newFilters.search) params.append('search', newFilters.search);
-    if (newFilters.city) params.append('city', newFilters.city); // ← ДОБАВЛЕНО
     if (newFilters.breed) params.append('breed', newFilters.breed);
     if (newFilters.age_group) params.append('age_group', newFilters.age_group);
     if (newFilters.minPrice) params.append('min_price', newFilters.minPrice);
@@ -83,7 +92,7 @@ export default function CityPage() {
       <div className="filters-section mb-6">
         <SearchFilters onFilter={handleFilter} loading={loading} />
       </div>
-      <h1 className="text-2xl font-bold mb-4">{seo.title}</h1>
+      <h1 className="text-2xl font-bold mb-4">{seo.title || `Объявления в ${citySlug.replace('-', ' ')}`}</h1>
       <div className="pets-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (
           Array.from({ length: 12 }).map((_, i) => (
