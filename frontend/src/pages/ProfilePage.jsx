@@ -61,13 +61,14 @@ function ProfilePage() {
     fetchProfile();
     fetchReviews(user_id);
     if (activeTab === 'pets') {
-      fetchPets(); // ← ВОЗВРАЩЕНО
+      fetchPets();
     }
   }, [user_id, activeTab, page]);
 
   const fetchProfile = async () => {
     try {
-      const profileRes = await api.get(`/profile/${user_id}/`);
+      // 🔥 ИСПРАВЛЕНО: правильный эндпоинт
+      const profileRes = await api.get(`/auth/profile/${user_id}/`);
       setUser(profileRes.data);
     } catch (err) {
       console.error('Ошибка загрузки профиля:', err.response || err);
@@ -78,13 +79,10 @@ function ProfilePage() {
     }
   };
 
-  // 🔥 ИСПРАВЛЕНО: добавлен токен в запрос
+  // 🔥 УДАЛЕНА ручная передача токена — теперь api.js сам добавляет его
   const fetchPets = async () => {
     try {
-      const token = localStorage.getItem('access_token');
-      const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
-
-      const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}&page_size=12`, config);
+      const petsRes = await api.get(`/pets/?user=${user_id}&page=${page}&page_size=12`);
       setPets(petsRes.data.results || []);
       setTotalPages(Math.ceil((petsRes.data.count || 0) / 12));
     } catch (err) {
@@ -164,7 +162,6 @@ function ProfilePage() {
 
   const canLeaveReview = currentUserId && currentUserId !== user_id;
 
-  // 🔥 Получаем отображаемое имя
   const getDisplayName = (user) => {
     if (user.first_name || user.last_name) {
       return `${user.first_name} ${user.last_name}`.trim();

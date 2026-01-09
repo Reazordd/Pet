@@ -10,43 +10,43 @@ const api = axios.create({
   },
 });
 
-// 🔥 ПОЛНЫЙ СПИСОК ПУБЛИЧНЫХ ЭНДПОИНТОВ (без авторизации)
-const PUBLIC_ENDPOINTS = [
-  // Аутентификация
-  '/token/',
-  '/token/refresh/',
+// 🔥 УМНАЯ ПРОВЕРКА: только точно публичные эндпоинты
+const isPublicEndpoint = (url) => {
+  if (!url) return false;
 
-  // Регистрация и активация
-  '/auth/register/',
-  '/auth/activate/',
+  // Полностью публичные
+  if (
+    url.startsWith('/token/') ||
+    url.startsWith('/auth/register/') ||
+    url.startsWith('/auth/activate/') ||
+    url.startsWith('/auth/password/reset/') ||
+    url.startsWith('/categories/') ||
+    url.startsWith('/breeds/')
+  ) {
+    return true;
+  }
 
-  // Сброс пароля
-  '/auth/password/reset/',
-  '/auth/password/reset/', // дубль для путей с параметрами
+  // /pets/ — список (публичный)
+  if (url === '/pets/' || url === '/pets') {
+    return true;
+  }
 
-  // Публичные данные
-  '/categories/',
-  '/breeds/',
-  '/pets/', // список объявлений (публичный просмотр)
+  // /pets/123/ — детали объявления (публичные)
+  if (/^\/pets\/\d+\/?$/.test(url)) {
+    return true;
+  }
 
-  // Детали объявления (публичный просмотр)
-  '/pets/',
-];
+  // ВСЁ ОСТАЛЬНОЕ — требует авторизации
+  return false;
+};
 
 api.interceptors.request.use((config) => {
-  // Проверяем, является ли URL публичным
-  const isPublic = PUBLIC_ENDPOINTS.some(endpoint =>
-    config.url?.startsWith(endpoint)
-  );
-
-  // Добавляем токен ТОЛЬКО для непубличных запросов
-  if (!isPublic) {
+  if (!isPublicEndpoint(config.url)) {
     const token = localStorage.getItem("access_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
-
   return config;
 });
 
