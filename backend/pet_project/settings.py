@@ -1,4 +1,3 @@
-# backend/pet_project/settings.py
 import os
 import logging
 from pathlib import Path
@@ -33,13 +32,12 @@ if SENTRY_DSN:
     try:
         import sentry_sdk
         from sentry_sdk.integrations.django import DjangoIntegration
-        from sentry_sdk.integrations.celery import CeleryIntegration
         from sentry_sdk.integrations.logging import LoggingIntegration
 
         sentry_logging = LoggingIntegration(level=logging.INFO, event_level=logging.ERROR)
         sentry_sdk.init(
             dsn=SENTRY_DSN,
-            integrations=[DjangoIntegration(), CeleryIntegration(), sentry_logging],
+            integrations=[DjangoIntegration(), sentry_logging],
             traces_sample_rate=SENTRY_TRACES_SAMPLE_RATE,
             profiles_sample_rate=SENTRY_PROFILES_SAMPLE_RATE,
             environment=SENTRY_ENV,
@@ -106,15 +104,15 @@ TEMPLATES = [
 # Используем WSGI (без Channels)
 WSGI_APPLICATION = "pet_project.wsgi.application"
 
-# База данных
+# База данных — совместимость с Timeweb Cloud
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", "petdb"),
-        "USER": env("POSTGRES_USER", "petuser"),
-        "PASSWORD": env("POSTGRES_PASSWORD", "5v1234567"),
-        "HOST": env("DB_HOST", "localhost"),
-        "PORT": env("DB_PORT", "5432"),
+        "NAME": env("DB_NAME", env("POSTGRES_DB", "petdb")),
+        "USER": env("DB_USER", env("POSTGRES_USER", "petuser")),
+        "PASSWORD": env("DB_PASSWORD", env("POSTGRES_PASSWORD", "5v1234567")),
+        "HOST": env("DB_HOST", env("POSTGRES_HOST", "localhost")),
+        "PORT": env("DB_PORT", env("POSTGRES_PORT", "5432")),
     }
 }
 
@@ -173,7 +171,7 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = "reazordd@yandex.ru"
 EMAIL_HOST_PASSWORD = "bpelzaibnborpvxa"  # ← твой пароль приложения
 DEFAULT_FROM_EMAIL = "reazordd@yandex.ru"
-FRONTEND_URL = "http://localhost:3000"
+FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
 
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
@@ -187,22 +185,4 @@ LOGGING = {
     "formatters": {"verbose": {"format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s"}},
     "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "verbose"}},
     "root": {"handlers": ["console"], "level": "INFO"},
-}
-
-# Celery
-REDIS_HOST = env("REDIS_HOST", "localhost")
-REDIS_PORT = int(env("REDIS_PORT", 6379))
-CELERY_BROKER_URL = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
-CELERY_RESULT_BACKEND = CELERY_BROKER_URL
-CELERY_ACCEPT_CONTENT = ["json"]
-CELERY_TASK_SERIALIZER = "json"
-CELERY_RESULT_SERIALIZER = "json"
-CELERY_TIMEZONE = TIME_ZONE
-
-from celery.schedules import crontab
-CELERY_BEAT_SCHEDULE = {
-    "debug-every-30-seconds": {
-        "task": "pet_project.tasks.debug_task",
-        "schedule": int(env("CELERY_BEAT_SCHEDULE_INTERVAL", "30")),
-    },
 }
