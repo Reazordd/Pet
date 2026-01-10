@@ -71,7 +71,15 @@ const PetCard = ({ pet, size = 'default' }) => {
         {/* 🔥 ИСПРАВЛЕНО: имя или порода */}
         <h3 className="pet-name">{petName}</h3>
         <p className="pet-city">{pet.city}</p>
-        <p className="pet-price">{formatPrice(pet.price)}</p>
+
+        {/* 🔥 Метка "Неактивно" */}
+        {!pet.is_active && (
+          <span className="text-red-500 text-xs font-medium block mb-1">Снято с публикации</span>
+        )}
+
+        <p className={`pet-price ${!pet.is_active ? 'text-gray-500 line-through' : ''}`}>
+          {formatPrice(pet.price)}
+        </p>
       </div>
       <button
         onClick={toggleFavorite}

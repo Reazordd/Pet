@@ -1,6 +1,8 @@
 # backend/ads/admin.py
 from django.contrib import admin
+from django.contrib import messages
 from .models import Pet, PetImage, Favorite
+from notifications.models import Notification
 
 
 class PetImageInline(admin.TabularInline):
@@ -10,7 +12,6 @@ class PetImageInline(admin.TabularInline):
 
 @admin.register(Pet)
 class PetAdmin(admin.ModelAdmin):
-    # 🔥 Явно указываем все поля, чтобы избежать кэша старой формы
     fields = (
         'user', 'name', 'species', 'breed', 'birth_date', 'price',
         'offer_type', 'city', 'city_slug', 'description', 'is_active',
@@ -23,18 +24,43 @@ class PetAdmin(admin.ModelAdmin):
     search_fields = ('name', 'breed', 'city', 'user__username')
     inlines = [PetImageInline]
 
-    # Действия для модерации
     actions = ['approve_pets', 'reject_pets']
 
     def approve_pets(self, request, queryset):
-        updated = queryset.update(moderation_status='approved')
-        self.message_user(request, f"{updated} объявлений одобрено.")
+        count = 0
+        for pet in queryset:
+            if pet.moderation_status != 'approved':
+                pet.moderation_status = 'approved'
+                pet.is_active = True  # ← ДОБАВЛЕНО!
+                pet.save(update_fields=['moderation_status', 'is_active'])
+                # Создаём уведомление
+                Notification.objects.create(
+                    recipient=pet.user,
+                    actor=request.user,
+                    verb='moderation',
+                    description='✅ Ваше объявление одобрено и опубликовано'
+                )
+                count += 1
+        self.message_user(request, f"{count} объявлений одобрено.", messages.SUCCESS)
 
     approve_pets.short_description = "Одобрить выбранные"
 
     def reject_pets(self, request, queryset):
-        updated = queryset.update(moderation_status='rejected')
-        self.message_user(request, f"{updated} объявлений отклонено.")
+        count = 0
+        for pet in queryset:
+            if pet.moderation_status != 'rejected':
+                pet.moderation_status = 'rejected'
+                pet.rejection_reason = 'Не соответствует правилам'
+                pet.is_active = False  # ← Опционально: деактивировать отклонённые
+                pet.save(update_fields=['moderation_status', 'rejection_reason', 'is_active'])
+                Notification.objects.create(
+                    recipient=pet.user,
+                    actor=request.user,
+                    verb='moderation',
+                    description='❌ Ваше объявление отклонено: Не соответствует правилам'
+                )
+                count += 1
+        self.message_user(request, f"{count} объявлений отклонено.", messages.WARNING)
 
     reject_pets.short_description = "Отклонить выбранные"
 

@@ -1,18 +1,16 @@
 # backend/users/serializers.py
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
-from rest_framework.validators import UniqueValidator
 from reviews.models import Review
-from ads.models import Pet  # ← добавлен импорт
-from ads.serializers import PetSerializer  # ← добавлен импорт
+from ads.models import Pet
+from ads.serializers import PetSerializer
 
 User = get_user_model()
 
 class UserSerializer(serializers.ModelSerializer):
     badges = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
-    pets = serializers.SerializerMethodField()  # ← новое поле
+    pets = serializers.SerializerMethodField()
 
     class Meta:
         model = User
@@ -20,9 +18,9 @@ class UserSerializer(serializers.ModelSerializer):
             'id', 'username', 'email', 'first_name', 'last_name', 'phone',
             'avatar', 'bio', 'location', 'date_joined',
             'is_trusted_seller', 'avito_delivery_count', 'is_company_verified',
-            'badges', 'review_count', 'pets'  # ← добавлено
+            'badges', 'review_count', 'pets'
         ]
-        read_only_fields = ['id', 'date_joined', 'badges', 'review_count', 'pets']
+        read_only_fields = ['id', 'date_joined', 'badges', 'review_count']
 
     def get_badges(self, obj):
         badges = []
@@ -50,10 +48,13 @@ class UserSerializer(serializers.ModelSerializer):
         return obj.received_reviews.count()
 
     def get_pets(self, obj):
-        # Только одобренные и активные объявления ЭТОГО пользователя
-        pets = Pet.objects.filter(
-            user=obj,
-            moderation_status='approved',
-            is_active=True
-        )
-        return PetSerializer(pets, many=True, context=self.context).data
+        # 🔥 Получаем объявления из контекста (все, без фильтрации)
+        pets = self.context.get('prefetched_pets')
+        if pets is not None:
+            return PetSerializer(pets, many=True, context=self.context).data
+        # Fallback (на случай, если контекст не передан)
+        return PetSerializer(
+            Pet.objects.filter(user=obj),
+            many=True,
+            context=self.context
+        ).data

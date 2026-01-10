@@ -149,16 +149,19 @@ function PetDetail() {
     }
   };
 
+  // 🔥 ИСПРАВЛЕНО: используем PATCH вместо POST /activate/
   const handleToggleActive = async () => {
     try {
-      if (pet.is_active) {
-        await api.post(`/pets/${id}/deactivate/`);
-        toast.info('Объявление снято с публикации');
-      } else {
-        await api.post(`/pets/${id}/activate/`);
+      const newStatus = !pet.is_active;
+      await api.patch(`/pets/${id}/`, { is_active: newStatus });
+
+      if (newStatus) {
         toast.success('Объявление снова в публикации');
+      } else {
+        toast.info('Объявление снято с публикации');
       }
-      fetchPet();
+
+      fetchPet(); // Обновляем данные
     } catch (err) {
       toast.error('Ошибка при изменении статуса');
     }

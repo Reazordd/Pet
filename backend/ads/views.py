@@ -9,7 +9,7 @@ from rest_framework.pagination import PageNumberPagination
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from datetime import timedelta
-from django.db.models import Count
+from django.db.models import Count, Q
 from .models import Pet, Favorite, PetImage
 from history.models import ViewHistory
 from .serializers import PetSerializer, FavoriteSerializer
@@ -79,40 +79,33 @@ class PetViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def get_queryset(self):
-        # Для детального просмотра — показываем все (владелец и модератор увидят даже rejected)
-        if self.action == 'retrieve':
-            return Pet.objects.prefetch_related('images')
+        # 🔥 Для списка (list) — стандартная фильтрация
+        if self.action == 'list':
+            owner_filter = self.request.query_params.get('owner')
+            if owner_filter == 'true':
+                if self.request.user.is_authenticated:
+                    return Pet.objects.filter(user=self.request.user).prefetch_related('images')
+                else:
+                    return Pet.objects.none().prefetch_related('images')
 
-        # 🔥 ИСПРАВЛЕНО: "Мои объявления" — показываем ВСЕ объявления пользователя
-        owner_filter = self.request.query_params.get('owner')
-        if owner_filter == 'true':
-            if self.request.user.is_authenticated:
-                return Pet.objects.filter(
-                    user=self.request.user
-                ).prefetch_related('images')
-            else:
-                return Pet.objects.none().prefetch_related('images')
+            if 'user' in self.request.query_params:
+                try:
+                    user_id = int(self.request.query_params['user'])
+                    return Pet.objects.filter(
+                        user_id=user_id,
+                        moderation_status='approved',
+                        is_active=True
+                    ).prefetch_related('images')
+                except (TypeError, ValueError):
+                    return Pet.objects.none().prefetch_related('images')
 
-        # Просмотр объявлений другого пользователя — только approved + active
-        if 'user' in self.request.query_params:
-            try:
-                user_id = int(self.request.query_params['user'])
-                return Pet.objects.filter(
-                    user_id=user_id,
-                    moderation_status='approved',
-                    is_active=True
-                ).prefetch_related('images')
-            except (TypeError, ValueError):
-                return Pet.objects.none().prefetch_related('images')
+            base_q = Pet.objects.prefetch_related('images')
+            if self.request.user.is_staff:
+                return base_q
+            return base_q.filter(moderation_status='approved', is_active=True)
 
-        # Общий список — только approved + active (или всё для staff)
-        base_q = Pet.objects.prefetch_related('images')
-        if self.request.user.is_staff:
-            return base_q
-        return base_q.filter(
-            moderation_status='approved',
-            is_active=True
-        )
+        # 🔥 Для retrieve, update, partial_update, destroy — полный доступ (без фильтрации)
+        return Pet.objects.prefetch_related('images')
 
     def get_serializer_context(self):
         context = super().get_serializer_context()
@@ -134,6 +127,10 @@ class PetViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         pet = serializer.save()
+        # 🔥 Добавляем проверку прав на обновление
+        if pet.user != self.request.user:
+            raise PermissionError("Только владелец может редактировать объявление")
+
         images = self.request.FILES.getlist('images')
         if images:
             pet.images.all().delete()
@@ -143,6 +140,7 @@ class PetViewSet(viewsets.ModelViewSet):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 
+        # Логируем просмотр (только если не владелец)
         if request.user.is_authenticated and request.user != instance.user:
             ViewHistory.objects.get_or_create(user=request.user, pet=instance)
 
@@ -151,8 +149,8 @@ class PetViewSet(viewsets.ModelViewSet):
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 
-        # Приватный доступ: владелец или модератор — видят всё
-        if request.user == instance.user or request.user.is_staff:
+        # Приватный доступ: владелец или модератор
+        if request.user.is_authenticated and (request.user == instance.user or request.user.is_staff):
             serializer = self.get_serializer(instance)
             return Response(serializer.data)
 
@@ -182,13 +180,15 @@ class PetViewSet(viewsets.ModelViewSet):
         pet = self.get_object()
         if pet.moderation_status == 'approved':
             return Response({'error': 'Уже одобрено'}, status=status.HTTP_400_BAD_REQUEST)
+        # 🔥 Одобряем И активируем одновременно
         pet.moderation_status = 'approved'
-        pet.save(update_fields=['moderation_status'])
+        pet.is_active = True
+        pet.save(update_fields=['moderation_status', 'is_active'])
         Notification.objects.create(
             recipient=pet.user,
             actor=request.user,
-            verb='moderation_approved',
-            description='Ваше объявление одобрено и опубликовано'
+            verb='moderation',  # ← ЕДИНЫЙ ТИП, совместимый с choices
+            description='✅ Ваше объявление одобрено и опубликовано'
         )
         return Response({'status': 'approved'})
 
@@ -204,8 +204,8 @@ class PetViewSet(viewsets.ModelViewSet):
         Notification.objects.create(
             recipient=pet.user,
             actor=request.user,
-            verb='moderation_rejected',
-            description=f'Ваше объявление отклонено: {reason}'
+            verb='moderation',  # ← ЕДИНЫЙ ТИП
+            description=f'❌ Ваше объявление отклонено: {reason}'
         )
         return Response({'status': 'rejected'})
 
