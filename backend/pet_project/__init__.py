@@ -1,3 +1,2 @@
-from .celery import app as celery_app
+#  backend/pet_project/__init__.py
 
-__all__ = ("celery_app",)
