@@ -1,3 +1,4 @@
+Django==5.1.4
 altgraph==0.17.5
 amqp==5.3.1
 asgiref==3.8.1
@@ -25,7 +26,6 @@ cron_descriptor==2.0.6
 cryptography==46.0.3
 daphne==4.1.2
 dj-database-url==2.1.0
-Django==5.1.4
 django-celery-beat==2.7.0
 django-celery-results==2.5.1
 django-cors-headers==4.9.0
