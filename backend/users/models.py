@@ -1,0 +1,43 @@
+# backend/users/models.py
+from django.contrib.auth.models import AbstractUser
+from django.db import models
+from django.core.validators import MinLengthValidator
+from ads.models import Pet
+
+class User(AbstractUser):
+    email = models.EmailField(unique=True)
+    phone = models.CharField(max_length=20, blank=True, null=True, validators=[MinLengthValidator(10)])
+    avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
+    bio = models.TextField(blank=True, null=True)
+    location = models.CharField(max_length=100, blank=True, null=True)
+    email_verified = models.BooleanField(default=False)
+    phone_verified = models.BooleanField(default=False)
+
+    # 🔥 Поля для Avito-статусов
+    is_trusted_seller = models.BooleanField(default=False, verbose_name="Надёжный продавец")
+    avito_delivery_count = models.PositiveIntegerField(default=0, verbose_name="Покупки с Pet Доставкой")
+    is_company_verified = models.BooleanField(default=False, verbose_name="Компания проверена")
+
+    # Для модерации и блокировки
+    is_blocked = models.BooleanField(default=False,
+                                     help_text="Если отмечено — пользователь заблокирован и не может постить/комментировать")
+
+    REQUIRED_FIELDS = ["email"]
+    USERNAME_FIELD = "username"
+
+    def __str__(self):
+        return f"{self.username} ({self.email})" if self.email else self.username
+
+    def update_trusted_seller_status(self):
+        """Автоматически обновляет статус «Надёжный продавец»"""
+        active_pets_count = Pet.objects.filter(
+            user=self,
+            moderation_status='approved',  # ← ИСПРАВЛЕНО
+            is_active=True
+        ).count()
+        self.is_trusted_seller = active_pets_count >= 5
+        self.save(update_fields=['is_trusted_seller'])
+
+    def update_avito_delivery_count(self):
+        """Заглушка для подсчёта доставок (реализуется отдельно)"""
+        pass
