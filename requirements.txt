@@ -1,0 +1,16 @@
+# Core
+Django==5.1.4
+djangorestframework==3.16.1
+djangorestframework_simplejwt==5.5.1
+
+# DB
+psycopg2-binary==2.9.10
+
+# CORS & Utils
+django-cors-headers==4.9.0
+django-filter==25.1
+python-dotenv==1.0.0
+pillow==11.3.0
+
+# WSGI
+gunicorn==21.2.0
