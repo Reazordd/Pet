@@ -1,3 +1,5 @@
+# D:\Pet\requirements.txt
+
 # Core
 Django==5.1.4
 djangorestframework==3.16.1

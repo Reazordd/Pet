@@ -1,15 +1,11 @@
-# backend/pet_project/wsgi.py
-
-"""
-WSGI config for pet_project project.
-
-It exposes the WSGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.2/howto/deployment/wsgi/
-"""
-
 import os
+import sys
+
+# Добавляем /app/backend в sys.path для Timeweb Cloud
+current_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(current_dir)
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
 
 from django.core.wsgi import get_wsgi_application
 
