@@ -1,7 +1,15 @@
 // frontend/src/utils/api.js
 import axios from "axios";
 
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+let BASE;
+
+if (import.meta.env.PROD) {
+  // На продакшене — полный URL из VITE_API_URL
+  BASE = `${import.meta.env.VITE_API_URL}/api`;
+} else {
+  // Локально — относительный путь, проксируется через vite.config.js
+  BASE = "/api";
+}
 
 const api = axios.create({
   baseURL: BASE,
@@ -9,6 +17,8 @@ const api = axios.create({
     "Accept": "application/json",
   },
 });
+
+// ... остальной код без изменений ...
 
 // Эндпоинты, где 401 = настоящий логаут (профиль, чаты, управление)
 const CRITICAL_AUTH_ENDPOINTS = [
@@ -47,7 +57,6 @@ api.interceptors.response.use(
         localStorage.removeItem("refresh_token");
         window.location.href = "/login";
       }
-      // Иначе — просто пробрасываем ошибку (например, /stats/)
     }
     return Promise.reject(error);
   }
