@@ -1,4 +1,5 @@
 # backend/users/views.py
+from django.contrib.auth.tokens import default_token_generator
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
@@ -12,6 +13,7 @@ from ads.models import Pet
 from reviews.models import Review
 from .serializers import UserSerializer
 from .utils import account_activation_token
+from django.conf import settings
 
 User = get_user_model()
 
@@ -145,7 +147,7 @@ def register(request):
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = account_activation_token.make_token(user)
-        activation_link = f"http://localhost:3000/activate/{uid}/{token}/"
+        activation_link = f"{settings.FRONTEND_URL}/activate/{uid}/{token}/" # сервер и локалка
 
         send_mail(
             subject="Подтвердите ваш email — PetMarket",
@@ -193,7 +195,7 @@ def password_reset_request(request):
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        reset_link = f"http://localhost:3000/reset-password/{uid}/{token}/"
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/" # сервер и локалка
 
         send_mail(
             subject="Сброс пароля — PetMarket",

@@ -101,7 +101,6 @@ TEMPLATES = [
     },
 ]
 
-# Используем WSGI (без Channels)
 WSGI_APPLICATION = "pet_project.wsgi.application"
 
 # База данных — совместимость с Timeweb Cloud
@@ -150,12 +149,16 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+# Proxy & HTTPS headers (актуально при использовании nginx/облака)
+if not DEBUG:
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# CORS & CSRF
 CORS_ALLOWED_ORIGINS = [
     origin.strip() for origin in env("CORS_ALLOWED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()
 ]
 CORS_ALLOW_CREDENTIALS = False
+
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in env("CSRF_TRUSTED_ORIGINS", "http://localhost:3000").split(",") if origin.strip()
 ]
@@ -163,26 +166,40 @@ CSRF_COOKIE_HTTPONLY = False
 CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_SAMESITE = "Lax"
 
-# 🔥 Настройки почты (обновлено для Яндекса)
+# 🔥 Настройки почты (Яндекс)
 EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
 EMAIL_HOST = "smtp.yandex.ru"
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
-EMAIL_HOST_USER = "reazordd@yandex.ru"
-EMAIL_HOST_PASSWORD = "bpelzaibnborpvxa"  # ← твой пароль приложения
-DEFAULT_FROM_EMAIL = "reazordd@yandex.ru"
+EMAIL_HOST_USER = env("EMAIL_HOST_USER", "reazordd@yandex.ru")
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "bpelzaibnborpvxa")  # ← пароль приложения
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
 
+# 🔒 Безопасность только в production
 if not DEBUG:
     SECURE_BROWSER_XSS_FILTER = True
     X_FRAME_OPTIONS = "DENY"
     SESSION_COOKIE_SECURE = True
     CSRF_COOKIE_SECURE = True
 
+# Логирование
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
-    "formatters": {"verbose": {"format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s"}},
-    "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "verbose"}},
-    "root": {"handlers": ["console"], "level": "INFO"},
+    "formatters": {
+        "verbose": {
+            "format": "[%(asctime)s] %(levelname)s %(name)s: %(message)s"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "formatter": "verbose"
+        }
+    },
+    "root": {
+        "handlers": ["console"],
+        "level": "INFO",
+    },
 }
