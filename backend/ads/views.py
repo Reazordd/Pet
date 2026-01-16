@@ -19,7 +19,7 @@ from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-BAN_WORDS = ['дешево', 'скидка', 'телефон', 'в лс', 'whatsapp', 'телеграм', 'номер', 'звонить', 'лс']
+BAN_WORDS = ['whatsapp', 'телеграм']
 
 
 @api_view(['GET'])

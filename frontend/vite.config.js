@@ -12,7 +12,7 @@ export default defineConfig({
     proxy: {
       // 🔥 Проксируем API
       '/api': {
-        target: 'http://localhost:8000', // или 'http://localhost:8000', если запускаете без Docker
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
       },
