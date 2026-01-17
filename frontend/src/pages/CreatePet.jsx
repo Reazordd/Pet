@@ -105,66 +105,77 @@ export default function CreatePet() {
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Добавить объявление</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Фото как у Avito */}
+        {/* Фото */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Фотографии (максимум 5)
           </label>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-3">
             {images.map((file, index) => (
               <div
                 key={`photo-${index}`}
-                className="relative"
-                style={{ width: '80px', height: '80px' }}
+                className="flex items-start gap-3"
               >
-                <img
-                  src={URL.createObjectURL(file)}
-                  alt={`Фото ${index + 1}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    borderRadius: '4px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                />
+                {/* Фото */}
+                <div style={{ width: '80px', height: '80px', position: 'relative' }}>
+                  <img
+                    src={URL.createObjectURL(file)}
+                    alt={`Фото ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '4px',
+                      border: '1px solid #e5e7eb'
+                    }}
+                  />
+                </div>
+
+                {/* Кнопка "Удалить" СПРАВА */}
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs z-10"
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm whitespace-nowrap self-start flex-shrink-0 h-fit mt-1"
+                  aria-label="Удалить фото"
                 >
-                  ×
+                  Удалить
                 </button>
               </div>
             ))}
 
+            {/* Плейсхолдеры для новых фото */}
             {Array.from({ length: 5 - images.length }).map((_, i) => (
               <div
                 key={`placeholder-${i}`}
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  border: '2px dashed #d1d5db',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="flex items-start gap-3"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <div
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                </div>
+                <div style={{ width: '64px' }}></div> {/* Заполнитель под кнопку */}
               </div>
             ))}
           </div>
@@ -173,7 +184,7 @@ export default function CreatePet() {
             accept="image/*"
             multiple
             onChange={handleFileChange}
-            className="mt-2"
+            className="mt-3"
           />
           <p className="text-xs text-gray-500 mt-1">
             Поддерживаются JPG, PNG. Макс. размер файла — 5 МБ.
@@ -195,9 +206,10 @@ export default function CreatePet() {
         </div>
 
         <div>
+          <label className="block mb-1">Кличка животного</label>
           <input
             name="name"
-            placeholder="Имя питомца"
+            placeholder="Не обязательно"
             value={formData.name}
             onChange={handleChange}
             className="w-full p-2 border rounded"
@@ -205,6 +217,7 @@ export default function CreatePet() {
         </div>
 
         <div>
+          <label className="block mb-1">Вид животного</label>
           <select
             name="species"
             value={formData.species}
@@ -218,9 +231,10 @@ export default function CreatePet() {
         </div>
 
         <div>
+          <label className="block mb-1">Порода</label>
           <input
             name="breed"
-            placeholder="Порода (не обязательно)"
+            placeholder="Не обязательно"
             value={formData.breed}
             onChange={handleChange}
             className="w-full p-2 border rounded"
@@ -241,6 +255,7 @@ export default function CreatePet() {
 
         {formData.offer_type === 'sale' && (
           <div>
+            <label className="block mb-1">Цена (₽)</label>
             <input
               name="price"
               type="number"
@@ -255,6 +270,7 @@ export default function CreatePet() {
         )}
 
         <div>
+          <label className="block mb-1">Город</label>
           <input
             name="city"
             placeholder="Город *"
@@ -266,6 +282,7 @@ export default function CreatePet() {
         </div>
 
         <div>
+          <label className="block mb-1">Описание</label>
           <textarea
             name="description"
             placeholder="Описание"

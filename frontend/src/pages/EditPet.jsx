@@ -27,13 +27,15 @@ export default function EditPet() {
     name: '',
     species: 'dog',
     breed: '',
-    age: '',
+    birth_date: '',
     price: '',
     offer_type: 'sale',
     city: '',
     description: '',
   });
-  const [images, setImages] = useState([]);
+  const [images, setImages] = useState([]); // содержит File или URL
+  const [existingImageIds, setExistingImageIds] = useState([]); // ID существующих фото
+  const [imagesToDelete, setImagesToDelete] = useState(new Set()); // ID фото на удаление
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
@@ -49,14 +51,19 @@ export default function EditPet() {
         name: pet.name || '',
         species: pet.species,
         breed: pet.breed || '',
-        age: pet.age || '',
+        birth_date: pet.birth_date ? pet.birth_date.split('T')[0] : '',
         price: pet.price || '',
         offer_type: pet.offer_type,
         city: pet.city,
         description: pet.description || '',
       });
-      const imageUrls = pet.images.map(img => img.image);
-      setImages(imageUrls);
+
+      const imageUrls = pet.images.map(img => ({
+        id: img.id,
+        url: img.image
+      }));
+      setImages(imageUrls.map(img => img.url));
+      setExistingImageIds(imageUrls.map(img => img.id));
     } catch (err) {
       toast.error('Не удалось загрузить объявление');
       navigate('/pets');
@@ -93,7 +100,17 @@ export default function EditPet() {
   };
 
   const removeImage = (index) => {
-    setImages(prev => prev.filter((_, i) => i !== index));
+    const updatedImages = [...images];
+    const removedItem = updatedImages[index];
+
+    if (typeof removedItem === 'string') {
+      // Это существующее фото — помечаем на удаление
+      const idToRemove = existingImageIds[index];
+      setImagesToDelete(prev => new Set([...prev, idToRemove]));
+    }
+
+    updatedImages.splice(index, 1);
+    setImages(updatedImages);
   };
 
   const handleSubmit = async (e) => {
@@ -113,6 +130,12 @@ export default function EditPet() {
         if (value !== '') data.append(key, value);
       });
 
+      // Отправляем ID фото на удаление
+      imagesToDelete.forEach(id => {
+        data.append('delete_images', id);
+      });
+
+      // Отправляем новые фото
       const newFiles = images.filter(img => img instanceof File);
       if (newFiles.length > 0) {
         newFiles.forEach(img => data.append('images', img));
@@ -137,66 +160,77 @@ export default function EditPet() {
     <div className="max-w-2xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-6">Редактировать объявление</h1>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* 🔥 Блок загрузки фото — Avito стиль */}
+        {/* Фото */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             Фотографии (максимум 5)
           </label>
-          <div className="flex flex-wrap gap-2">
-            {images.map((file, index) => (
+          <div className="flex flex-col gap-3">
+            {images.map((item, index) => (
               <div
                 key={`photo-${index}`}
-                className="relative"
-                style={{ width: '80px', height: '80px' }}
+                className="flex items-start gap-3"
               >
-                <img
-                  src={typeof file === 'string' ? file : URL.createObjectURL(file)}
-                  alt={`Фото ${index + 1}`}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover',
-                    borderRadius: '4px',
-                    border: '1px solid #e5e7eb'
-                  }}
-                />
+                {/* Фото */}
+                <div style={{ width: '80px', height: '80px', position: 'relative' }}>
+                  <img
+                    src={typeof item === 'string' ? item : URL.createObjectURL(item)}
+                    alt={`Фото ${index + 1}`}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      objectFit: 'cover',
+                      borderRadius: '4px',
+                      border: '1px solid #e5e7eb'
+                    }}
+                  />
+                </div>
+
+                {/* Кнопка "Удалить" СПРАВА */}
                 <button
                   type="button"
                   onClick={() => removeImage(index)}
-                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs z-10"
+                  className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm whitespace-nowrap self-start flex-shrink-0 h-fit mt-1"
+                  aria-label="Удалить фото"
                 >
-                  ×
+                  Удалить
                 </button>
               </div>
             ))}
 
+            {/* Плейсхолдеры для новых фото */}
             {Array.from({ length: 5 - images.length }).map((_, i) => (
               <div
                 key={`placeholder-${i}`}
-                style={{
-                  width: '80px',
-                  height: '80px',
-                  border: '2px dashed #d1d5db',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
+                className="flex items-start gap-3"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-6 w-6 text-gray-400"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
+                <div
+                  style={{
+                    width: '80px',
+                    height: '80px',
+                    border: '2px dashed #d1d5db',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}
                 >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                  />
-                </svg>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+                    />
+                  </svg>
+                </div>
+                <div style={{ width: '64px' }}></div> {/* Заполнитель под кнопку */}
               </div>
             ))}
           </div>
@@ -205,15 +239,16 @@ export default function EditPet() {
             accept="image/*"
             multiple
             onChange={handleFileChange}
-            className="mt-2"
+            className="mt-3"
           />
           <p className="text-xs text-gray-500 mt-1">
             Поддерживаются JPG, PNG. Макс. размер файла — 5 МБ.
           </p>
         </div>
 
-        {/* Поля формы */}
+        {/* Кличка животного */}
         <div>
+          <label className="block mb-1">Кличка животного</label>
           <input
             name="name"
             value={formData.name}
@@ -263,34 +298,31 @@ export default function EditPet() {
           />
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Дата рождения */}
+        <div>
+          <label className="block mb-1">Дата рождения</label>
+          <input
+            name="birth_date"
+            type="date"
+            value={formData.birth_date}
+            onChange={handleChange}
+            className="w-full p-2 border rounded"
+          />
+        </div>
+
+        {formData.offer_type === 'sale' && (
           <div>
-            <label className="block mb-1">Возраст (лет)</label>
+            <label className="block mb-1">Цена (₽)</label>
             <input
-              name="age"
+              name="price"
               type="number"
-              value={formData.age}
+              value={formData.price}
               onChange={handleChange}
               className="w-full p-2 border rounded"
               min="0"
-              max="30"
             />
           </div>
-
-          {formData.offer_type === 'sale' && (
-            <div>
-              <label className="block mb-1">Цена (₽)</label>
-              <input
-                name="price"
-                type="number"
-                value={formData.price}
-                onChange={handleChange}
-                className="w-full p-2 border rounded"
-                min="0"
-              />
-            </div>
-          )}
-        </div>
+        )}
 
         <div>
           <label className="block mb-1">Город</label>

@@ -127,14 +127,24 @@ class PetViewSet(viewsets.ModelViewSet):
 
     def perform_update(self, serializer):
         pet = serializer.save()
-        # 🔥 Добавляем проверку прав на обновление
+
+        # 🔒 Проверка прав
         if pet.user != self.request.user:
             raise PermissionError("Только владелец может редактировать объявление")
 
-        images = self.request.FILES.getlist('images')
-        if images:
-            pet.images.all().delete()
-            for image in images:
+        # 🗑️ Удаление выбранных фото
+        delete_ids = self.request.data.getlist('delete_images')
+        if delete_ids:
+            try:
+                delete_ids = [int(id) for id in delete_ids]
+                pet.images.filter(id__in=delete_ids).delete()
+            except (ValueError, TypeError):
+                pass  # Игнорируем некорректные ID
+
+        # ➕ Добавление новых фото
+        new_images = self.request.FILES.getlist('images')
+        if new_images:
+            for image in new_images:
                 PetImage.objects.create(pet=pet, image=image)
 
     def retrieve(self, request, *args, **kwargs):
