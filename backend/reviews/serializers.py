@@ -6,12 +6,13 @@ from ads.serializers import PetSerializer
 
 class ReviewSerializer(serializers.ModelSerializer):
     reviewer = UserSerializer(read_only=True)
+    reviewed = UserSerializer(read_only=True)  # ← добавлено
     pet = PetSerializer(read_only=True)
 
     class Meta:
         model = Review
-        fields = ['id', 'reviewer', 'pet', 'rating', 'comment', 'created_at', 'transaction_completed']
-        read_only_fields = ['id', 'reviewer', 'pet', 'created_at']
+        fields = ['id', 'reviewer', 'reviewed', 'pet', 'rating', 'comment', 'created_at', 'transaction_completed']
+        read_only_fields = ['id', 'reviewer', 'reviewed', 'pet', 'created_at']
 
     def validate_rating(self, value):
         if value < 1 or value > 5:

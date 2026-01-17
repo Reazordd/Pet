@@ -38,7 +38,8 @@ function ProfilePage() {
   const [reviewStats, setReviewStats] = useState({ avg_rating: 0, total_reviews: 0 });
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [showReviewForm, setShowReviewForm] = useState(false);
-  const [showReviews, setShowReviews] = useState(false); // ← НОВОЕ: управление видимостью отзывов
+  const [showReviews, setShowReviews] = useState(false);
+  const [reviewsLoaded, setReviewsLoaded] = useState(false); // ← отслеживаем, загружены ли отзывы
   const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
@@ -60,7 +61,7 @@ function ProfilePage() {
       return;
     }
     fetchProfile();
-    // 🔥 УБРАНО: fetchReviews — грузим только при клике
+    fetchReviewStats(); // ← Загружаем статистику сразу
     if (activeTab === 'pets') {
       fetchPets();
     }
@@ -89,21 +90,31 @@ function ProfilePage() {
     }
   };
 
-  // 🔥 ЛЕНИВАЯ ЗАГРУЗКА ОТЗЫВОВ
+  // 🔥 Загружаем ТОЛЬКО статистику (без списка отзывов)
+  const fetchReviewStats = async () => {
+    try {
+      const res = await api.get(`/reviews/user/${user_id}/reviews/`);
+      setReviewStats(res.data.rating_stats || { avg_rating: 0, total_reviews: 0 });
+    } catch (err) {
+      console.error('Ошибка загрузки статистики отзывов:', err);
+    }
+  };
+
+  // 🔥 Загружаем полный список отзывов (только при первом клике)
   const loadReviews = async () => {
-    if (reviews.length === 0 && reviewStats.total_reviews > 0) {
+    if (!reviewsLoaded) {
       try {
         const res = await api.get(`/reviews/user/${user_id}/reviews/`);
-        setReviews(res.data.reviews);
-        setReviewStats(res.data.rating_stats);
+        setReviews(res.data.reviews || []);
+        setReviewsLoaded(true);
       } catch (err) {
-        console.error('Ошибка загрузки отзывов:', err);
+        console.error('Ошибка загрузки списка отзывов:', err);
       }
     }
   };
 
   const toggleReviews = () => {
-    if (!showReviews) {
+    if (!showReviews && !reviewsLoaded) {
       loadReviews(); // Грузим только при первом открытии
     }
     setShowReviews(!showReviews);
@@ -149,8 +160,7 @@ function ProfilePage() {
       setShowReviewForm(false);
       setReviewForm({ rating: 5, comment: '' });
       // Обновляем статистику после нового отзыва
-      const res = await api.get(`/reviews/user/${user_id}/reviews/`);
-      setReviewStats(res.data.rating_stats);
+      fetchReviewStats();
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Ошибка при создании отзыва';
       toast.error(errorMsg);
@@ -303,8 +313,8 @@ function ProfilePage() {
         </div>
       )}
 
-      {/* Список отзывов — ПОКАЗЫВАЕТСЯ ТОЛЬКО ПРИ showReviews */}
-      {showReviews && reviews.length > 0 && (
+      {/* Список отзывов — показывается только при showReviews и если загружены */}
+      {showReviews && reviewsLoaded && reviews.length > 0 && (
         <div className="mt-6">
           <h3 className="font-bold text-lg mb-3">Отзывы о {getDisplayName(user)}</h3>
           <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
