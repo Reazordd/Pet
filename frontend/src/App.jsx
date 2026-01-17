@@ -17,8 +17,6 @@ import Register from './pages/Register';
 import FavoritesPage from './pages/FavoritesPage';
 import ProfilePage from './pages/ProfilePage';
 import Profile from './pages/Profile';
-// 🔥 ФОРУМ ВРЕМЕННО УДАЛЁН
-// import Forum from './pages/Forum';
 import AdminAds from './pages/AdminAds';
 import CityPage from './pages/CityPage';
 
@@ -32,6 +30,10 @@ import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
 import Reviews from './pages/Reviews';
 
+// 🔥 ЮРИДИЧЕСКИЕ СТРАНИЦЫ
+import PrivacyPolicy from './pages/PrivacyPolicy';
+import TermsOfService from './pages/TermsOfService';
+
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -39,9 +41,9 @@ function App() {
   return (
     <ThemeProvider>
       <FavoritesProvider>
-        <div className="app">
+        <div className="min-h-screen flex flex-col">
           <Navbar />
-          <main className="content">
+          <main className="content flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
 
@@ -108,16 +110,39 @@ function App() {
                   <Reviews />
                 </ProtectedRoute>
               } />
-              {/* 🔥 ФОРУМ ВРЕМЕННО УДАЛЁН */}
-              {/* <Route path="/forum" element={<Forum />} /> */}
               <Route path="/admin/ads" element={
                 <ProtectedRoute>
                   <AdminAds />
                 </ProtectedRoute>
               } />
+
+              {/* 🔥 ЮРИДИЧЕСКИЕ СТРАНИЦЫ */}
+              <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/terms" element={<TermsOfService />} />
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
+
+          {/* FOOTER */}
+          <footer className="bg-white border-t mt-auto">
+            <div className="max-w-6xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
+              <a
+                href="/terms"
+                className="text-gray-600 hover:text-gray-900 hover:underline mr-4"
+              >
+                Пользовательское соглашение
+              </a>
+              <a
+                href="/privacy"
+                className="text-gray-600 hover:text-gray-900 hover:underline mr-4"
+              >
+                Политика конфиденциальности
+              </a>
+              <span>© {new Date().getFullYear()} PetMarket</span>
+            </div>
+          </footer>
+
           <ToastContainer position="top-right" autoClose={3000} />
         </div>
       </FavoritesProvider>
