@@ -147,6 +147,19 @@ class PetViewSet(viewsets.ModelViewSet):
             for image in new_images:
                 PetImage.objects.create(pet=pet, image=image)
 
+        # 🔁 ОБЯЗАТЕЛЬНО: отправляем на модерацию при ЛЮБОМ редактировании
+        pet.moderation_status = 'pending'
+        pet.rejection_reason = None  # Сбрасываем причину отклонения
+        pet.is_active = False        # Снимаем с публикации до одобрения
+        pet.save(update_fields=['moderation_status', 'rejection_reason', 'is_active'])
+
+        # ⚠️ Автомодерация (проверка бан-слов)
+        self.auto_moderate(pet)
+
+        # 📬 Уведомление модераторам, если после автомодерации статус остался "pending"
+        if pet.moderation_status == 'pending':
+            self.notify_moderators(pet)
+
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
 

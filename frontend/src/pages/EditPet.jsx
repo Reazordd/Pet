@@ -144,7 +144,7 @@ export default function EditPet() {
       await api.put(`/pets/${id}/`, data, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-      toast.success('✅ Объявление обновлено!');
+      toast.success('✅ Объявление обновлено и отправлено на модерацию!');
       navigate(`/pets/${id}`);
     } catch (err) {
       console.error(err);
