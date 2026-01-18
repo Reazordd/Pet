@@ -1,17 +1,15 @@
 # backend/users/models.py
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.core.validators import MinLengthValidator
+from django.core.validators import RegexValidator
 from ads.models import Pet
 
 class User(AbstractUser):
     email = models.EmailField(unique=True)
-    phone = models.CharField(max_length=20, blank=True, null=True, validators=[MinLengthValidator(10)])
     avatar = models.ImageField(upload_to="avatars/", blank=True, null=True)
     bio = models.TextField(blank=True, null=True)
     location = models.CharField(max_length=100, blank=True, null=True)
     email_verified = models.BooleanField(default=False)
-    phone_verified = models.BooleanField(default=False)
 
     # 🔥 Поля для Avito-статусов
     is_trusted_seller = models.BooleanField(default=False, verbose_name="Надёжный продавец")
@@ -32,7 +30,7 @@ class User(AbstractUser):
         """Автоматически обновляет статус «Надёжный продавец»"""
         active_pets_count = Pet.objects.filter(
             user=self,
-            moderation_status='approved',  # ← ИСПРАВЛЕНО
+            moderation_status='approved',
             is_active=True
         ).count()
         self.is_trusted_seller = active_pets_count >= 5
@@ -41,3 +39,29 @@ class User(AbstractUser):
     def update_avito_delivery_count(self):
         """Заглушка для подсчёта доставок (реализуется отдельно)"""
         pass
+
+
+# 🔥 НОВАЯ МОДЕЛЬ: PhoneNumber
+class PhoneNumber(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='phone_number')
+    number = models.CharField(
+        max_length=15,
+        unique=True,
+        validators=[
+            RegexValidator(
+                regex=r'^\+?[379]\d{9,12}$',
+                message="Номер телефона должен быть в международном формате: +380991234567"
+            )
+        ],
+        help_text="Международный формат: +79991234567"
+    )
+    verified = models.BooleanField(default=False, help_text="Подтверждён ли номер через SMS")
+    verification_code = models.CharField(max_length=6, blank=True, null=True, help_text="Код для верификации")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Номер телефона"
+        verbose_name_plural = "Номера телефонов"
+
+    def __str__(self):
+        return f"{self.number} ({'✅' if self.verified else '⏳'})"

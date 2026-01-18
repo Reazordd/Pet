@@ -306,7 +306,7 @@ class PetViewSet(viewsets.ModelViewSet):
             try:
                 favorite = Favorite.objects.get(user=user, pet=pet)
                 favorite.delete()
-                return Response({'is_favorite': False}, status=status.HTTP_204_NO_CONTENT)
+                return Response(status=status.HTTP_204_NO_CONTENT)  # ← БЕЗ ТЕЛА!
             except Favorite.DoesNotExist:
                 return Response({'error': 'Not in favorites'}, status=status.HTTP_400_BAD_REQUEST)
 

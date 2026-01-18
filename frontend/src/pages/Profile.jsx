@@ -18,7 +18,6 @@ function Profile() {
   const [activeTab, setActiveTab] = useState("ads");
   const [stats, setStats] = useState({});
 
-  // УДАЛЕНО: myAds, page, totalPages — не нужны!
   const [passwords, setPasswords] = useState({
     old_password: "",
     new_password: "",
@@ -34,7 +33,6 @@ function Profile() {
     if (!checkToken()) return logout();
     fetchProfile();
     fetchStats();
-    // УДАЛЕНО: fetchMyAds()
   }, []);
 
   const fetchProfile = async () => {
@@ -57,8 +55,6 @@ function Profile() {
     }
   };
 
-  // УДАЛЕНА функция fetchMyAds()
-
   const fetchReviews = async () => {
     if (!userData.id) return;
     setReviewsLoading(true);
@@ -76,8 +72,6 @@ function Profile() {
       setReviewsLoading(false);
     }
   };
-
-  // УДАЛЕН useEffect для fetchMyAds
 
   useEffect(() => {
     if ((activeTab === "reviews" || activeTab === "messages") && userData.id) {
@@ -99,6 +93,22 @@ function Profile() {
     }
   };
 
+  const handlePhoneChange = (e) => {
+    let value = e.target.value;
+    value = value.replace(/[^\d+\s]/g, '');
+    if (value.length > 15) return;
+    setUserData(prev => ({ ...prev, phone: value }));
+  };
+
+  const normalizePhone = (phone) => {
+    if (!phone) return '';
+    let clean = phone.replace(/[^\d+]/g, '');
+    if (!clean.startsWith('+')) {
+      clean = '+' + clean;
+    }
+    return clean;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -107,7 +117,13 @@ function Profile() {
       if (avatarFile) {
         data.append('avatar', avatarFile);
       }
-      ['first_name', 'last_name', 'username', 'email', 'phone', 'bio'].forEach(key => {
+
+      const phoneToSend = normalizePhone(userData.phone);
+      if (phoneToSend && phoneToSend.length >= 10) {
+        data.append('phone', phoneToSend);
+      }
+
+      ['first_name', 'last_name', 'username', 'email', 'bio'].forEach(key => {
         if (userData[key] !== undefined && userData[key] !== null) {
           data.append(key, userData[key]);
         }
@@ -122,7 +138,23 @@ function Profile() {
       toast.success("✅ Профиль обновлён");
     } catch (err) {
       console.error(err);
-      toast.error("Ошибка обновления профиля");
+      // 🔥 Улучшенная обработка ошибок
+      const errorData = err.response?.data;
+      if (errorData) {
+        if (errorData.phone) {
+          toast.error(errorData.phone);
+        } else if (errorData.email) {
+          toast.error(errorData.email);
+        } else if (errorData.username) {
+          toast.error(errorData.username);
+        } else if (errorData.error) {
+          toast.error(errorData.error);
+        } else {
+          toast.error("Ошибка обновления профиля");
+        }
+      } else {
+        toast.error("Ошибка обновления профиля");
+      }
     } finally {
       setLoading(false);
     }
@@ -167,7 +199,7 @@ function Profile() {
   if (loading && !userData.username) return <div className="text-center mt-10">Загрузка...</div>;
 
   const reviewCount = userData.review_count || 0;
-  const myAds = userData.pets || []; // ✅ Берём объявления из профиля!
+  const myAds = userData.pets || [];
 
   return (
     <div className="profile-container min-h-screen bg-gray-50 py-6">
@@ -269,8 +301,6 @@ function Profile() {
               ) : (
                 <p className="text-gray-500 text-center py-8">Нет объявлений</p>
               )}
-
-              {/* УДАЛЕНА пагинация — она не нужна, так как все объявления уже загружены */}
             </div>
           )}
 
@@ -445,16 +475,19 @@ function Profile() {
                   required
                 />
               </div>
+
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
                 <input
                   name="phone"
+                  type="tel"
                   value={userData.phone || ""}
-                  onChange={handleChange}
+                  onChange={handlePhoneChange}
                   className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="+7 (999) 999-99-99"
+                  placeholder="+380 99 123 45 67 или +7 999 123-45-67"
                 />
               </div>
+
               <div className="mb-6">
                 <label className="block text-sm font-medium text-gray-700 mb-1">О себе</label>
                 <textarea
