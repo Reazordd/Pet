@@ -149,21 +149,24 @@ function PetDetail() {
     }
   };
 
-  // 🔥 ИСПРАВЛЕНО: используем PATCH вместо POST /activate/
-  const handleToggleActive = async () => {
+  // 🔥 ИСПРАВЛЕНО: используем POST /deactivate/ и /activate/
+  const handleDeactivate = async () => {
     try {
-      const newStatus = !pet.is_active;
-      await api.patch(`/pets/${id}/`, { is_active: newStatus });
-
-      if (newStatus) {
-        toast.success('Объявление снова в публикации');
-      } else {
-        toast.info('Объявление снято с публикации');
-      }
-
-      fetchPet(); // Обновляем данные
+      await api.post(`/pets/${id}/deactivate/`);
+      setPet(prev => ({ ...prev, is_active: false }));
+      toast.info('Объявление снято с публикации');
     } catch (err) {
-      toast.error('Ошибка при изменении статуса');
+      toast.error('Ошибка при снятии с публикации');
+    }
+  };
+
+  const handleActivate = async () => {
+    try {
+      await api.post(`/pets/${id}/activate/`);
+      setPet(prev => ({ ...prev, is_active: true }));
+      toast.success('Объявление снова в публикации');
+    } catch (err) {
+      toast.error('Ошибка при возврате в публикацию');
     }
   };
 
@@ -367,16 +370,22 @@ function PetDetail() {
               {pet.can_be_raised ? 'Поднять объявление' : 'Поднять можно позже'}
             </button>
 
-            <button
-              onClick={handleToggleActive}
-              className={`px-4 py-2 rounded font-medium ${
-                pet.is_active
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-yellow-600 text-white hover:bg-yellow-700'
-              }`}
-            >
-              {pet.is_active ? 'Снять с публикации' : 'Вернуть в публикацию'}
-            </button>
+            {/* 🔥 ЗАМЕНЕНО: используем отдельные функции */}
+            {pet.is_active ? (
+              <button
+                onClick={handleDeactivate}
+                className="px-4 py-2 bg-red-600 text-white rounded font-medium hover:bg-red-700"
+              >
+                Снять с публикации
+              </button>
+            ) : (
+              <button
+                onClick={handleActivate}
+                className="px-4 py-2 bg-yellow-600 text-white rounded font-medium hover:bg-yellow-700"
+              >
+                Вернуть в публикацию
+              </button>
+            )}
           </div>
 
           {pet.last_raised_at && (

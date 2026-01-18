@@ -54,11 +54,14 @@ function Home() {
       const newPets = response.data.results || [];
 
       setPets(prev => pageNum === 1 ? newPets : [...prev, ...newPets]);
-      setHasMore(newPets.length === 12);
+
+      // 🔥 ИСПРАВЛЕНО: используем next для определения hasMore
+      setHasMore(!!response.data.next);
       setPage(pageNum);
     } catch (err) {
       console.error('Ошибка загрузки объявлений:', err);
       toast.error('Ошибка при загрузке объявлений');
+      setHasMore(false); // ← чтобы не пытаться снова
     } finally {
       setLoading(false);
       setFilterLoading(false);
