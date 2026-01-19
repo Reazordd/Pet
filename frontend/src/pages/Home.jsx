@@ -19,7 +19,16 @@ function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  // Инициализация фильтров из URL
+  // 🔥 Получаем город пользователя
+  const fetchUserLocation = async () => {
+    try {
+      const res = await api.get("/auth/profile/me/");
+      return res.data.location || null;
+    } catch {
+      return null;
+    }
+  };
+
   const initFilters = () => {
     return {
       search: searchParams.get('search') || '',
@@ -42,7 +51,15 @@ function Home() {
         page_size: 12,
       });
 
-      // Добавляем фильтры в запрос
+      // Если нет фильтра по городу — используем город пользователя
+      let cityFilter = currentFilters.city || '';
+      if (!cityFilter && !currentFilters.search) {
+        const userLocation = await fetchUserLocation();
+        if (userLocation) {
+          cityFilter = userLocation;
+        }
+      }
+
       Object.entries(currentFilters).forEach(([key, value]) => {
         if (value !== '') {
           const paramName = key === 'minPrice' ? 'min_price' : key === 'maxPrice' ? 'max_price' : key;
@@ -50,18 +67,20 @@ function Home() {
         }
       });
 
+      if (cityFilter) {
+        params.append('city', cityFilter);
+      }
+
       const response = await api.get(`/pets/?${params.toString()}`);
       const newPets = response.data.results || [];
 
       setPets(prev => pageNum === 1 ? newPets : [...prev, ...newPets]);
-
-      // 🔥 ИСПРАВЛЕНО: используем next для определения hasMore
       setHasMore(!!response.data.next);
       setPage(pageNum);
     } catch (err) {
       console.error('Ошибка загрузки объявлений:', err);
       toast.error('Ошибка при загрузке объявлений');
-      setHasMore(false); // ← чтобы не пытаться снова
+      setHasMore(false);
     } finally {
       setLoading(false);
       setFilterLoading(false);
@@ -88,8 +107,6 @@ function Home() {
 
   const handleFilter = useCallback((newFilters) => {
     setFilters(newFilters);
-
-    // Обновляем URL-параметры
     const params = new URLSearchParams();
     Object.entries(newFilters).forEach(([key, value]) => {
       if (value) {
@@ -98,8 +115,6 @@ function Home() {
       }
     });
     setSearchParams(params, { replace: true });
-
-    // Сбрасываем страницу и загружаем новые данные
     fetchData(1, newFilters);
   }, [fetchData, setSearchParams]);
 

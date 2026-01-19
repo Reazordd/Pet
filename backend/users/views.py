@@ -14,6 +14,7 @@ from reviews.models import Review
 from .serializers import UserSerializer
 from .utils import account_activation_token
 from django.conf import settings
+from .models import PhoneNumber  # ← ДОБАВЛЕНО
 
 User = get_user_model()
 
@@ -21,9 +22,8 @@ User = get_user_model()
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_my_profile(request):
-    # 🔥 ЯВНО ЗАГРУЖАЕМ ВСЕ ОБЪЯВЛЕНИЯ ПОЛЬЗОВАТЕЛЯ (без фильтрации!)
     user = request.user
-    pets = Pet.objects.filter(user=user)  # Все объявления: активные, неактивные, rejected
+    pets = Pet.objects.filter(user=user)
     reviews = Review.objects.filter(reviewed=user).select_related('reviewer')
 
     serializer = UserSerializer(
@@ -91,7 +91,6 @@ def get_profile_stats(request):
     })
 
 
-# 🔥 НОВЫЙ: смена пароля для авторизованного пользователя
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def password_change(request):
@@ -113,7 +112,6 @@ def password_change(request):
     return Response({'message': 'Пароль успешно изменён'})
 
 
-# 🔥 ОБНОВЛЁННЫЙ: регистрация с email-активацией
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def register(request):
@@ -133,21 +131,43 @@ def register(request):
         return Response({"email": "Пользователь с таким email уже существует"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        user = User.objects.create(
-            username=data["username"],
-            email=data["email"],
-            first_name=data.get("first_name", ""),
-            last_name=data.get("last_name", ""),
-            phone=data.get("phone", ""),
-            is_active=False,
-            email_verified=False,
-        )
+        # 🔥 Создаём пользователя БЕЗ phone
+        user_data = {
+            'username': data["username"],
+            'email': data["email"],
+            'first_name': data.get("first_name", ""),
+            'last_name': data.get("last_name", ""),
+            'is_active': False,
+            'email_verified': False,
+        }
+        user = User.objects.create(**user_data)
         user.set_password(data["password"])
         user.save()
 
+        # 🔥 Сохраняем номер отдельно
+        phone = data.get("phone")
+        if phone:
+            clean_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
+            if clean_phone.startswith('8'):
+                clean_phone = '+7' + clean_phone[1:]
+            elif clean_phone and not clean_phone.startswith('+'):
+                clean_phone = '+' + clean_phone
+
+            from django.core.validators import RegexValidator
+            from django.core.exceptions import ValidationError
+            phone_validator = RegexValidator(
+                regex=r'^\+?[379]\d{9,12}$',
+                message="Номер телефона должен быть в международном формате: +380991234567"
+            )
+            try:
+                phone_validator(clean_phone)
+                PhoneNumber.objects.create(user=user, number=clean_phone, verified=True)
+            except ValidationError:
+                pass  # Игнорируем невалидный номер
+
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = account_activation_token.make_token(user)
-        activation_link = f"{settings.FRONTEND_URL}/activate/{uid}/{token}/" # сервер и локалка
+        activation_link = f"{settings.FRONTEND_URL}/activate/{uid}/{token}/"
 
         send_mail(
             subject="Подтвердите ваш email — PetMarket",
@@ -163,7 +183,6 @@ def register(request):
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# 🔥 НОВЫЙ: активация аккаунта
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def activate_account(request, uidb64, token):
@@ -182,7 +201,6 @@ def activate_account(request, uidb64, token):
         return Response({"error": "Неверная или устаревшая ссылка"}, status=status.HTTP_400_BAD_REQUEST)
 
 
-# 🔥 БЕЗОПАСНЫЙ СБРОС ПАРОЛЯ (как на Avito)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_request(request):
@@ -190,12 +208,11 @@ def password_reset_request(request):
     if not email:
         return Response({'error': 'Email обязателен'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 🔥 НЕ раскрываем существование email — всегда возвращаем успех
     try:
         user = User.objects.get(email=email)
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = default_token_generator.make_token(user)
-        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/" # сервер и локалка
+        reset_link = f"{settings.FRONTEND_URL}/reset-password/{uid}/{token}/"
 
         send_mail(
             subject="Сброс пароля — PetMarket",
@@ -205,13 +222,11 @@ def password_reset_request(request):
             fail_silently=False,
         )
     except User.DoesNotExist:
-        # Злоумышленник не узнает, существует ли email
         pass
 
     return Response({"message": "Если email зарегистрирован, письмо отправлено"}, status=status.HTTP_200_OK)
 
 
-# 🔥 НОВЫЙ: подтверждение сброса пароля
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_confirm(request, uidb64, token):

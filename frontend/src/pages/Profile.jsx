@@ -123,7 +123,7 @@ function Profile() {
         data.append('phone', phoneToSend);
       }
 
-      ['first_name', 'last_name', 'username', 'email', 'bio'].forEach(key => {
+      ['first_name', 'last_name', 'username', 'email', 'bio', 'location'].forEach(key => {
         if (userData[key] !== undefined && userData[key] !== null) {
           data.append(key, userData[key]);
         }
@@ -138,7 +138,6 @@ function Profile() {
       toast.success("✅ Профиль обновлён");
     } catch (err) {
       console.error(err);
-      // 🔥 Улучшенная обработка ошибок
       const errorData = err.response?.data;
       if (errorData) {
         if (errorData.phone) {
@@ -147,6 +146,8 @@ function Profile() {
           toast.error(errorData.email);
         } else if (errorData.username) {
           toast.error(errorData.username);
+        } else if (errorData.location) {
+          toast.error(errorData.location);
         } else if (errorData.error) {
           toast.error(errorData.error);
         } else {
@@ -485,6 +486,17 @@ function Profile() {
                   onChange={handlePhoneChange}
                   className="w-full p-2 border border-gray-300 rounded"
                   placeholder="+380 99 123 45 67 или +7 999 123-45-67"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Город *</label>
+                <input
+                  name="location"
+                  value={userData.location || ""}
+                  onChange={handleChange}
+                  className="w-full p-2 border border-gray-300 rounded"
+                  required
                 />
               </div>
 
