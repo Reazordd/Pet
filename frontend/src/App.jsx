@@ -34,6 +34,9 @@ import Reviews from './pages/Reviews';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
+// 🔥 НОВАЯ СТРАНИЦА КАТЕГОРИИ
+import CategoryPage from './pages/CategoryPage';
+
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -58,6 +61,9 @@ function App() {
               {/* SEO-страницы */}
               <Route path="/:citySlug" element={<CityPage />} />
               <Route path="/:citySlug/:species" element={<CityPage />} />
+
+              {/* 🔥 СТРАНИЦА КАТЕГОРИИ */}
+              <Route path="/category/:id" element={<CategoryPage />} />
 
               {/* Детали объявления */}
               <Route path="/pets/:id" element={<PetDetail />} />

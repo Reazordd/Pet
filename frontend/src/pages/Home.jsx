@@ -150,7 +150,7 @@ function Home() {
           {categories.slice(0, 6).map((cat) => (
             <Link
               key={cat.id}
-              to={`/?species=${cat.slug}`}
+              to={`/category/${cat.id}`}  // ← ИЗМЕНЕНО: теперь /category/dog
               className="category-card"
             >
               <div className="category-icon">{cat.icon || '🐾'}</div>
