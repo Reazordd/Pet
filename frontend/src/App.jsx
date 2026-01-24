@@ -8,6 +8,7 @@ import Navbar from './components/Navbar';
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './components/NotFound';
 
+// Компоненты страниц
 import Home from './pages/Home';
 import PetDetail from './pages/PetDetail';
 import CreatePet from './pages/CreatePet';
@@ -20,24 +21,27 @@ import Profile from './pages/Profile';
 import AdminAds from './pages/AdminAds';
 import CityPage from './pages/CityPage';
 
-// 🔥 НОВЫЕ СТРАНИЦЫ
+// Новые страницы
 import ActivateAccount from './pages/ActivateAccount';
 import PasswordResetRequest from './pages/PasswordResetRequest';
 import PasswordResetConfirm from './pages/PasswordResetConfirm';
-import YandexCallback from './pages/YandexCallback'; // ← ДОБАВЛЕНО
+import YandexCallback from './pages/YandexCallback';
 
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
 import Reviews from './pages/Reviews';
 
-// 🔥 ЮРИДИЧЕСКИЕ СТРАНИЦЫ
+// Юридические страницы
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
 
-// 🔥 НОВАЯ СТРАНИЦА КАТЕГОРИИ
+// Страницы категорий
 import CategoryPage from './pages/CategoryPage';
 import AllAdsPage from './pages/AllAdsPage';
+
+// Компоненты
+import YandexMetrika from './components/YandexMetrika'; // ← ДОБАВЛЕНО
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -51,37 +55,21 @@ function App() {
           <main className="content flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
-
-              {/* 🔥 РЕДИРЕКТ: /pets → / */}
               <Route path="/pets" element={<Navigate to="/" replace />} />
-
-              {/* 🔥 НОВЫЙ МАРШРУТ */}
               <Route path="/all" element={<AllAdsPage />} />
-
-              {/* 🔥 НОВЫЕ МАРШРУТЫ */}
               <Route path="/activate/:uidb64/:token" element={<ActivateAccount />} />
               <Route path="/password-reset" element={<PasswordResetRequest />} />
               <Route path="/reset-password/:uidb64/:token" element={<PasswordResetConfirm />} />
-
-              {/* 🔥 ЯНДЕКС CALLBACK */}
               <Route path="/auth/yandex/callback" element={<YandexCallback />} />
-
-              {/* SEO-страницы */}
               <Route path="/:citySlug" element={<CityPage />} />
               <Route path="/:citySlug/:species" element={<CityPage />} />
-
-              {/* 🔥 СТРАНИЦА КАТЕГОРИИ */}
               <Route path="/category/:id" element={<CategoryPage />} />
-
-              {/* Детали объявления */}
               <Route path="/pets/:id" element={<PetDetail />} />
               <Route path="/pets/:id/edit" element={
                 <ProtectedRoute>
                   <EditPet />
                 </ProtectedRoute>
               } />
-
-              {/* Остальные страницы */}
               <Route path="/create" element={
                 <ProtectedRoute>
                   <CreatePet />
@@ -129,11 +117,8 @@ function App() {
                   <AdminAds />
                 </ProtectedRoute>
               } />
-
-              {/* 🔥 ЮРИДИЧЕСКИЕ СТРАНИЦЫ */}
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
-
               <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
@@ -158,6 +143,9 @@ function App() {
           </footer>
 
           <ToastContainer position="top-right" autoClose={3000} />
+
+          {/* 🔥 ЯНДЕКС.МЕТРИКА */}
+          <YandexMetrika />
         </div>
       </FavoritesProvider>
     </ThemeProvider>
