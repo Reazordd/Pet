@@ -133,7 +133,7 @@ function Home() {
           <p>Тысячи объявлений о животных по всей России. Удобный поиск, честные продавцы, безопасные сделки.</p>
           <div className="hero-buttons">
             <Link to="/create" className="btn btn-primary">Разместить объявление</Link>
-            <Link to="/" className="btn btn-outline">Посмотреть все</Link>
+            <Link to="/all" className="btn btn-outline">Посмотреть все</Link> {/* ← ИСПРАВЛЕНО */}
           </div>
         </div>
       </section>
@@ -150,7 +150,7 @@ function Home() {
           {categories.slice(0, 6).map((cat) => (
             <Link
               key={cat.id}
-              to={`/category/${cat.id}`}  // ← ИЗМЕНЕНО: теперь /category/dog
+              to={`/category/${cat.id}`}
               className="category-card"
             >
               <div className="category-icon">{cat.icon || '🐾'}</div>

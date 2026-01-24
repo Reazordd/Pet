@@ -36,6 +36,7 @@ import TermsOfService from './pages/TermsOfService';
 
 // 🔥 НОВАЯ СТРАНИЦА КАТЕГОРИИ
 import CategoryPage from './pages/CategoryPage';
+import AllAdsPage from './pages/AllAdsPage'; // ← ДОБАВЛЕНО
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -52,6 +53,9 @@ function App() {
 
               {/* 🔥 РЕДИРЕКТ: /pets → / */}
               <Route path="/pets" element={<Navigate to="/" replace />} />
+
+              {/* 🔥 НОВЫЙ МАРШРУТ */}
+              <Route path="/all" element={<AllAdsPage />} />
 
               {/* 🔥 НОВЫЕ МАРШРУТЫ */}
               <Route path="/activate/:uidb64/:token" element={<ActivateAccount />} />
