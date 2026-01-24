@@ -51,28 +51,23 @@ const PetCard = ({ pet, size = 'default' }) => {
     ? buildImageUrl(pet.images[0].image)
     : '/images/placeholder-pet.jpg';
 
-  // 🔥 Отображаем имя или породу
   const petName = pet.name || pet.breed || 'Питомец';
 
   return (
     <div className={`pet-card ${size === 'small' ? 'pet-card-small' : ''}`}>
       <div className="pet-image-container">
         <Link to={`/pets/${pet.id}`} className="pet-card-link">
-          <div className="pet-image">
-            <img
-              src={imageUrl}
-              alt={petName}
-              onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
-            />
-          </div>
+          <img
+            src={imageUrl}
+            alt={petName}
+            onError={(e) => e.target.src = '/images/placeholder-pet.jpg'}
+          />
         </Link>
       </div>
       <div className="pet-info">
-        {/* 🔥 ИСПРАВЛЕНО: имя или порода */}
         <h3 className="pet-name">{petName}</h3>
         <p className="pet-city">{pet.city}</p>
 
-        {/* 🔥 Метка "Неактивно" */}
         {!pet.is_active && (
           <span className="text-red-500 text-xs font-medium block mb-1">Снято с публикации</span>
         )}

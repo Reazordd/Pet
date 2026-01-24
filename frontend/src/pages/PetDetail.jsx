@@ -8,6 +8,7 @@ import Lightbox from '../components/Lightbox';
 import ViewStatsChart from '../components/ViewStatsChart';
 import { buildImageUrl } from '../utils/image';
 import { jwtDecode } from 'jwt-decode';
+import '../styles/PetDetail.css';
 
 const SPECIES_LABELS = {
   dog: 'Собака',
@@ -125,7 +126,6 @@ function PetDetail() {
     }
   };
 
-  // 🔥 НОВАЯ ФУНКЦИЯ: Пожаловаться
   const handleReport = () => {
     const reason = prompt('Укажите причину жалобы (например: "спам", "мошенничество", "неприемлемый контент"):');
     if (reason && reason.trim()) {
@@ -149,7 +149,6 @@ function PetDetail() {
     }
   };
 
-  // 🔥 ИСПРАВЛЕНО: используем POST /deactivate/ и /activate/
   const handleDeactivate = async () => {
     try {
       await api.post(`/pets/${id}/deactivate/`);
@@ -214,47 +213,23 @@ function PetDetail() {
             {images.length > 0 ? (
               <div
                 onClick={() => openLightbox(buildImageUrl(images[0].image))}
-                style={{
-                  width: '100%',
-                  height: '400px',
-                  marginBottom: '12px',
-                  backgroundColor: '#f3f4f6',
-                  borderRadius: '0.5rem',
-                  overflow: 'hidden',
-                  cursor: 'pointer'
-                }}
+                className="pet-detail-image-container"
               >
                 <img
                   src={buildImageUrl(images[0].image)}
                   alt={getPetName()}
-                  style={{
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'cover'
-                  }}
+                  className="pet-detail-image"
                   onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
                 />
               </div>
             ) : (
-              <div
-                style={{
-                  width: '100%',
-                  height: '400px',
-                  marginBottom: '12px',
-                  backgroundColor: '#f3f4f6',
-                  border: '2px dashed #d1d5db',
-                  borderRadius: '0.5rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}
-              >
-                <span style={{ color: '#9ca3af', fontSize: '2rem' }}>🖼️ Нет фото</span>
+              <div className="pet-detail-image-container">
+                <span className="pet-detail-placeholder">🖼️ Нет фото</span>
               </div>
             )}
 
             {images.length > 1 && (
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
                 {images.slice(1, 6).map((img, idx) => (
                   <div
                     key={'thumb-' + idx}
@@ -318,7 +293,6 @@ function PetDetail() {
             <div className="mt-6 flex flex-wrap gap-3">
               {pet.offer_type !== 'search' && (
                 <>
-                  {/* 🔥 КНОПКА "ПОЖАЛОВАТЬСЯ" */}
                   <button
                     onClick={handleReport}
                     className="flex-1 min-w-[120px] px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
@@ -370,7 +344,6 @@ function PetDetail() {
               {pet.can_be_raised ? 'Поднять объявление' : 'Поднять можно позже'}
             </button>
 
-            {/* 🔥 ЗАМЕНЕНО: используем отдельные функции */}
             {pet.is_active ? (
               <button
                 onClick={handleDeactivate}
@@ -413,10 +386,11 @@ function PetDetail() {
         />
       )}
 
+      {/* 🔥 ИСПРАВЛЕНО: Похожие объявления */}
       {similarPets.length > 0 && (
         <div className="mt-8">
           <h2 className="text-2xl font-bold mb-4">Похожие объявления</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
             {similarPets.map((pet) => (
               <PetCard key={pet.id} pet={pet} />
             ))}
