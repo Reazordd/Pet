@@ -24,6 +24,7 @@ import CityPage from './pages/CityPage';
 import ActivateAccount from './pages/ActivateAccount';
 import PasswordResetRequest from './pages/PasswordResetRequest';
 import PasswordResetConfirm from './pages/PasswordResetConfirm';
+import YandexCallback from './pages/YandexCallback'; // ← ДОБАВЛЕНО
 
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
@@ -36,7 +37,7 @@ import TermsOfService from './pages/TermsOfService';
 
 // 🔥 НОВАЯ СТРАНИЦА КАТЕГОРИИ
 import CategoryPage from './pages/CategoryPage';
-import AllAdsPage from './pages/AllAdsPage'; // ← ДОБАВЛЕНО
+import AllAdsPage from './pages/AllAdsPage';
 
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -61,6 +62,9 @@ function App() {
               <Route path="/activate/:uidb64/:token" element={<ActivateAccount />} />
               <Route path="/password-reset" element={<PasswordResetRequest />} />
               <Route path="/reset-password/:uidb64/:token" element={<PasswordResetConfirm />} />
+
+              {/* 🔥 ЯНДЕКС CALLBACK */}
+              <Route path="/auth/yandex/callback" element={<YandexCallback />} />
 
               {/* SEO-страницы */}
               <Route path="/:citySlug" element={<CityPage />} />

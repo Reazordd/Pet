@@ -1,14 +1,13 @@
+# backend/pet_project/settings.py
 import os
 import logging
 from pathlib import Path
 from datetime import timedelta
 
-# Безопасное чтение .env с явной кодировкой UTF-8
 from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Загружаем .env только если он существует, в UTF-8
 env_path = BASE_DIR / ".env"
 if env_path.exists():
     load_dotenv(env_path, encoding="utf-8")
@@ -16,13 +15,12 @@ if env_path.exists():
 def env(key, default=None):
     return os.environ.get(key, default)
 
-# Основные настройки
 SECRET_KEY = env("SECRET_KEY", "django-insecure-dev-key-for-local-use-only")
 DEBUG = str(env("DEBUG", "True")).lower() in ("1", "true", "yes")
 
 ALLOWED_HOSTS = [h.strip() for h in env("ALLOWED_HOSTS", "localhost,127.0.0.1").split(",") if h.strip()]
 
-# Sentry (опционально)
+# Sentry
 SENTRY_DSN = env("SENTRY_DSN", "").strip()
 SENTRY_ENV = env("SENTRY_ENV", "development")
 SENTRY_TRACES_SAMPLE_RATE = float(env("SENTRY_TRACES_SAMPLE_RATE", "0.0"))
@@ -49,7 +47,7 @@ if SENTRY_DSN:
 else:
     print("[SENTRY] disabled (no DSN)")
 
-# Приложения
+# Приложения — УДАЛЕНО social_django
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -96,6 +94,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                # УДАЛЕНО: social_django.context_processors
             ],
         },
     },
@@ -103,7 +102,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = "pet_project.wsgi.application"
 
-# База данных — совместимость с Timeweb Cloud
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
@@ -134,6 +132,7 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+# 🔥 АВТОРИЗАЦИЯ: только JWT
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
@@ -149,7 +148,7 @@ SIMPLE_JWT = {
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# Proxy & HTTPS headers (актуально при использовании nginx/облака)
+# Proxy & HTTPS headers
 if not DEBUG:
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
@@ -172,7 +171,7 @@ EMAIL_HOST = "smtp.yandex.ru"
 EMAIL_PORT = 465
 EMAIL_USE_SSL = True
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", "reazordd@yandex.ru")
-EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "bpelzaibnborpvxa")  # ← пароль приложения
+EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "bpelzaibnborpvxa")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
 

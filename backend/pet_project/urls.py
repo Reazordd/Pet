@@ -22,7 +22,7 @@ urlpatterns = [
     path('api/history/', include('history.urls')),
     path('api/reviews/', include('reviews.urls')),
 
-    # 🔥 ИСПРАВЛЕНО: пользователи теперь под /api/auth/
+    # Пользователи
     path('api/auth/', include('users.urls')),
 ]
 

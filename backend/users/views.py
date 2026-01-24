@@ -1,4 +1,4 @@
-# backend/users/views.py
+import requests
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -14,9 +14,86 @@ from reviews.models import Review
 from .serializers import UserSerializer
 from .utils import account_activation_token
 from django.conf import settings
-from .models import PhoneNumber  # ← ДОБАВЛЕНО
+from .models import PhoneNumber
 
 User = get_user_model()
+
+# 🔥 НОВЫЙ: обработка callback от Яндекса (с защитой от дублей)
+@api_view(['POST'])
+@permission_classes([AllowAny])
+def yandex_oauth_callback(request):
+    """Обработка callback от Яндекса"""
+    code = request.data.get('code')
+    if not code:
+        return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Обмен кода на токен (убраны лишние пробелы!)
+    token_url = 'https://oauth.yandex.ru/token'
+    token_data = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'client_id': '66ec70274ad44a78ae44f21ce89f9eee',
+        'client_secret': '34f640430f2144e0b28ce4c91a7da0f0'
+    }
+
+    try:
+        token_response = requests.post(token_url, data=token_data, timeout=10)
+        token_response.raise_for_status()
+        access_token = token_response.json()['access_token']
+    except Exception as e:
+        return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Получение данных пользователя (убраны лишние пробелы!)
+    user_url = 'https://login.yandex.ru/info?format=json'
+    try:
+        user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
+        user_response.raise_for_status()
+        yandex_data = user_response.json()
+    except Exception as e:
+        return Response({'error': 'Failed to get user info'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Извлечение и нормализация данных
+    email = yandex_data.get('default_email')
+    login = yandex_data.get('login', 'yandex_user')
+    first_name = yandex_data.get('first_name', '')
+    last_name = yandex_data.get('last_name', '')
+
+    if not email:
+        return Response({'error': 'Email not provided by Yandex'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # 🔥 НОРМАЛИЗАЦИЯ EMAIL
+    email = email.strip().lower()
+
+    # 🔥 ПОЛУЧЕНИЕ СУЩЕСТВУЮЩЕГО ПОЛЬЗОВАТЕЛЯ ИЛИ СОЗДАНИЕ НОВОГО
+    try:
+        user = User.objects.get(email=email)
+        # Если пользователь существует — просто входим
+    except User.DoesNotExist:
+        # Создаём нового пользователя
+        user = User.objects.create(
+            email=email,
+            username=login,
+            first_name=first_name,
+            last_name=last_name,
+            is_active=True,
+            email_verified=True
+        )
+
+    # Генерация JWT токена
+    from rest_framework_simplejwt.tokens import RefreshToken
+    refresh = RefreshToken.for_user(user)
+
+    return Response({
+        'access': str(refresh.access_token),
+        'refresh': str(refresh),
+        'user': {
+            'id': user.id,
+            'username': user.username,
+            'email': user.email,
+            'first_name': user.first_name,
+            'last_name': user.last_name
+        }
+    })
 
 
 @api_view(['GET'])
@@ -131,7 +208,6 @@ def register(request):
         return Response({"email": "Пользователь с таким email уже существует"}, status=status.HTTP_400_BAD_REQUEST)
 
     try:
-        # 🔥 Создаём пользователя БЕЗ phone
         user_data = {
             'username': data["username"],
             'email': data["email"],
@@ -144,7 +220,6 @@ def register(request):
         user.set_password(data["password"])
         user.save()
 
-        # 🔥 Сохраняем номер отдельно
         phone = data.get("phone")
         if phone:
             clean_phone = ''.join(c for c in phone if c.isdigit() or c == '+')
@@ -163,7 +238,7 @@ def register(request):
                 phone_validator(clean_phone)
                 PhoneNumber.objects.create(user=user, number=clean_phone, verified=True)
             except ValidationError:
-                pass  # Игнорируем невалидный номер
+                pass
 
         uid = urlsafe_base64_encode(force_bytes(user.pk))
         token = account_activation_token.make_token(user)

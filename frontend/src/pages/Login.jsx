@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import { logout } from '../utils/auth';
+import YandexLoginButton from '../components/YandexLoginButton';
 
 function Login() {
     const [credentials, setCredentials] = useState({
@@ -89,6 +90,23 @@ function Login() {
                         {loading ? 'Вход...' : 'Войти'}
                     </button>
                 </form>
+
+                {/* Разделитель */}
+                <div className="mt-6">
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-300"></div>
+                        </div>
+                        <div className="relative flex justify-center text-sm">
+                            <span className="px-2 bg-white text-gray-500">Или войдите через</span>
+                        </div>
+                    </div>
+
+                    {/* 🔥 КНОПКА БЕЗ ДОПОЛНИТЕЛЬНЫХ ОБЁРТОК */}
+                    <div className="mt-3">
+                      <YandexLoginButton />
+                    </div>
+                </div>
 
                 <div className="auth-links mt-4 text-center">
                     <p>
