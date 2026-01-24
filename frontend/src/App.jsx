@@ -40,9 +40,6 @@ import TermsOfService from './pages/TermsOfService';
 import CategoryPage from './pages/CategoryPage';
 import AllAdsPage from './pages/AllAdsPage';
 
-// Компоненты
-import YandexMetrika from './components/YandexMetrika'; // ← ДОБАВЛЕНО
-
 import { FavoritesProvider } from './context/FavoritesContext';
 import { ThemeProvider } from './context/ThemeContext';
 
@@ -143,9 +140,6 @@ function App() {
           </footer>
 
           <ToastContainer position="top-right" autoClose={3000} />
-
-          {/* 🔥 ЯНДЕКС.МЕТРИКА */}
-          <YandexMetrika />
         </div>
       </FavoritesProvider>
     </ThemeProvider>
