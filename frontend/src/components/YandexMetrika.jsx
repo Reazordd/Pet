@@ -8,24 +8,23 @@ const YandexMetrika = () => {
       // Проверяем, не загружен ли уже скрипт
       if (window.ym !== undefined) return;
 
-      // Создаём скрипт Метрики
+      // Создаём скрипт с src
       const script = document.createElement('script');
       script.type = 'text/javascript';
       script.async = true;
-      script.innerHTML = `
-        (function(m,e,t,r,i,k,a){m[i]=m[i]||function(){(m[i].a=m[i].a||[]).push(arguments)};
-        m[i].l=1*new Date();k=e.createElement(t),a=e.getElementsByTagName(t)[0],k.async=1,k.src=r,a.parentNode.insertBefore(k,a)})
-        (window, document, "script", "https://mc.yandex.ru/metrika/tag.js", "ym");
-        
-        ym(106432339, "init", {
-          clickmap:true,
-          trackLinks:true,
-          accurateTrackBounce:true,
-          webvisor:true
-        });
-      `;
+      script.src = 'https://mc.yandex.ru/metrika/tag.js';
 
-      // Создаём noscript для пользователей без JS
+      // Инициализация после загрузки
+      script.onload = () => {
+        window.ym(106432339, 'init', {
+          clickmap: true,
+          trackLinks: true,
+          accurateTrackBounce: true,
+          webvisor: true
+        });
+      };
+
+      // Создаём noscript
       const noscript = document.createElement('noscript');
       noscript.innerHTML = '<div><img src="https://mc.yandex.ru/watch/106432339" style="position:absolute; left:-9999px;" alt="" /></div>';
 
@@ -33,7 +32,7 @@ const YandexMetrika = () => {
       document.head.appendChild(script);
       document.body.appendChild(noscript);
 
-      // Очистка при размонтировании
+      // Очистка
       return () => {
         if (document.head.contains(script)) {
           document.head.removeChild(script);
