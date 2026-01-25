@@ -445,7 +445,7 @@ def pets_rss_feed(request):
     pets = Pet.objects.filter(
         is_active=True,
         moderation_status='approved'
-    ).order_by('-created_at')[:100]  # последние 100 объявлений
+    ).order_by('-created_at')[:100]
 
     feed = Rss201rev2Feed(
         title="PetMarket — Объявления о животных",
@@ -455,10 +455,16 @@ def pets_rss_feed(request):
     )
 
     for pet in pets:
-        # Формируем описание с фото
+        # 🔥 ПРАВИЛЬНОЕ получение фото
+        photo_url = ""
+        if pet.images.exists():
+            photo_url = pet.images.first().image.url
+            # Делаем абсолютный URL
+            if not photo_url.startswith('http'):
+                photo_url = f"https://petmarket.com.ru{photo_url}"
+
         description = f"<![CDATA["
-        if pet.photos.exists():
-            photo_url = pet.photos.first().image.url
+        if photo_url:
             description += f'<img src="{photo_url}" alt="{pet.breed}" style="max-width:300px; height:auto;">'
         description += f"<p>{pet.description or 'Без описания'}</p>"
         description += f"<p><strong>Цена:</strong> {pet.price if pet.price else 'Договорная'} ₽</p>"
