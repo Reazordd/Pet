@@ -429,3 +429,50 @@ def get_breeds(request):
         breeds = [b for b in breeds if query in b.lower()]
 
     return Response(breeds[:10])
+
+
+# 🔥 НОВАЯ ФУНКЦИЯ: RSS-лента для Яндекс.Турбо
+from django.http import HttpResponse
+from django.utils.feedgenerator import Rss201rev2Feed
+
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def pets_rss_feed(request):
+    """RSS-лента активных объявлений для Яндекс.Турбо"""
+    from .models import Pet
+
+    pets = Pet.objects.filter(
+        is_active=True,
+        moderation_status='approved'
+    ).order_by('-created_at')[:100]  # последние 100 объявлений
+
+    feed = Rss201rev2Feed(
+        title="PetMarket — Объявления о животных",
+        link="https://petmarket.com.ru",
+        description="Свежие объявления о продаже и отдаче домашних животных по всей России",
+        language="ru"
+    )
+
+    for pet in pets:
+        # Формируем описание с фото
+        description = f"<![CDATA["
+        if pet.photos.exists():
+            photo_url = pet.photos.first().image.url
+            description += f'<img src="{photo_url}" alt="{pet.breed}" style="max-width:300px; height:auto;">'
+        description += f"<p>{pet.description or 'Без описания'}</p>"
+        description += f"<p><strong>Цена:</strong> {pet.price if pet.price else 'Договорная'} ₽</p>"
+        description += f"<p><strong>Город:</strong> {pet.city}</p>"
+        description += f"]]>"
+
+        feed.add_item(
+            title=f"{pet.name or pet.breed} — {pet.price if pet.price else 'Договорная'} ₽",
+            link=f"https://petmarket.com.ru/pets/{pet.id}",
+            description=description,
+            pubdate=pet.created_at,
+            unique_id=str(pet.id)
+        )
+
+    response = HttpResponse(content_type='application/xml; charset=utf-8')
+    feed.write(response, 'utf-8')
+    return response
