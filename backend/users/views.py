@@ -1,3 +1,4 @@
+import logging
 import requests
 from django.contrib.auth.tokens import default_token_generator
 from rest_framework.decorators import api_view, permission_classes
@@ -12,11 +13,99 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from ads.models import Pet
 from reviews.models import Review
 from .serializers import UserSerializer
-from .utils import account_activation_token
+from .utils import account_activation_token, verify_telegram_auth_data
 from django.conf import settings
 from .models import PhoneNumber
+from django.http import HttpResponse
+from rest_framework_simplejwt.tokens import RefreshToken
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.core.files.base import ContentFile
+import os
+from urllib.parse import urlparse
 
 User = get_user_model()
+logger = logging.getLogger(__name__)
+
+
+# 🔥 НОВЫЙ: вход через Telegram OAuth (полноценный)
+@csrf_exempt
+@require_POST
+def telegram_auth(request):
+    """
+    Обработка POST-запроса от Telegram Login Widget.
+    """
+    data = request.POST.dict()
+
+    # Используем ТОЛЬКО login-токен
+    bot_token = settings.TELEGRAM_LOGIN_BOT_TOKEN
+
+    if not verify_telegram_auth_data(data, bot_token):
+        logger.warning("Invalid Telegram auth data")
+        return Response({"error": "Invalid data"}, status=400)
+
+    telegram_id = int(data['id'])
+    first_name = data.get('first_name', '')
+    last_name = data.get('last_name', '')
+    username = data.get('username', '')
+    photo_url = data.get('photo_url', '')
+
+    # Поиск или создание пользователя по telegram_id
+    user, created = User.objects.get_or_create(
+        telegram_id=telegram_id,
+        defaults={
+            'username': f"tg_{telegram_id}",
+            'email': f"{telegram_id}@telegram.bot",
+            'first_name': first_name,
+            'last_name': last_name,
+            'is_active': True,
+            'email_verified': True,
+        }
+    )
+
+    # Обновление имени при повторном входе
+    if not created:
+        updated = False
+        if user.first_name != first_name:
+            user.first_name = first_name
+            updated = True
+        if user.last_name != last_name:
+            user.last_name = last_name
+            updated = True
+        if updated:
+            user.save(update_fields=['first_name', 'last_name'])
+
+    # 🔥 Загрузка аватарки из photo_url (если нет)
+    if photo_url and not user.avatar:
+        try:
+            response = requests.get(photo_url, timeout=10)
+            if response.status_code == 200:
+                ext = os.path.splitext(urlparse(photo_url).path)[1] or '.jpg'
+                avatar_name = f"tg_{telegram_id}{ext}"
+                user.avatar.save(avatar_name, ContentFile(response.content), save=True)
+        except Exception as e:
+            logger.error(f"Failed to download Telegram avatar: {e}")
+
+    # Генерация JWT
+    refresh = RefreshToken.for_user(user)
+    access_token = str(refresh.access_token)
+
+    # Возвращаем HTML-редирект (требование Telegram)
+    response_html = f"""
+    <!DOCTYPE html>
+    <html>
+    <head><title>Вход выполнен</title></head>
+    <body>
+      <script>
+        localStorage.setItem('authToken', '{access_token}');
+        window.location.href = '{settings.FRONTEND_URL}/profile';
+      </script>
+      <p>Авторизация прошла успешно. Переход...</p>
+    </body>
+    </html>
+    """
+    return HttpResponse(response_html, content_type='text/html; charset=utf-8')
+
 
 # 🔥 НОВЫЙ: обработка callback от Яндекса (с защитой от дублей)
 @api_view(['POST'])
@@ -27,7 +116,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Обмен кода на токен (убраны лишние пробелы!)
+    # Обмен кода на токен
     token_url = 'https://oauth.yandex.ru/token'
     token_data = {
         'grant_type': 'authorization_code',
@@ -43,7 +132,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Получение данных пользователя (убраны лишние пробелы!)
+    # Получение данных пользователя
     user_url = 'https://login.yandex.ru/info?format=json'
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
@@ -52,7 +141,6 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to get user info'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Извлечение и нормализация данных
     email = yandex_data.get('default_email')
     login = yandex_data.get('login', 'yandex_user')
     first_name = yandex_data.get('first_name', '')
@@ -61,15 +149,11 @@ def yandex_oauth_callback(request):
     if not email:
         return Response({'error': 'Email not provided by Yandex'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # 🔥 НОРМАЛИЗАЦИЯ EMAIL
     email = email.strip().lower()
 
-    # 🔥 ПОЛУЧЕНИЕ СУЩЕСТВУЮЩЕГО ПОЛЬЗОВАТЕЛЯ ИЛИ СОЗДАНИЕ НОВОГО
     try:
         user = User.objects.get(email=email)
-        # Если пользователь существует — просто входим
     except User.DoesNotExist:
-        # Создаём нового пользователя
         user = User.objects.create(
             email=email,
             username=login,
@@ -79,8 +163,6 @@ def yandex_oauth_callback(request):
             email_verified=True
         )
 
-    # Генерация JWT токена
-    from rest_framework_simplejwt.tokens import RefreshToken
     refresh = RefreshToken.for_user(user)
 
     return Response({

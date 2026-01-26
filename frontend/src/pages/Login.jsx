@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import api from '../utils/api';
 import { logout } from '../utils/auth';
 import YandexLoginButton from '../components/YandexLoginButton';
+import TelegramLoginButton from '../components/TelegramLoginButton'; // 🔥 ДОБАВЛЕНО
 
 function Login() {
     const [credentials, setCredentials] = useState({
@@ -102,9 +103,10 @@ function Login() {
                         </div>
                     </div>
 
-                    {/* 🔥 КНОПКА БЕЗ ДОПОЛНИТЕЛЬНЫХ ОБЁРТОК */}
-                    <div className="mt-3">
+                    {/* 🔥 ОБЕ КНОПКИ */}
+                    <div className="mt-3 space-y-2">
                       <YandexLoginButton />
+                      <TelegramLoginButton />
                     </div>
                 </div>
 

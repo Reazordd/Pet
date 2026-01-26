@@ -20,6 +20,9 @@ class User(AbstractUser):
     is_blocked = models.BooleanField(default=False,
                                      help_text="Если отмечено — пользователь заблокирован и не может постить/комментировать")
 
+    # 🔥 НОВОЕ ПОЛЕ для Telegram OAuth
+    telegram_id = models.BigIntegerField(unique=True, null=True, blank=True, verbose_name="ID в Telegram")
+
     REQUIRED_FIELDS = ["email"]
     USERNAME_FIELD = "username"
 
@@ -27,7 +30,6 @@ class User(AbstractUser):
         return f"{self.username} ({self.email})" if self.email else self.username
 
     def update_trusted_seller_status(self):
-        """Автоматически обновляет статус «Надёжный продавец»"""
         active_pets_count = Pet.objects.filter(
             user=self,
             moderation_status='approved',
@@ -37,11 +39,10 @@ class User(AbstractUser):
         self.save(update_fields=['is_trusted_seller'])
 
     def update_avito_delivery_count(self):
-        """Заглушка для подсчёта доставок (реализуется отдельно)"""
         pass
 
 
-# 🔥 НОВАЯ МОДЕЛЬ: PhoneNumber
+# 🔥 Модель PhoneNumber остаётся без изменений
 class PhoneNumber(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='phone_number')
     number = models.CharField(

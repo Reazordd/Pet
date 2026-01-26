@@ -1,4 +1,5 @@
 # backend/ads/models.py
+
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -7,6 +8,7 @@ from unidecode import unidecode
 from datetime import timedelta
 
 User = settings.AUTH_USER_MODEL
+
 
 class Pet(models.Model):
     SPECIES_CHOICES = [
@@ -50,6 +52,9 @@ class Pet(models.Model):
     )
     rejection_reason = models.TextField('Причина отклонения', blank=True, null=True)
     last_raised_at = models.DateTimeField(null=True, blank=True)
+
+    # 🔥 НОВОЕ ПОЛЕ: отслеживание отправки уведомления в Telegram
+    notified_in_telegram = models.BooleanField(default=False, help_text="Отправлено ли уведомление в Telegram")
 
     class Meta:
         ordering = ['-created_at']

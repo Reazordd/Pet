@@ -14,6 +14,7 @@ function Register() {
         first_name: '',
         last_name: '',
         phone: ''
+        // ❌ УБРАНО: telegram_username
     });
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
@@ -47,21 +48,9 @@ function Register() {
         setLoading(true);
 
         try {
-            // 🔥 ИСПРАВЛЕНО: правильный путь /auth/register/
             const response = await api.post('/auth/register/', formData);
-
-            if (response.data.message === "Проверьте email для подтверждения") {
-                toast.info('Регистрация прошла успешно! Проверьте email для подтверждения.');
-                navigate('/login');
-            } else {
-                const { access, refresh } = response.data;
-                if (access && refresh) {
-                    localStorage.setItem('access_token', access);
-                    localStorage.setItem('refresh_token', refresh);
-                }
-                toast.success('Регистрация прошла успешно!');
-                navigate('/');
-            }
+            toast.success('Регистрация успешна! Проверьте email для подтверждения.');
+            navigate('/login');
         } catch (error) {
             if (error.response?.data) {
                 const data = error.response.data;
@@ -155,6 +144,7 @@ function Register() {
                             placeholder="+7 (999) 999-99-99"
                         />
                     </div>
+
 
                     <div className="form-row">
                         <div className="form-group">

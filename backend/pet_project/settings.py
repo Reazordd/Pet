@@ -1,4 +1,3 @@
-# backend/pet_project/settings.py
 import os
 import logging
 from pathlib import Path
@@ -47,7 +46,7 @@ if SENTRY_DSN:
 else:
     print("[SENTRY] disabled (no DSN)")
 
-# Приложения — УДАЛЕНО social_django
+# Приложения
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -68,6 +67,7 @@ INSTALLED_APPS = [
     'notifications',
     'history',
     'reviews',
+    'tgbot',
 ]
 
 MIDDLEWARE = [
@@ -94,7 +94,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-                # УДАЛЕНО: social_django.context_processors
             ],
         },
     },
@@ -173,7 +172,13 @@ EMAIL_USE_SSL = True
 EMAIL_HOST_USER = env("EMAIL_HOST_USER", "reazordd@yandex.ru")
 EMAIL_HOST_PASSWORD = env("EMAIL_HOST_PASSWORD", "bpelzaibnborpvxa")
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+# 🔥 FRONTEND URL (для редиректов после входа)
 FRONTEND_URL = env("FRONTEND_URL", "http://localhost:3000")
+
+# 🔥 Telegram Bot Tokens
+TELEGRAM_LOGIN_BOT_TOKEN = env("TELEGRAM_LOGIN_BOT_TOKEN", "")
+TELEGRAM_NOTIFY_BOT_TOKEN = env("TELEGRAM_NOTIFY_BOT_TOKEN", "")
 
 # 🔒 Безопасность только в production
 if not DEBUG:
