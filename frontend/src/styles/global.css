@@ -231,3 +231,19 @@ select:focus {
     height: 56px;
   }
 }
+/* === Telegram Login Widget СТИЛИ === */
+.tgui_widget_login_button {
+  display: inline-flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: auto !important;
+  max-width: 100% !important;
+  margin: 0 auto !important;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 768px) {
+  .tgui_widget_login_button {
+    width: 100% !important;
+  }
+}

@@ -19,7 +19,6 @@ from .models import PhoneNumber
 from django.http import HttpResponse
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 from django.core.files.base import ContentFile
 import os
 from urllib.parse import urlparse
@@ -28,95 +27,93 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
-# 🔥 НОВЫЙ: вход через Telegram OAuth (полноценный)
+# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram
 @csrf_exempt
-@require_POST
 def telegram_auth(request):
     """
-    Обработка POST-запроса от Telegram Login Widget.
+    Обработка запросов от Telegram Login Widget.
+    Должен поддерживать GET (проверка) и POST (авторизация).
     """
-    data = request.POST.dict()
+    if request.method == 'GET':
+        # Telegram проверяет доступность эндпоинта
+        return HttpResponse("OK", status=200)
 
-    # Используем ТОЛЬКО login-токен
-    bot_token = settings.TELEGRAM_LOGIN_BOT_TOKEN
+    if request.method == 'POST':
+        data = request.POST.dict()
+        bot_token = settings.TELEGRAM_LOGIN_BOT_TOKEN
 
-    if not verify_telegram_auth_data(data, bot_token):
-        logger.warning("Invalid Telegram auth data")
-        return Response({"error": "Invalid data"}, status=400)
+        if not verify_telegram_auth_data(data, bot_token):
+            logger.warning("Invalid Telegram auth data")
+            return HttpResponse("Invalid data", status=400)
 
-    telegram_id = int(data['id'])
-    first_name = data.get('first_name', '')
-    last_name = data.get('last_name', '')
-    username = data.get('username', '')
-    photo_url = data.get('photo_url', '')
+        telegram_id = int(data['id'])
+        first_name = data.get('first_name', '')
+        last_name = data.get('last_name', '')
+        photo_url = data.get('photo_url', '')
 
-    # Поиск или создание пользователя по telegram_id
-    user, created = User.objects.get_or_create(
-        telegram_id=telegram_id,
-        defaults={
-            'username': f"tg_{telegram_id}",
-            'email': f"{telegram_id}@telegram.bot",
-            'first_name': first_name,
-            'last_name': last_name,
-            'is_active': True,
-            'email_verified': True,
-        }
-    )
+        user, created = User.objects.get_or_create(
+            telegram_id=telegram_id,
+            defaults={
+                'username': f"tg_{telegram_id}",
+                'email': f"{telegram_id}@telegram.bot",
+                'first_name': first_name,
+                'last_name': last_name,
+                'is_active': True,
+                'email_verified': True,
+            }
+        )
 
-    # Обновление имени при повторном входе
-    if not created:
-        updated = False
-        if user.first_name != first_name:
-            user.first_name = first_name
-            updated = True
-        if user.last_name != last_name:
-            user.last_name = last_name
-            updated = True
-        if updated:
-            user.save(update_fields=['first_name', 'last_name'])
+        if not created:
+            updated = False
+            if user.first_name != first_name:
+                user.first_name = first_name
+                updated = True
+            if user.last_name != last_name:
+                user.last_name = last_name
+                updated = True
+            if updated:
+                user.save(update_fields=['first_name', 'last_name'])
 
-    # 🔥 Загрузка аватарки из photo_url (если нет)
-    if photo_url and not user.avatar:
-        try:
-            response = requests.get(photo_url, timeout=10)
-            if response.status_code == 200:
-                ext = os.path.splitext(urlparse(photo_url).path)[1] or '.jpg'
-                avatar_name = f"tg_{telegram_id}{ext}"
-                user.avatar.save(avatar_name, ContentFile(response.content), save=True)
-        except Exception as e:
-            logger.error(f"Failed to download Telegram avatar: {e}")
+        # Загрузка аватарки
+        if photo_url and not user.avatar:
+            try:
+                response = requests.get(photo_url, timeout=10)
+                if response.status_code == 200:
+                    ext = os.path.splitext(urlparse(photo_url).path)[1] or '.jpg'
+                    avatar_name = f"tg_{telegram_id}{ext}"
+                    user.avatar.save(avatar_name, ContentFile(response.content), save=True)
+            except Exception as e:
+                logger.error(f"Failed to download Telegram avatar: {e}")
 
-    # Генерация JWT
-    refresh = RefreshToken.for_user(user)
-    access_token = str(refresh.access_token)
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
 
-    # Возвращаем HTML-редирект (требование Telegram)
-    response_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head><title>Вход выполнен</title></head>
-    <body>
-      <script>
-        localStorage.setItem('authToken', '{access_token}');
-        window.location.href = '{settings.FRONTEND_URL}/profile';
-      </script>
-      <p>Авторизация прошла успешно. Переход...</p>
-    </body>
-    </html>
-    """
-    return HttpResponse(response_html, content_type='text/html; charset=utf-8')
+        response_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Вход выполнен</title></head>
+        <body>
+          <script>
+            localStorage.setItem('authToken', '{access_token}');
+            window.location.href = '{settings.FRONTEND_URL}/profile';
+          </script>
+          <p>Авторизация прошла успешно. Переход...</p>
+        </body>
+        </html>
+        """
+        return HttpResponse(response_html, content_type='text/html; charset=utf-8')
+
+    return HttpResponse("Method not allowed", status=405)
 
 
-# 🔥 НОВЫЙ: обработка callback от Яндекса (с защитой от дублей)
+# 🔥 Яндекс OAuth (остаётся без изменений)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def yandex_oauth_callback(request):
-    """Обработка callback от Яндекса"""
     code = request.data.get('code')
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Обмен кода на токен
     token_url = 'https://oauth.yandex.ru/token'
     token_data = {
         'grant_type': 'authorization_code',
@@ -132,7 +129,6 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    # Получение данных пользователя
     user_url = 'https://login.yandex.ru/info?format=json'
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
