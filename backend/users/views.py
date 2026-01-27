@@ -27,7 +27,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
-# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram
+# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram (только для /api/auth/telegram/)
 @csrf_exempt
 def telegram_auth(request):
     """
@@ -35,7 +35,7 @@ def telegram_auth(request):
     Должен поддерживать GET (проверка) и POST (авторизация).
     """
     if request.method == 'GET':
-        # Telegram проверяет доступность эндпоинта
+        # Telegram проверяет доступность эндпоинта — ОБЯЗАТЕЛЬНО!
         return HttpResponse("OK", status=200)
 
     if request.method == 'POST':

@@ -7,6 +7,7 @@ const TelegramLoginButton = () => {
   useEffect(() => {
     if (!isProduction) return;
 
+    // Удаляем старый скрипт, если есть
     const existingScript = document.querySelector('script[src*="telegram-widget"]');
     if (existingScript) existingScript.remove();
 
@@ -16,27 +17,28 @@ const TelegramLoginButton = () => {
     script.setAttribute('data-size', 'large');
     script.setAttribute('data-radius', '8');
     script.setAttribute('data-userpic', 'true');
+    script.setAttribute('data-request-access', 'write');
 
+    // 🔥 ВАЖНО: data-auth-url должен быть ЧИСТЫМ — без пробелов и GET-параметров!
     const apiUrl = import.meta.env.VITE_API_URL || 'https://petmarket.com.ru';
     script.setAttribute('data-auth-url', `${apiUrl}/api/auth/telegram/`);
-    script.setAttribute('data-request-access', 'write');
 
     script.onerror = () => console.error('Не удалось загрузить Telegram Login Widget');
     document.body.appendChild(script);
 
-    // 🔥 Выравнивание кнопки после загрузки
-    const adjustTelegramButton = () => {
+    // Выравнивание кнопки после загрузки
+    const adjustButton = () => {
       const btn = document.querySelector('.tgui_widget_login_button');
       if (btn) {
         btn.style.display = 'inline-flex';
         btn.style.justifyContent = 'center';
         btn.style.width = 'auto';
         btn.style.maxWidth = '100%';
+        btn.style.margin = '0 auto';
       }
     };
 
-    // Попытка каждые 300 мс, пока кнопка не появится
-    const interval = setInterval(adjustTelegramButton, 300);
+    const interval = setInterval(adjustButton, 300);
     setTimeout(() => clearInterval(interval), 5000);
 
     return () => {
@@ -47,18 +49,15 @@ const TelegramLoginButton = () => {
 
   if (!isProduction) {
     return (
-      <div style={{ textAlign: 'center', margin: '1rem auto', color: '#666' }}>
+      <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#666' }}>
         Вход через Telegram доступен только на основном сайте
       </div>
     );
   }
 
+  // Рендерим placeholder — Telegram сам вставит кнопку внутрь body
   return (
-    <div style={{
-      display: 'flex',
-      justifyContent: 'center',
-      margin: '0.5rem 0'
-    }}>
+    <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
       <div id="telegram-login-button-placeholder" style={{ display: 'none' }} />
     </div>
   );
