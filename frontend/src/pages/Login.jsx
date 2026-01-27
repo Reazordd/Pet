@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api'; // ← ИСПОЛЬЗУЕМ СТАРЫЙ РАБОЧИЙ API
-import { logout } from '../utils/auth'; // ← для очистки токенов при ошибке
+import { logout } from '../utils/auth';
 import YandexLoginButton from '../components/YandexLoginButton';
 import TelegramLoginButton from '../components/TelegramLoginButton';
 
@@ -28,7 +28,6 @@ function Login() {
     setLoading(true);
 
     try {
-      // 🔥 ИСПОЛЬЗУЕМ СТАРЫЙ РАБОЧИЙ МЕТОД
       const response = await api.post('/token/', credentials);
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
@@ -44,7 +43,7 @@ function Login() {
       } else {
         toast.error('Ошибка подключения к серверу');
       }
-      logout(); // Очищаем токены при ошибке
+      logout();
     } finally {
       setLoading(false);
     }
@@ -104,7 +103,7 @@ function Login() {
             </div>
           </div>
 
-          {/* 🔥 КНОПКИ РЯДОМ — БЕЗ ИЗМЕНЕНИЙ */}
+          {/* 🔥 КНОПКИ РЯДОМ */}
           <div className="mt-3 space-y-2">
             <YandexLoginButton />
             <TelegramLoginButton />

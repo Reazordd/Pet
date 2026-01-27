@@ -27,7 +27,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 
-# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram (только для /api/auth/telegram/)
+# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram
 @csrf_exempt
 def telegram_auth(request):
     """
@@ -114,7 +114,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    token_url = 'https://oauth.yandex.ru/token'
+    token_url = 'https://oauth.yandex.ru/token'  # ← УБРАНЫ ЛИШНИЕ ПРОБЕЛЫ!
     token_data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -129,7 +129,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user_url = 'https://login.yandex.ru/info?format=json'
+    user_url = 'https://login.yandex.ru/info?format=json'  # ← УБРАНЫ ЛИШНИЕ ПРОБЕЛЫ!
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
         user_response.raise_for_status()
