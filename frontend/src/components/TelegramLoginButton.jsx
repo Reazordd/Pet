@@ -7,8 +7,9 @@ const TelegramLoginButton = () => {
   useEffect(() => {
     if (!isProduction) return;
 
-    const existingScript = document.querySelector('script[src*="telegram-widget"]');
-    if (existingScript) existingScript.remove();
+    // Удаляем старый скрипт
+    const oldScript = document.querySelector('script[src*="telegram-widget"]');
+    if (oldScript) oldScript.remove();
 
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
@@ -18,7 +19,7 @@ const TelegramLoginButton = () => {
     script.setAttribute('data-userpic', 'true');
     script.setAttribute('data-request-access', 'write');
 
-    // 🔥 ВАЖНО: чистый URL без параметров
+    // 🔥 ЧИСТЫЙ URL без пробелов!
     const apiUrl = 'https://petmarket.com.ru';
     script.setAttribute('data-auth-url', `${apiUrl}/api/auth/telegram/`);
 

@@ -106,7 +106,7 @@ def telegram_auth(request):
     return HttpResponse("Method not allowed", status=405)
 
 
-# 🔥 Яндекс OAuth (остаётся без изменений)
+# 🔥 Яндекс OAuth (исправлены URL — убраны пробелы!)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def yandex_oauth_callback(request):
@@ -114,7 +114,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    token_url = 'https://oauth.yandex.ru/token'  # ← УБРАНЫ ЛИШНИЕ ПРОБЕЛЫ!
+    token_url = 'https://oauth.yandex.ru/token'  # ← БЕЗ ПРОБЕЛОВ!
     token_data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -129,7 +129,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user_url = 'https://login.yandex.ru/info?format=json'  # ← УБРАНЫ ЛИШНИЕ ПРОБЕЛЫ!
+    user_url = 'https://login.yandex.ru/info?format=json'  # ← БЕЗ ПРОБЕЛОВ!
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
         user_response.raise_for_status()
