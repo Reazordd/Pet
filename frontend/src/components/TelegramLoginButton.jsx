@@ -3,15 +3,12 @@ import React from 'react';
 
 const TelegramLoginButton = () => {
   const handleLogin = () => {
-    // 🔥 ЧИСЛОВОЙ ID БОТА (не имя!)
-    const botId = '8518062763';
+    const botId = '8518062763'; // Числовой ID бота
     const origin = window.location.origin;
-    // Полный URL для возврата после авторизации
     const returnTo = `${origin}/api/auth/telegram/`;
-    // Формируем правильный URL для окна авторизации
+    // 🔥 УБРАНЫ ПРОБЕЛЫ В URL!
     const authUrl = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(origin)}&return_to=${encodeURIComponent(returnTo)}`;
 
-    // Открываем окно авторизации
     window.open(authUrl, 'TelegramAuth', 'width=500,height=600');
   };
 
