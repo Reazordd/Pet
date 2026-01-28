@@ -1,44 +1,40 @@
 // frontend/src/components/TelegramLoginButton.jsx
-import React from 'react';
+import React, { useEffect } from 'react';
 
 const TelegramLoginButton = () => {
-  const handleLogin = () => {
-    const botId = '8518062763'; // ← ЧИСЛОВОЙ ID БОТА
-    const origin = window.location.origin;
-    const returnTo = `${origin}/api/auth/telegram/`;
-    // 🔥 УБРАНЫ ПРОБЕЛЫ В URL!
-    const authUrl = `https://oauth.telegram.org/auth?bot_id=${botId}&origin=${encodeURIComponent(origin)}&return_to=${encodeURIComponent(returnTo)}`;
+  useEffect(() => {
+    // Удаляем старый скрипт при повторном монтировании
+    const existingScript = document.querySelector('script[src*="telegram-widget"]');
+    if (existingScript) existingScript.remove();
 
-    window.open(authUrl, 'TelegramAuth', 'width=500,height=600');
-  };
+    const script = document.createElement('script');
+    script.src = 'https://telegram.org/js/telegram-widget.js?22';
+    script.setAttribute('data-telegram-login', 'petmarket_login_bot');
+    script.setAttribute('data-size', 'large');
+    script.setAttribute('data-radius', '8');
+    script.setAttribute('data-userpic', 'true');
+    script.setAttribute('data-request-access', 'write');
+    script.setAttribute('data-auth-url', 'https://petmarket.com.ru/api/auth/telegram/');
+
+    script.onerror = () => {
+      console.error('Не удалось загрузить Telegram Login Widget');
+    };
+
+    document.body.appendChild(script);
+
+    return () => {
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
+    };
+  }, []);
 
   return (
-    <button
-      onClick={handleLogin}
-      style={{
-        display: 'inline-flex',
-        alignItems: 'center',
-        gap: '0.5rem',
-        padding: '0.375rem 0.75rem',
-        backgroundColor: '#0088cc',
-        color: 'white',
-        borderRadius: '0.5rem',
-        border: 'none',
-        fontSize: '0.875rem',
-        fontWeight: '500',
-        height: '2.5rem',
-        cursor: 'pointer',
-        maxWidth: 'fit-content',
-        margin: '0 auto'
-      }}
-      onMouseEnter={(e) => e.target.style.backgroundColor = '#006699'}
-      onMouseLeave={(e) => e.target.style.backgroundColor = '#0088cc'}
-    >
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.604 8.463c-.188.843-.94 2.5-1.188 3.375-.094.375-.188.75-.281 1.031-.188.75-.375 1.125-.375 1.313 0 .188.188.281.375.188.188-.094 1.125-.938 1.688-1.5.563-.563.938-1.031 1.125-1.313.188-.281.375-.281.563-.188.188.094.188.375.094.656-.188.75-1.313 2.813-2.25 5.25-.75 1.875-1.313 2.625-2.063 2.625-.563 0-1-.375-1.5-.844-.375-.375-1.5-1.5-2.625-2.813-1.5-1.875-2.5-3.375-2.625-3.656-.188-.375-.188-.656 0-.844.188-.188.375-.188.563-.188.188 0 .375.094.563.188.188.094 1.125 1.125 2.25 2.438.938 1.125 1.5 1.875 1.688 2.063.188.188.375.188.563.188.188 0 .375-.094.563-.188.188-.094 1.125-1.313 1.688-2.625.563-1.313.938-2.625 1.125-3.375.094-.75.094-1.313.094-1.5 0-.188-.094-.281-.188-.281-.094 0-.188.094-.281.281z"/>
-      </svg>
-      Войти через Telegram
-    </button>
+    <div style={{ textAlign: 'center', margin: '1rem auto' }}>
+      <div id="telegram-login-button-placeholder">
+        Загрузка кнопки входа через Telegram...
+      </div>
+    </div>
   );
 };
 

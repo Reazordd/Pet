@@ -26,12 +26,12 @@ from urllib.parse import urlparse
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-# 🔥 ВХОД ЧЕРЕЗ TELEGRAM (работает через popup-окно)
+# 🔥 ВХОД ЧЕРЕЗ TELEGRAM (работает через iframe)
 @csrf_exempt
 def telegram_auth(request):
     """
-    Обработка авторизации через Telegram OAuth popup.
-    Поддерживает только POST-запросы с данными формы.
+    Обработка авторизации через Telegram Login Widget (iframe).
+    Поддерживает POST-запросы с данными формы.
     """
     if request.method == 'POST':
         data = request.POST.dict()
@@ -81,20 +81,15 @@ def telegram_auth(request):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
+        # 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: HTML-редирект с токеном
         response_html = f"""
         <!DOCTYPE html>
         <html>
         <head><title>Вход выполнен</title></head>
         <body>
         <script>
-        if (window.opener) {{
-            window.opener.localStorage.setItem('authToken', '{access_token}');
-            window.opener.location.href = '{settings.FRONTEND_URL}/profile';
-        }} else {{
-            localStorage.setItem('authToken', '{access_token}');
-            window.location.href = '{settings.FRONTEND_URL}/profile';
-        }}
-        window.close();
+        localStorage.setItem('authToken', '{access_token}');
+        window.location.href = '{settings.FRONTEND_URL}/profile';
         </script>
         <p>Авторизация прошла успешно. Переход...</p>
         </body>
