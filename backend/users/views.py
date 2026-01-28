@@ -28,8 +28,7 @@ from urllib.parse import urlparse
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-
-# 🔥 ИСПРАВЛЕНО: обработка авторизации через Telegram (window.open подход)
+# 🔥 ВХОД ЧЕРЕЗ TELEGRAM (работает через окно авторизации)
 @csrf_exempt
 def telegram_auth(request):
     """
@@ -37,7 +36,6 @@ def telegram_auth(request):
     Telegram перенаправляет сюда после авторизации через окно.
     """
     if request.method == 'GET':
-        # Получаем данные из GET-параметров
         data = {
             'id': request.GET.get('id'),
             'first_name': request.GET.get('first_name', ''),
@@ -48,17 +46,14 @@ def telegram_auth(request):
             'hash': request.GET.get('hash'),
         }
 
-        # Проверяем обязательные поля
         if not data['id'] or not data['hash']:
             logger.warning("Missing required Telegram auth data")
             return HttpResponse("Invalid data", status=400)
 
-        # Валидация хеша
         if not verify_telegram_auth_data(data, settings.TELEGRAM_LOGIN_BOT_TOKEN):
-            logger.warning("Invalid Telegram auth hash")
+            logger.warning(f"Invalid Telegram auth hash. Data: {data}")
             return HttpResponse("Invalid data", status=400)
 
-        # Создаем/получаем пользователя
         telegram_id = int(data['id'])
         user, created = User.objects.get_or_create(
             telegram_id=telegram_id,
@@ -72,7 +67,6 @@ def telegram_auth(request):
             }
         )
 
-        # Обновляем данные при повторном входе
         if not created:
             updated = False
             if user.first_name != data['first_name']:
@@ -84,7 +78,6 @@ def telegram_auth(request):
             if updated:
                 user.save(update_fields=['first_name', 'last_name'])
 
-        # Загрузка аватарки
         if data['photo_url'] and not user.avatar:
             try:
                 response = requests.get(data['photo_url'], timeout=10)
@@ -95,19 +88,22 @@ def telegram_auth(request):
             except Exception as e:
                 logger.error(f"Failed to download Telegram avatar: {e}")
 
-        # Генерируем JWT
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        # Редирект на профиль с токеном в localStorage
         response_html = f"""
         <!DOCTYPE html>
         <html>
         <head><title>Вход выполнен</title></head>
         <body>
         <script>
-        localStorage.setItem('authToken', '{access_token}');
-        window.opener.location.href = '{settings.FRONTEND_URL}/profile';
+        if (window.opener) {{
+            window.opener.localStorage.setItem('authToken', '{access_token}');
+            window.opener.location.href = '{settings.FRONTEND_URL}/profile';
+        }} else {{
+            localStorage.setItem('authToken', '{access_token}');
+            window.location.href = '{settings.FRONTEND_URL}/profile';
+        }}
         window.close();
         </script>
         <p>Авторизация прошла успешно. Переход...</p>
@@ -118,8 +114,7 @@ def telegram_auth(request):
 
     return HttpResponse("Method not allowed", status=405)
 
-
-# 🔥 Яндекс OAuth (ИСПРАВЛЕНО: убраны пробелы в URL!)
+# 🔥 ЯНДЕКС OAUTH (ИСПРАВЛЕНО: убраны ВСЕ пробелы в URL!)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def yandex_oauth_callback(request):
@@ -127,7 +122,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    token_url = 'https://oauth.yandex.ru/token'  # ← УБРАНЫ ПРОБЕЛЫ!
+    token_url = 'https://oauth.yandex.ru/token'  # ← БЕЗ ПРОБЕЛОВ!
     token_data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -142,7 +137,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user_url = 'https://login.yandex.ru/info?format=json'  # ← УБРАНЫ ПРОБЕЛЫ!
+    user_url = 'https://login.yandex.ru/info?format=json'  # ← БЕЗ ПРОБЕЛОВ!
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
         user_response.raise_for_status()
@@ -186,7 +181,6 @@ def yandex_oauth_callback(request):
         }
     })
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_my_profile(request):
@@ -204,7 +198,6 @@ def get_my_profile(request):
     )
     return Response(serializer.data)
 
-
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_my_profile(request):
@@ -214,7 +207,6 @@ def update_my_profile(request):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -232,7 +224,6 @@ def get_profile(request, user_id):
 
     serializer = UserSerializer(user, context={'request': request})
     return Response(serializer.data)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -258,7 +249,6 @@ def get_profile_stats(request):
         'avg_rating': round(avg_rating, 2),
     })
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def password_change(request):
@@ -278,7 +268,6 @@ def password_change(request):
     user.set_password(new_password)
     user.save()
     return Response({'message': 'Пароль успешно изменён'})
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -348,7 +337,6 @@ def register(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def activate_account(request, uidb64, token):
@@ -365,7 +353,6 @@ def activate_account(request, uidb64, token):
         return Response({"message": "Аккаунт подтверждён! Теперь вы можете войти."})
     else:
         return Response({"error": "Неверная или устаревшая ссылка"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -392,7 +379,6 @@ def password_reset_request(request):
 
     return Response({"message": "Если email зарегистрирован, письмо отправлено"}, status=status.HTTP_200_OK)
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_confirm(request, uidb64, token):
@@ -411,7 +397,6 @@ def password_reset_confirm(request, uidb64, token):
         return Response({"message": "Пароль успешно изменён"})
     else:
         return Response({'error': 'Ссылка недействительна или устарела'}, status=400)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])

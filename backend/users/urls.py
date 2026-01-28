@@ -1,5 +1,5 @@
 # backend/users/urls.py
-from django.urls import path, re_path
+from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
 
@@ -16,6 +16,6 @@ urlpatterns = [
     path('profile/me/update/', views.update_my_profile, name='update-my-profile'),
     path('profile/stats/', views.get_profile_stats, name='profile-stats'),
     path('yandex/callback/', views.yandex_oauth_callback, name='yandex_callback'),
-    # 🔥 ИСПРАВЛЕНО:
+    # 🔥 Маршрут для Telegram OAuth (окно авторизации)
     path('telegram/', views.telegram_auth, name='telegram_auth'),
 ]
