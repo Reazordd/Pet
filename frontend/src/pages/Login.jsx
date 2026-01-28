@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import api from '../utils/api'; // ← ИСПОЛЬЗУЕМ СТАРЫЙ РАБОЧИЙ API
+import api from '../utils/api';
 import { logout } from '../utils/auth';
 import YandexLoginButton from '../components/YandexLoginButton';
 import TelegramLoginButton from '../components/TelegramLoginButton';
@@ -26,12 +26,10 @@ function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const response = await api.post('/token/', credentials);
       localStorage.setItem('access_token', response.data.access);
       localStorage.setItem('refresh_token', response.data.refresh);
-
       toast.success('Вход выполнен успешно!');
       navigate('/');
     } catch (error) {
@@ -53,7 +51,6 @@ function Login() {
     <div className="auth-container">
       <div className="auth-card">
         <h2>Вход в систему</h2>
-
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
             <label htmlFor="username">Логин</label>
@@ -68,7 +65,6 @@ function Login() {
               placeholder="Введите ваш логин"
             />
           </div>
-
           <div className="form-group">
             <label htmlFor="password">Пароль</label>
             <input
@@ -82,7 +78,6 @@ function Login() {
               placeholder="Введите ваш пароль"
             />
           </div>
-
           <button
             type="submit"
             className="btn btn-primary btn-full"
@@ -91,7 +86,6 @@ function Login() {
             {loading ? 'Вход...' : 'Войти'}
           </button>
         </form>
-
         {/* Разделитель */}
         <div className="mt-6">
           <div className="relative">
@@ -102,14 +96,12 @@ function Login() {
               <span className="px-2 bg-white text-gray-500">Или войдите через</span>
             </div>
           </div>
-
           {/* 🔥 КНОПКИ РЯДОМ */}
           <div className="mt-3 space-y-2">
             <YandexLoginButton />
             <TelegramLoginButton />
           </div>
         </div>
-
         <div className="auth-links mt-4 text-center">
           <p>
             Нет аккаунта?{' '}

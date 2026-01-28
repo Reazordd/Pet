@@ -2,10 +2,16 @@
 import React, { useEffect } from 'react';
 
 const TelegramLoginButton = () => {
+  const isProduction = window.location.hostname === 'petmarket.com.ru';
+
   useEffect(() => {
-    // Удаляем старый скрипт при повторном монтировании
-    const existingScript = document.querySelector('script[src*="telegram-widget"]');
-    if (existingScript) existingScript.remove();
+    if (!isProduction) return;
+
+    // Удаляем старый скрипт и iframe
+    const oldScript = document.querySelector('script[src*="telegram-widget"]');
+    if (oldScript) oldScript.remove();
+    const oldIframe = document.querySelector('iframe[id*="telegram-login"]');
+    if (oldIframe) oldIframe.remove();
 
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
@@ -15,25 +21,25 @@ const TelegramLoginButton = () => {
     script.setAttribute('data-userpic', 'true');
     script.setAttribute('data-request-access', 'write');
     script.setAttribute('data-auth-url', 'https://petmarket.com.ru/api/auth/telegram/');
-
-    script.onerror = () => {
-      console.error('Не удалось загрузить Telegram Login Widget');
-    };
-
+    script.onerror = () => console.error('Не удалось загрузить Telegram Login Widget');
     document.body.appendChild(script);
 
     return () => {
-      if (script.parentNode) {
-        script.parentNode.removeChild(script);
-      }
+      if (script.parentNode) script.parentNode.removeChild(script);
     };
-  }, []);
+  }, [isProduction]);
+
+  if (!isProduction) {
+    return (
+      <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#666' }}>
+        Вход через Telegram доступен только на основном сайте
+      </div>
+    );
+  }
 
   return (
-    <div style={{ textAlign: 'center', margin: '1rem auto' }}>
-      <div id="telegram-login-button-placeholder">
-        Загрузка кнопки входа через Telegram...
-      </div>
+    <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
+      <div id="telegram-login-button-placeholder" style={{ display: 'none' }} />
     </div>
   );
 };

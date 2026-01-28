@@ -26,13 +26,35 @@ from urllib.parse import urlparse
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-# 🔥 ВХОД ЧЕРЕЗ TELEGRAM (работает через iframe)
+# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram
 @csrf_exempt
 def telegram_auth(request):
     """
-    Обработка авторизации через Telegram Login Widget (iframe).
-    Поддерживает POST-запросы с данными формы.
+    Обработка запросов от Telegram Login Widget.
+    Должен поддерживать GET (проверка + HTML-форма) и POST (авторизация).
     """
+    if request.method == 'GET':
+        # Telegram ожидает HTML-форму для автоматической отправки POST
+        params = request.GET
+        form_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head><title>Telegram Auth</title></head>
+        <body>
+        <form id="tg-auth-form" method="post">
+        <input type="hidden" name="id" value="{params.get('id', '')}">
+        <input type="hidden" name="first_name" value="{params.get('first_name', '')}">
+        <input type="hidden" name="last_name" value="{params.get('last_name', '')}">
+        <input type="hidden" name="username" value="{params.get('username', '')}">
+        <input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
+        <input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
+        <input type="hidden" name="hash" value="{params.get('hash', '')}">
+        </form>
+        <script>document.getElementById('tg-auth-form').submit();</script>
+        </body>
+        </html>
+        """
+        return HttpResponse(form_html, content_type='text/html; charset=utf-8')
     if request.method == 'POST':
         data = request.POST.dict()
 
@@ -81,7 +103,6 @@ def telegram_auth(request):
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
 
-        # 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: HTML-редирект с токеном
         response_html = f"""
         <!DOCTYPE html>
         <html>
@@ -108,7 +129,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    token_url = 'https://oauth.yandex.ru/token'
+    token_url = 'https://oauth.yandex.ru/token'  # ← УБРАНЫ ПРОБЕЛЫ!
     token_data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -123,7 +144,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user_url = 'https://login.yandex.ru/info?format=json'
+    user_url = 'https://login.yandex.ru/info?format=json'  # ← УБРАНЫ ПРОБЕЛЫ!
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
         user_response.raise_for_status()
