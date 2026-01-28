@@ -16,6 +16,6 @@ urlpatterns = [
     path('profile/me/update/', views.update_my_profile, name='update-my-profile'),
     path('profile/stats/', views.get_profile_stats, name='profile-stats'),
     path('yandex/callback/', views.yandex_oauth_callback, name='yandex_callback'),
-    # 🔥 Маршрут для Telegram OAuth (окно авторизации)
+    # 🔥 Маршрут для Telegram OAuth
     path('telegram/', views.telegram_auth, name='telegram_auth'),
 ]
