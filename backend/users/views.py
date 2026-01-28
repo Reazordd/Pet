@@ -26,35 +26,13 @@ from urllib.parse import urlparse
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-# 🔥 ИСПРАВЛЕНО: поддержка GET и POST для Telegram
+# 🔥 ОФИЦИАЛЬНЫЙ ВХОД ЧЕРЕЗ TELEGRAM (JS-виджет)
 @csrf_exempt
 def telegram_auth(request):
     """
-    Обработка запросов от Telegram Login Widget.
-    Должен поддерживать GET (проверка + HTML-форма) и POST (авторизация).
+    Обработка авторизации через Telegram Login Widget (JS-виджет).
+    Поддерживает POST-запросы с данными формы.
     """
-    if request.method == 'GET':
-        # Telegram ожидает HTML-форму для автоматической отправки POST
-        params = request.GET
-        form_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Telegram Auth</title></head>
-        <body>
-        <form id="tg-auth-form" method="post">
-        <input type="hidden" name="id" value="{params.get('id', '')}">
-        <input type="hidden" name="first_name" value="{params.get('first_name', '')}">
-        <input type="hidden" name="last_name" value="{params.get('last_name', '')}">
-        <input type="hidden" name="username" value="{params.get('username', '')}">
-        <input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
-        <input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
-        <input type="hidden" name="hash" value="{params.get('hash', '')}">
-        </form>
-        <script>document.getElementById('tg-auth-form').submit();</script>
-        </body>
-        </html>
-        """
-        return HttpResponse(form_html, content_type='text/html; charset=utf-8')
     if request.method == 'POST':
         data = request.POST.dict()
 
