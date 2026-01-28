@@ -50,8 +50,8 @@ def telegram_auth(request):
             defaults={
                 'username': f"tg_{telegram_id}",
                 'email': f"{telegram_id}@telegram.bot",
-                'first_name': data['first_name'],
-                'last_name': data['last_name'],
+                'first_name': data.get('first_name', ''),
+                'last_name': data.get('last_name', ''),
                 'is_active': True,
                 'email_verified': True,
             }
@@ -59,16 +59,16 @@ def telegram_auth(request):
 
         if not created:
             updated = False
-            if user.first_name != data['first_name']:
-                user.first_name = data['first_name']
+            if user.first_name != data.get('first_name', ''):
+                user.first_name = data.get('first_name', '')
                 updated = True
-            if user.last_name != data['last_name']:
-                user.last_name = data['last_name']
+            if user.last_name != data.get('last_name', ''):
+                user.last_name = data.get('last_name', '')
                 updated = True
             if updated:
                 user.save(update_fields=['first_name', 'last_name'])
 
-        if data['photo_url'] and not user.avatar:
+        if data.get('photo_url') and not user.avatar:
             try:
                 response = requests.get(data['photo_url'], timeout=10)
                 if response.status_code == 200:
@@ -113,7 +113,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    token_url = 'https://oauth.yandex.ru/token'  # ← УБРАНЫ ПРОБЕЛЫ!
+    token_url = 'https://oauth.yandex.ru/token'
     token_data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -128,7 +128,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user_url = 'https://login.yandex.ru/info?format=json'  # ← УБРАНЫ ПРОБЕЛЫ!
+    user_url = 'https://login.yandex.ru/info?format=json'
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
         user_response.raise_for_status()
