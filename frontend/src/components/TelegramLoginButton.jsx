@@ -7,9 +7,12 @@ const TelegramLoginButton = () => {
   useEffect(() => {
     if (!isProduction) return;
 
-    // Удаляем старый скрипт
+    // Удаляем старый скрипт и iframe
     const oldScript = document.querySelector('script[src*="telegram-widget"]');
     if (oldScript) oldScript.remove();
+
+    const oldIframe = document.querySelector('iframe[id*="telegram-login"]');
+    if (oldIframe) oldIframe.remove();
 
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
@@ -18,10 +21,7 @@ const TelegramLoginButton = () => {
     script.setAttribute('data-radius', '8');
     script.setAttribute('data-userpic', 'true');
     script.setAttribute('data-request-access', 'write');
-
-    // 🔥 ЧИСТЫЙ URL без пробелов!
-    const apiUrl = 'https://petmarket.com.ru';
-    script.setAttribute('data-auth-url', `${apiUrl}/api/auth/telegram/`);
+    script.setAttribute('data-auth-url', 'https://petmarket.com.ru/api/auth/telegram/');
 
     script.onerror = () => console.error('Не удалось загрузить Telegram Login Widget');
     document.body.appendChild(script);
