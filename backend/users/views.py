@@ -29,9 +29,11 @@ logger = logging.getLogger(__name__)
 # 🔥 ОФИЦИАЛЬНЫЙ ВХОД ЧЕРЕЗ TELEGRAM (JS-виджет)
 @csrf_exempt
 def telegram_auth(request):
+    logger.info(f"Received request: {request.method} {request.get_full_path()}")
     if request.method == 'GET':
         # Получаем параметры из URL
         params = request.GET
+        logger.info(f"GET params: {dict(params)}")
         # Формируем HTML-страницу с автоматической отправкой POST
         form_html = f"""
         <!DOCTYPE html>
