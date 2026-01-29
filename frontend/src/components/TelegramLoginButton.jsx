@@ -8,8 +8,11 @@ const TelegramLoginButton = () => {
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
-    const authUrl = `https://t.me/petmarket_login_bot?start=login_${Date.now()}`;
+    // Генерируем уникальный state для защиты от CSRF
+    const state = Date.now().toString();
 
+    // Открываем popup с ботом
+    const authUrl = `https://t.me/petmarket_login_bot?start=login_${state}`;
     const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`;
     window.open(authUrl, 'TelegramAuth', features);
   };

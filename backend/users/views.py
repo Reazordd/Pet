@@ -27,6 +27,7 @@ User = get_user_model()
 logger = logging.getLogger(__name__)
 
 # 🔥 КАСТОМНЫЙ ВХОД ЧЕРЕЗ TELEGRAM BOT API
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def telegram_callback(request):
@@ -45,7 +46,7 @@ def telegram_callback(request):
     if not telegram_id or not hash_sig:
         return HttpResponse("Invalid request", status=400)
 
-    # Создаем/получаем пользователя
+    # Создание/получение пользователя
     user, created = User.objects.get_or_create(
         telegram_id=telegram_id,
         defaults={
@@ -69,7 +70,7 @@ def telegram_callback(request):
         if updated:
             user.save(update_fields=['first_name', 'last_name'])
 
-    # Скачиваем аватар
+    # Скачиваем аватар, если нужно
     if photo_url and not user.avatar:
         try:
             response = requests.get(photo_url, timeout=10)
@@ -84,9 +85,9 @@ def telegram_callback(request):
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
 
-    # Редирект на фронтенд
+    # Редирект на фронтенд с токеном
     redirect_url = f"{settings.FRONTEND_URL}/profile?token={access_token}"
-    return HttpResponseRedirect(redirect_url)
+    return redirect(redirect_url)
 
 # 🔥 ЯНДЕКС OAUTH (ИСПРАВЛЕНО: убраны пробелы)
 @api_view(['POST'])
