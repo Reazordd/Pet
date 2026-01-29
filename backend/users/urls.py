@@ -4,6 +4,7 @@ from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 from . import views
 
 urlpatterns = [
+    # ... другие маршруты ...
     path('register/', views.register, name='register'),
     path('activate/<uidb64>/<token>/', views.activate_account, name='activate'),
     path('password/reset/', views.password_reset_request, name='password_reset'),
@@ -16,6 +17,7 @@ urlpatterns = [
     path('profile/me/update/', views.update_my_profile, name='update-my-profile'),
     path('profile/stats/', views.get_profile_stats, name='profile-stats'),
     path('yandex/callback/', views.yandex_oauth_callback, name='yandex_callback'),
-    # 🔥 Маршрут для Telegram OAuth
-    path('telegram/', views.telegram_auth, name='telegram_auth'),
+
+    # 🔥 НОВЫЙ МАРШРУТ ДЛЯ TELEGRAM POPUP
+    path('telegram/callback/', views.telegram_callback, name='telegram_callback'),
 ]

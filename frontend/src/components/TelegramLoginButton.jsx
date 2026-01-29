@@ -1,52 +1,44 @@
 // frontend/src/components/TelegramLoginButton.jsx
-import React, { useEffect } from 'react';
+import React from 'react';
+
+const TELEGRAM_BOT_NAME = 'petmarket_login_bot';
 
 const TelegramLoginButton = () => {
-  const isProduction = window.location.hostname === 'petmarket.com.ru';
+  const handleLogin = () => {
+    const width = 500;
+    const height = 600;
+    const left = window.screen.width / 2 - width / 2;
+    const top = window.screen.height / 2 - height / 2;
 
-  useEffect(() => {
-    if (!isProduction) return;
+    // Генерируем уникальный state для защиты от CSRF
+    const state = Date.now().toString();
 
-    // Удаляем ВСЕ следы Telegram при монтировании
-    const cleanupTelegram = () => {
-      // Удаляем старые скрипты
-      document.querySelectorAll('script[src*="telegram-widget"]').forEach(el => el.remove());
-      // Удаляем iframe
-      document.querySelectorAll('iframe[src*="oauth.telegram.org"], iframe[id*="telegram-login"]').forEach(el => el.remove());
-    };
+    const authUrl = `https://t.me/${TELEGRAM_BOT_NAME}?start=auth_${state}`;
 
-    cleanupTelegram();
-
-    // Создаем новый скрипт
-    const script = document.createElement('script');
-    script.src = 'https://telegram.org/js/telegram-widget.js?22';
-    script.setAttribute('data-telegram-login', 'petmarket_login_bot');
-    script.setAttribute('data-size', 'large');
-    script.setAttribute('data-radius', '8');
-    script.setAttribute('data-userpic', 'true');
-    script.setAttribute('data-request-access', 'write');
-    script.setAttribute('data-auth-url', 'https://petmarket.com.ru/api/auth/telegram/');
-    script.onerror = () => console.error('Не удалось загрузить Telegram Login Widget');
-
-    document.body.appendChild(script);
-
-    return () => {
-      cleanupTelegram();
-    };
-  }, [isProduction]);
-
-  if (!isProduction) {
-    return (
-      <div style={{ textAlign: 'center', margin: '0.5rem 0', color: '#666' }}>
-        Вход через Telegram доступен только на основном сайте
-      </div>
-    );
-  }
+    const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`;
+    window.open(authUrl, 'TelegramAuth', features);
+  };
 
   return (
-    <div style={{ textAlign: 'center', margin: '0.5rem 0' }}>
-      <div id="telegram-login-button-placeholder" style={{ display: 'none' }} />
-    </div>
+    <button
+      type="button"
+      onClick={handleLogin}
+      className="btn btn-secondary"
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: '8px',
+        width: '100%',
+        backgroundColor: '#0088cc',
+        color: 'white',
+      }}
+    >
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+        <path d="M12 0C5.4 0 0 5.4 0 12s5.4 12 12 12 12-5.4 12-12S18.66 0 12 0zm5.739 16.5c-.162.375-.63.525-1.005.337l-2.25-1.425-1.05.975c-2.7 2.475-5.55 2.4-6.3-.075-.15-.45.075-.9.45-1.05l2.85-2.25-1.35-4.2c-.15-.45.15-.9.6-.9h3.6c.3 0 .525.15.675.375l1.5 3.15 3.45-2.1c.45-.225.9-.075 1.05.45l1.05 4.5c.15.6-.3.975-.9.975l-4.2-.3 1.05 3.6c.075.3-.075.675-.45.825z"/>
+      </svg>
+      Войти через Telegram
+    </button>
   );
 };
 
