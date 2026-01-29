@@ -4,7 +4,6 @@ import hmac
 from typing import Dict
 from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
-
 # === Telegram OAuth ===
 def verify_telegram_auth_data(data: Dict[str, str], bot_token: str) -> bool:
     """Проверяет подлинность данных от Telegram Login Widget."""
@@ -24,7 +23,6 @@ def verify_telegram_auth_data(data: Dict[str, str], bot_token: str) -> bool:
     ).hexdigest()
 
     return hmac.compare_digest(computed_hash, received_hash)
-
 
 # === Email активация (не удалять!) ===
 class AccountActivationTokenGenerator(PasswordResetTokenGenerator):

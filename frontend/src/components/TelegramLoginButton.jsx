@@ -7,14 +7,17 @@ const TelegramLoginButton = () => {
   useEffect(() => {
     if (!isProduction) return;
 
-    // Удаляем ВСЁ, что связано с Telegram
-    const oldScript = document.querySelector('script[src*="telegram-widget"]');
-    if (oldScript) oldScript.remove();
+    // Удаляем ВСЕ следы Telegram при монтировании
+    const cleanupTelegram = () => {
+      // Удаляем старые скрипты
+      document.querySelectorAll('script[src*="telegram-widget"]').forEach(el => el.remove());
+      // Удаляем iframe
+      document.querySelectorAll('iframe[src*="oauth.telegram.org"], iframe[id*="telegram-login"]').forEach(el => el.remove());
+    };
 
-    const oldIframe = document.querySelector('iframe[src*="oauth.telegram.org"]');
-    if (oldIframe) oldIframe.remove();
+    cleanupTelegram();
 
-    // Создаём НОВЫЙ скрипт
+    // Создаем новый скрипт
     const script = document.createElement('script');
     script.src = 'https://telegram.org/js/telegram-widget.js?22';
     script.setAttribute('data-telegram-login', 'petmarket_login_bot');
@@ -24,10 +27,11 @@ const TelegramLoginButton = () => {
     script.setAttribute('data-request-access', 'write');
     script.setAttribute('data-auth-url', 'https://petmarket.com.ru/api/auth/telegram/');
     script.onerror = () => console.error('Не удалось загрузить Telegram Login Widget');
+
     document.body.appendChild(script);
 
     return () => {
-      if (script.parentNode) script.parentNode.removeChild(script);
+      cleanupTelegram();
     };
   }, [isProduction]);
 

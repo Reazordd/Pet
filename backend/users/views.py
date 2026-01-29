@@ -29,33 +29,40 @@ logger = logging.getLogger(__name__)
 # 🔥 ОФИЦИАЛЬНЫЙ ВХОД ЧЕРЕЗ TELEGRAM (JS-виджет)
 @csrf_exempt
 def telegram_auth(request):
+    """
+    Обработка авторизации через Telegram Login Widget.
+    Поддерживает GET (HTML-форма) и POST (обработка данных).
+    """
     if request.method == 'GET':
-        # Получаем параметры и ОБРЕЗАЕМ пробелы
-        params = {k: v.strip() if isinstance(v, str) else v for k, v in request.GET.items()}
+        # Telegram отправляет GET с параметрами для проверки
+        params = request.GET
+        if not params.get('id') or not params.get('hash'):
+            # Простая проверка доступности эндпоинта
+            return HttpResponse("OK", status=200)
+
+        # Создаем HTML-форму для автоматической отправки POST
         form_html = f"""
-<!DOCTYPE html>
-<html>
-<head><title>Telegram Auth</title></head>
-<body>
-<form id="tg-auth-form" method="post">
-<input type="hidden" name="id" value="{params.get('id', '')}">
-<input type="hidden" name="first_name" value="{params.get('first_name', '')}">
-<input type="hidden" name="last_name" value="{params.get('last_name', '')}">
-<input type="hidden" name="username" value="{params.get('username', '')}">
-<input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
-<input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
-<input type="hidden" name="hash" value="{params.get('hash', '')}">
-</form>
-<script>document.getElementById('tg-auth-form').submit();</script>
-</body>
-</html>
+        <!DOCTYPE html>
+        <html>
+        <head><title>Telegram Auth</title></head>
+        <body>
+        <form id="tg-auth-form" method="post">
+        <input type="hidden" name="id" value="{params.get('id', '')}">
+        <input type="hidden" name="first_name" value="{params.get('first_name', '')}">
+        <input type="hidden" name="last_name" value="{params.get('last_name', '')}">
+        <input type="hidden" name="username" value="{params.get('username', '')}">
+        <input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
+        <input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
+        <input type="hidden" name="hash" value="{params.get('hash', '')}">
+        </form>
+        <script>document.getElementById('tg-auth-form').submit();</script>
+        </body>
+        </html>
         """
         return HttpResponse(form_html, content_type='text/html; charset=utf-8')
 
-    if request.method == 'POST':
-        # Обрезаем пробелы у всех значений
-        data = {k: v.strip() if isinstance(v, str) else v for k, v in request.POST.items()}
-
+    elif request.method == 'POST':
+        data = request.POST.dict()
         if not data.get('id') or not data.get('hash'):
             logger.warning("Missing required Telegram auth data")
             return HttpResponse("Invalid data", status=400)
@@ -77,6 +84,7 @@ def telegram_auth(request):
             }
         )
 
+        # Обновление данных при повторном входе
         if not created:
             updated = False
             if user.first_name != data.get('first_name', ''):
@@ -88,30 +96,35 @@ def telegram_auth(request):
             if updated:
                 user.save(update_fields=['first_name', 'last_name'])
 
-        if data.get('photo_url') and not user.avatar:
+        # Загрузка аватарки
+        photo_url = data.get('photo_url')
+        if photo_url and not user.avatar:
             try:
-                response = requests.get(data['photo_url'], timeout=10)
+                response = requests.get(photo_url, timeout=10)
                 if response.status_code == 200:
-                    ext = os.path.splitext(urlparse(data['photo_url']).path)[1] or '.jpg'
+                    ext = os.path.splitext(urlparse(photo_url).path)[1] or '.jpg'
                     avatar_name = f"tg_{telegram_id}{ext}"
                     user.avatar.save(avatar_name, ContentFile(response.content), save=True)
             except Exception as e:
                 logger.error(f"Failed to download Telegram avatar: {e}")
 
+        # Генерация JWT токена
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
+
+        # Редирект с токеном
         response_html = f"""
-<!DOCTYPE html>
-<html>
-<head><title>Вход выполнен</title></head>
-<body>
-<script>
-localStorage.setItem('authToken', '{access_token}');
-window.location.href = '{settings.FRONTEND_URL}/profile';
-</script>
-<p>Авторизация прошла успешно. Переход...</p>
-</body>
-</html>
+        <!DOCTYPE html>
+        <html>
+        <head><title>Вход выполнен</title></head>
+        <body>
+        <script>
+        localStorage.setItem('authToken', '{access_token}');
+        window.location.href = '{settings.FRONTEND_URL}/profile';
+        </script>
+        <p>Авторизация прошла успешно. Переход...</p>
+        </body>
+        </html>
         """
         return HttpResponse(response_html, content_type='text/html; charset=utf-8')
 
