@@ -24,7 +24,7 @@ def verify_telegram_auth_data(data: Dict[str, str], bot_token: str) -> bool:
 
     return hmac.compare_digest(computed_hash, received_hash)
 
-# === Email активация (не удалять!) ===
+# === Email активация ===
 class AccountActivationTokenGenerator(PasswordResetTokenGenerator):
     def _make_hash_value(self, user, timestamp):
         return str(user.pk) + str(timestamp) + str(user.email_verified)

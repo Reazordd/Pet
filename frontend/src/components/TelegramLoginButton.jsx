@@ -10,9 +10,7 @@ const TelegramLoginButton = () => {
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
-    // Генерируем уникальный state для защиты от CSRF
     const state = Date.now().toString();
-
     const authUrl = `https://t.me/${TELEGRAM_BOT_NAME}?start=auth_${state}`;
 
     const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`;

@@ -19,7 +19,6 @@ if not BOT_TOKEN:
 FRONTEND_URL = 'https://petmarket.com.ru'
 CALLBACK_URL = f'{FRONTEND_URL}/api/auth/telegram/callback/'
 
-
 def generate_hash(data: dict, bot_token: str) -> str:
     check_data = {k: v for k, v in data.items() if k != 'hash'}
     sorted_items = sorted(check_data.items())
@@ -32,7 +31,6 @@ def generate_hash(data: dict, bot_token: str) -> str:
     ).hexdigest()
     return computed_hash
 
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     args = context.args
@@ -43,7 +41,16 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
         return
 
-    # Формируем данные для подписи
+    # Формируем данные пользователя
+    params = {
+        'telegram_id': str(user.id),
+        'first_name': user.first_name or '',
+        'last_name': user.last_name or '',
+        'username': user.username or '',
+        'photo_url': f"https://t.me/i/userpic/320/{user.username}.jpg" if user.username else '',
+    }
+
+    # Генерируем хеш для проверки подлинности
     data_for_hash = {
         'id': str(user.id),
         'first_name': user.first_name or '',
@@ -52,20 +59,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'photo_url': f"https://t.me/i/userpic/320/{user.username}.jpg" if user.username else '',
         'auth_date': str(int(update.message.date.timestamp())),
     }
+    params['hash'] = generate_hash(data_for_hash, BOT_TOKEN)
 
-    # Генерируем хеш (как в официальном виджете)
-    hash_sig = generate_hash(data_for_hash, BOT_TOKEN)
-
-    # Формируем параметры для редиректа
-    params = {
-        'telegram_id': str(user.id),
-        'first_name': user.first_name or '',
-        'last_name': user.last_name or '',
-        'username': user.username or '',
-        'photo_url': f"https://t.me/i/userpic/320/{user.username}.jpg" if user.username else '',
-        'hash': hash_sig,
-    }
-
+    # Формируем URL для редиректа
     query_string = '&'.join([f"{k}={quote(str(v))}" for k, v in params.items() if v])
     full_url = f"{CALLBACK_URL}?{query_string}"
 
@@ -80,13 +76,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
     )
 
-
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     print("Telegram Login Bot запущен...")
     application.run_polling()
-
 
 if __name__ == "__main__":
     main()

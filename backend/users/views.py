@@ -1,5 +1,4 @@
 # backend/users/views.py
-
 import logging
 import requests
 from django.contrib.auth.tokens import default_token_generator
@@ -28,8 +27,7 @@ from urllib.parse import urlparse
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-
-# 🔥 КАСТОМНЫЙ ВХОД ЧЕРЕЗ TELEGRAM BOT API (как у Яндекса)
+# 🔥 КАСТОМНЫЙ ВХОД ЧЕРЕЗ TELEGRAM BOT API
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def telegram_callback(request):
@@ -48,18 +46,7 @@ def telegram_callback(request):
     if not telegram_id or not hash_sig:
         return HttpResponse("Invalid request", status=400)
 
-    # Для локальной разработки можно временно пропустить проверку хеша
-    # На продакшене раскомментируй эту проверку
-    # if not verify_telegram_auth_data({
-    #     'id': telegram_id,
-    #     'first_name': first_name,
-    #     'last_name': last_name,
-    #     'username': username,
-    #     'photo_url': photo_url,
-    #     'auth_date': request.GET.get('auth_date', ''),
-    # }, settings.TELEGRAM_LOGIN_BOT_TOKEN):
-    #     return HttpResponse("Invalid data", status=400)
-
+    # Создаем/получаем пользователя
     user, created = User.objects.get_or_create(
         telegram_id=telegram_id,
         defaults={
@@ -83,7 +70,7 @@ def telegram_callback(request):
         if updated:
             user.save(update_fields=['first_name', 'last_name'])
 
-    # Скачиваем аватар, если нужно
+    # Скачиваем аватар
     if photo_url and not user.avatar:
         try:
             response = requests.get(photo_url, timeout=10)
@@ -98,16 +85,11 @@ def telegram_callback(request):
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
 
-    # Редирект на фронтенд с токеном
-    if settings.DEBUG:
-        redirect_url = f"http://localhost:3000/profile?token={access_token}"
-    else:
-        redirect_url = f"{settings.FRONTEND_URL}/profile?token={access_token}"
-
+    # Редирект на фронтенд
+    redirect_url = f"{settings.FRONTEND_URL}/profile?token={access_token}"
     return HttpResponseRedirect(redirect_url)
 
-
-# 🔥 ЯНДЕКС OAUTH (ИСПРАВЛЕНО: убраны ВСЕ пробелы в URL!)
+# 🔥 ЯНДЕКС OAUTH (ИСПРАВЛЕНО: убраны пробелы)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def yandex_oauth_callback(request):
@@ -115,7 +97,7 @@ def yandex_oauth_callback(request):
     if not code:
         return Response({'error': 'Code required'}, status=status.HTTP_400_BAD_REQUEST)
 
-    token_url = 'https://oauth.yandex.ru/token'  # ← УБРАНЫ ПРОБЕЛЫ!
+    token_url = 'https://oauth.yandex.ru/token'
     token_data = {
         'grant_type': 'authorization_code',
         'code': code,
@@ -130,7 +112,7 @@ def yandex_oauth_callback(request):
     except Exception as e:
         return Response({'error': 'Failed to exchange code'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user_url = 'https://login.yandex.ru/info?format=json'  # ← УБРАНЫ ПРОБЕЛЫ!
+    user_url = 'https://login.yandex.ru/info?format=json'
     try:
         user_response = requests.get(user_url, headers={'Authorization': f'OAuth {access_token}'}, timeout=10)
         user_response.raise_for_status()
