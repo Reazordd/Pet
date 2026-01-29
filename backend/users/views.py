@@ -29,34 +29,33 @@ logger = logging.getLogger(__name__)
 # 🔥 ОФИЦИАЛЬНЫЙ ВХОД ЧЕРЕЗ TELEGRAM (JS-виджет)
 @csrf_exempt
 def telegram_auth(request):
-    logger.info(f"Received request: {request.method} {request.get_full_path()}")
     if request.method == 'GET':
-        # Получаем параметры из URL
-        params = request.GET
-        logger.info(f"GET params: {dict(params)}")
-        # Формируем HTML-страницу с автоматической отправкой POST
+        # Получаем параметры и ОБРЕЗАЕМ пробелы
+        params = {k: v.strip() if isinstance(v, str) else v for k, v in request.GET.items()}
         form_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Telegram Auth</title></head>
-        <body>
-        <form id="tg-auth-form" method="post">
-            <input type="hidden" name="id" value="{params.get('id', '')}">
-            <input type="hidden" name="first_name" value="{params.get('first_name', '')}">
-            <input type="hidden" name="last_name" value="{params.get('last_name', '')}">
-            <input type="hidden" name="username" value="{params.get('username', '')}">
-            <input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
-            <input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
-            <input type="hidden" name="hash" value="{params.get('hash', '')}">
-        </form>
-        <script>document.getElementById('tg-auth-form').submit();</script>
-        </body>
-        </html>
+<!DOCTYPE html>
+<html>
+<head><title>Telegram Auth</title></head>
+<body>
+<form id="tg-auth-form" method="post">
+<input type="hidden" name="id" value="{params.get('id', '')}">
+<input type="hidden" name="first_name" value="{params.get('first_name', '')}">
+<input type="hidden" name="last_name" value="{params.get('last_name', '')}">
+<input type="hidden" name="username" value="{params.get('username', '')}">
+<input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
+<input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
+<input type="hidden" name="hash" value="{params.get('hash', '')}">
+</form>
+<script>document.getElementById('tg-auth-form').submit();</script>
+</body>
+</html>
         """
         return HttpResponse(form_html, content_type='text/html; charset=utf-8')
 
     if request.method == 'POST':
-        data = request.POST.dict()
+        # Обрезаем пробелы у всех значений
+        data = {k: v.strip() if isinstance(v, str) else v for k, v in request.POST.items()}
+
         if not data.get('id') or not data.get('hash'):
             logger.warning("Missing required Telegram auth data")
             return HttpResponse("Invalid data", status=400)
@@ -101,20 +100,18 @@ def telegram_auth(request):
 
         refresh = RefreshToken.for_user(user)
         access_token = str(refresh.access_token)
-
-        # Редирект на профиль с токеном
         response_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Вход выполнен</title></head>
-        <body>
-        <script>
-        localStorage.setItem('authToken', '{access_token}');
-        window.location.href = '{settings.FRONTEND_URL}/profile';
-        </script>
-        <p>Авторизация прошла успешно. Переход...</p>
-        </body>
-        </html>
+<!DOCTYPE html>
+<html>
+<head><title>Вход выполнен</title></head>
+<body>
+<script>
+localStorage.setItem('authToken', '{access_token}');
+window.location.href = '{settings.FRONTEND_URL}/profile';
+</script>
+<p>Авторизация прошла успешно. Переход...</p>
+</body>
+</html>
         """
         return HttpResponse(response_html, content_type='text/html; charset=utf-8')
 
