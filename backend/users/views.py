@@ -31,8 +31,33 @@ logger = logging.getLogger(__name__)
 def telegram_auth(request):
     """
     Обработка авторизации через Telegram Login Widget (JS-виджет).
-    Поддерживает POST-запросы с данными формы.
+    Поддерживает:
+      - GET: возвращает HTML-форму для автоматической отправки POST
+      - POST: обрабатывает данные, создаёт пользователя и редиректит на /profile
     """
+    if request.method == 'GET':
+        # Telegram ожидает HTML-форму для автоматической отправки POST
+        params = request.GET
+        form_html = f"""
+<!DOCTYPE html>
+<html>
+<head><title>Telegram Auth</title></head>
+<body>
+<form id="tg-auth-form" method="post">
+<input type="hidden" name="id" value="{params.get('id', '')}">
+<input type="hidden" name="first_name" value="{params.get('first_name', '')}">
+<input type="hidden" name="last_name" value="{params.get('last_name', '')}">
+<input type="hidden" name="username" value="{params.get('username', '')}">
+<input type="hidden" name="photo_url" value="{params.get('photo_url', '')}">
+<input type="hidden" name="auth_date" value="{params.get('auth_date', '')}">
+<input type="hidden" name="hash" value="{params.get('hash', '')}">
+</form>
+<script>document.getElementById('tg-auth-form').submit();</script>
+</body>
+</html>
+        """
+        return HttpResponse(form_html, content_type='text/html; charset=utf-8')
+
     if request.method == 'POST':
         data = request.POST.dict()
 
@@ -82,22 +107,21 @@ def telegram_auth(request):
         access_token = str(refresh.access_token)
 
         response_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head><title>Вход выполнен</title></head>
-        <body>
-        <script>
-        localStorage.setItem('authToken', '{access_token}');
-        window.location.href = '{settings.FRONTEND_URL}/profile';
-        </script>
-        <p>Авторизация прошла успешно. Переход...</p>
-        </body>
-        </html>
+<!DOCTYPE html>
+<html>
+<head><title>Вход выполнен</title></head>
+<body>
+<script>
+localStorage.setItem('authToken', '{access_token}');
+window.location.href = '{settings.FRONTEND_URL}/profile';
+</script>
+<p>Авторизация прошла успешно. Переход...</p>
+</body>
+</html>
         """
         return HttpResponse(response_html, content_type='text/html; charset=utf-8')
 
     return HttpResponse("Method not allowed", status=405)
-
 
 # 🔥 ЯНДЕКС OAUTH (ИСПРАВЛЕНО: убраны ВСЕ пробелы в URL!)
 @api_view(['POST'])
