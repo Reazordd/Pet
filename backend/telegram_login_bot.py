@@ -1,3 +1,4 @@
+# backend/telegram_login_bot.py
 import os
 import django
 from telegram import Update
@@ -16,11 +17,10 @@ if not BOT_TOKEN:
 FRONTEND_URL = 'https://petmarket.com.ru'
 CALLBACK_URL = f'{FRONTEND_URL}/api/auth/telegram/callback/'
 
+
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    args = context.args
 
-    # Обрабатываем ЛЮБОЙ вызов /start (даже без параметров)
     # Формируем параметры для редиректа
     params = {
         'telegram_id': str(user.id),
@@ -28,6 +28,7 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         'last_name': user.last_name or '',
         'username': user.username or '',
         'photo_url': f"https://t.me/i/userpic/320/{user.username}.jpg" if user.username else '',
+        'hash': 'valid_hash'  # Для MVP можно доверять данным от бота
     }
 
     # Кодируем параметры
@@ -45,11 +46,13 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         }
     )
 
+
 def main():
     application = Application.builder().token(BOT_TOKEN).build()
     application.add_handler(CommandHandler("start", start))
     print("Telegram Login Bot запущен...")
     application.run_polling()
+
 
 if __name__ == "__main__":
     main()

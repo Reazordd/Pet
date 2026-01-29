@@ -1,8 +1,6 @@
 // frontend/src/components/TelegramLoginButton.jsx
 import React from 'react';
 
-const TELEGRAM_BOT_NAME = 'petmarket_login_bot';
-
 const TelegramLoginButton = () => {
   const handleLogin = () => {
     const width = 500;
@@ -10,8 +8,7 @@ const TelegramLoginButton = () => {
     const left = window.screen.width / 2 - width / 2;
     const top = window.screen.height / 2 - height / 2;
 
-    const state = Date.now().toString();
-    const authUrl = `https://t.me/${TELEGRAM_BOT_NAME}?start=auth_${state}`;
+    const authUrl = `https://t.me/petmarket_login_bot?start=login_${Date.now()}`;
 
     const features = `width=${width},height=${height},left=${left},top=${top},resizable=yes,scrollbars=yes,status=yes`;
     window.open(authUrl, 'TelegramAuth', features);

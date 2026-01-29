@@ -1,4 +1,3 @@
-# backend/users/views.py
 import logging
 import requests
 from django.contrib.auth.tokens import default_token_generator
@@ -156,7 +155,6 @@ def yandex_oauth_callback(request):
         }
     })
 
-
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_my_profile(request):
@@ -174,7 +172,6 @@ def get_my_profile(request):
     )
     return Response(serializer.data)
 
-
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def update_my_profile(request):
@@ -184,7 +181,6 @@ def update_my_profile(request):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -202,7 +198,6 @@ def get_profile(request, user_id):
 
     serializer = UserSerializer(user, context={'request': request})
     return Response(serializer.data)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -228,7 +223,6 @@ def get_profile_stats(request):
         'avg_rating': round(avg_rating, 2),
     })
 
-
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def password_change(request):
@@ -248,7 +242,6 @@ def password_change(request):
     user.set_password(new_password)
     user.save()
     return Response({'message': 'Пароль успешно изменён'})
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -318,7 +311,6 @@ def register(request):
     except Exception as e:
         return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def activate_account(request, uidb64, token):
@@ -335,7 +327,6 @@ def activate_account(request, uidb64, token):
         return Response({"message": "Аккаунт подтверждён! Теперь вы можете войти."})
     else:
         return Response({"error": "Неверная или устаревшая ссылка"}, status=status.HTTP_400_BAD_REQUEST)
-
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
@@ -362,7 +353,6 @@ def password_reset_request(request):
 
     return Response({"message": "Если email зарегистрирован, письмо отправлено"}, status=status.HTTP_200_OK)
 
-
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def password_reset_confirm(request, uidb64, token):
@@ -381,7 +371,6 @@ def password_reset_confirm(request, uidb64, token):
         return Response({"message": "Пароль успешно изменён"})
     else:
         return Response({'error': 'Ссылка недействительна или устарела'}, status=400)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
