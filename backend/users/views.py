@@ -13,7 +13,7 @@ from django.utils.http import urlsafe_base64_encode, urlsafe_base64_decode
 from ads.models import Pet
 from reviews.models import Review
 from .serializers import UserSerializer
-from .utils import account_activation_token, verify_telegram_auth_data
+from .utils import account_activation_token
 from django.conf import settings
 from .models import PhoneNumber
 from django.http import HttpResponse, HttpResponseRedirect
@@ -26,74 +26,6 @@ from urllib.parse import urlparse
 User = get_user_model()
 logger = logging.getLogger(__name__)
 
-# 🔥 КАСТОМНЫЙ ВХОД ЧЕРЕЗ TELEGRAM BOT API
-
-
-@api_view(['GET'])
-@permission_classes([AllowAny])
-def telegram_callback(request):
-    """
-    Обрабатывает редирект от Telegram-бота.
-    Бот должен отправить пользователя сюда с параметрами:
-    ?telegram_id=123&first_name=...&last_name=...&username=...&photo_url=...&hash=...
-    """
-    telegram_id = request.GET.get('telegram_id')
-    first_name = request.GET.get('first_name', '')
-    last_name = request.GET.get('last_name', '')
-    username = request.GET.get('username', '')
-    photo_url = request.GET.get('photo_url', '')
-    hash_sig = request.GET.get('hash')
-
-    if not telegram_id or not hash_sig:
-        return HttpResponse("Invalid request", status=400)
-
-    try:
-        # Создание/получение пользователя
-        user, created = User.objects.get_or_create(
-            telegram_id=telegram_id,
-            defaults={
-                'username': f"tg_{telegram_id}",
-                'email': f"{telegram_id}@telegram.bot",
-                'first_name': first_name,
-                'last_name': last_name,
-                'is_active': True,
-                'email_verified': True,
-            }
-        )
-
-        if not created:
-            updated = False
-            if user.first_name != first_name:
-                user.first_name = first_name
-                updated = True
-            if user.last_name != last_name:
-                user.last_name = last_name
-                updated = True
-            if updated:
-                user.save(update_fields=['first_name', 'last_name'])
-
-        # Скачиваем аватар, если нужно
-        if photo_url and not user.avatar:
-            try:
-                response = requests.get(photo_url, timeout=10)
-                if response.status_code == 200:
-                    ext = os.path.splitext(urlparse(photo_url).path)[1] or '.jpg'
-                    avatar_name = f"tg_{telegram_id}{ext}"
-                    user.avatar.save(avatar_name, ContentFile(response.content), save=True)
-            except Exception as e:
-                logger.error(f"Failed to download Telegram avatar: {e}")
-
-        # Генерируем JWT
-        refresh = RefreshToken.for_user(user)
-        access_token = str(refresh.access_token)
-
-        # Редирект на фронтенд с токеном
-        redirect_url = f"{settings.FRONTEND_URL}/profile?token={access_token}"
-        return HttpResponseRedirect(redirect_url)
-
-    except Exception as e:
-        logger.error(f"Telegram callback error: {e}")
-        return HttpResponse("Internal server error", status=500)
 
 # 🔥 ЯНДЕКС OAUTH (ИСПРАВЛЕНО: убраны пробелы)
 @api_view(['POST'])

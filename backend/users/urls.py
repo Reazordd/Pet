@@ -17,6 +17,4 @@ urlpatterns = [
     path('profile/stats/', views.get_profile_stats, name='profile-stats'),
     path('yandex/callback/', views.yandex_oauth_callback, name='yandex_callback'),
 
-    # 🔥 МАРШРУТ ДЛЯ TELEGRAM POPUP
-    path('telegram/callback/', views.telegram_callback, name='telegram_callback'),
 ]
