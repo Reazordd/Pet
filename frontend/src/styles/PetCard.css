@@ -1,39 +1,44 @@
-/* PetCard.css */
-
+/* PetCard.css — РАБОЧАЯ ВЕРСИЯ ДЛЯ PETMARKET */
 .pet-card {
   display: flex;
   flex-direction: column;
   background: white;
   border-radius: 12px;
-  overflow: hidden;
+  /* overflow: hidden; ← УДАЛИТЬ ЭТУ СТРОКУ */
   border: 1px solid #e0e0e0;
   text-decoration: none;
   color: #222;
   transition: box-shadow 0.2s ease;
-  position: relative;
+  width: 260px;
   height: 100%;
-  width: 100%;
-  max-width: 260px; /* ← ФИКСИРОВАННАЯ ШИРИНА */
   margin: 0 auto;
 }
 
 .pet-image-container {
-  width: 100%;
-  height: 140px; /* ← ФИКСИРОВАННАЯ ВЫСОТА */
+  height: 140px;
+  background: #f8f9fa;
+  position: relative;
   overflow: hidden;
-  background: #f5f5f5;
+}
+
+.pet-image-container::before {
+  content: "";
+  display: block;
+  padding-top: 53.85%; /* 140 / 260 */
 }
 
 .pet-image-container img {
+  position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover; /* ← ОБРЕЗКА ПО ЦЕНТРУ, НО БЕЗ ИСКАЖЕНИЙ */
-  display: block;
+  object-fit: cover;
+  object-position: top; /* 🔥 ГАРАНТИРУЕТ, ЧТО ГОЛОВА ВИДНА */
+  border-radius: 12px 12px 0 0;
 }
 
 .pet-card-link {
-  text-decoration: none;
-  color: inherit;
   display: block;
   height: 100%;
 }
@@ -76,7 +81,7 @@
   font-size: 1.3rem;
   cursor: pointer;
   transition: transform 0.2s;
-  z-index: 2;
+  z-index: 10; /* должно быть выше всего */
 }
 
 .favorite-btn.active {
@@ -87,12 +92,12 @@
   transform: scale(1.2);
 }
 
-/* Адаптивность */
 @media (max-width: 768px) {
   .pet-card {
-    max-width: 100%;
+    width: 100%;
+    max-width: 260px;
   }
-  .pet-image-container {
-    height: 120px;
+  .pet-image-container::before {
+    padding-top: 53.85%;
   }
 }
