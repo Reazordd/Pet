@@ -46,41 +46,45 @@ function Navbar() {
 
         <nav className="nav-links">
           <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
-            Главная
+            <span className="nav-icon">🏠</span>
+            <span className="nav-text">Главная</span>
           </Link>
-          {/* 🔥 ФОРУМ ВРЕМЕННО УДАЛЁН */}
-          {/* <Link className={`nav-link ${location.pathname === "/forum" ? "active" : ""}`} to="/forum">
-            Форум
-          </Link> */}
 
           {isAuthenticated ? (
             <>
               <Link className={`nav-link ${location.pathname === "/favorites" ? "active" : ""}`} to="/favorites">
-                ❤️ Избранное
+                <span className="nav-icon">❤️</span>
+                <span className="nav-text">Избранное</span>
               </Link>
               <Link className={`nav-link ${location.pathname === "/messages" ? "active" : ""}`} to="/messages">
-                💬 Сообщения
+                <span className="nav-icon">💬</span>
+                <span className="nav-text">Сообщения</span>
               </Link>
               <Link className={`nav-link ${location.pathname === "/notifications" ? "active" : ""}`} to="/notifications">
-                🔔 Уведомления
+                <span className="nav-icon">🔔</span>
+                <span className="nav-text">Уведомления</span>
                 {!loading && unreadCount > 0 && (
                   <span className="notification-badge">{unreadCount}</span>
                 )}
               </Link>
               <Link className={`nav-link ${location.pathname === "/profile" ? "active" : ""}`} to="/profile">
-                👤 Профиль
+                <span className="nav-icon">👤</span>
+                <span className="nav-text">Профиль</span>
               </Link>
               <button className="nav-logout" onClick={handleLogout}>
-                Выйти
+                <span className="nav-icon">🚪</span>
+                <span className="nav-text">Выйти</span>
               </button>
             </>
           ) : (
             <>
               <Link className={`nav-link ${location.pathname === "/login" ? "active" : ""}`} to="/login">
-                Вход
+                <span className="nav-icon">🔑</span>
+                <span className="nav-text">Вход</span>
               </Link>
               <Link className="nav-cta" to="/register">
-                Регистрация
+                <span className="nav-icon">📝</span>
+                <span className="nav-text">Регистрация</span>
               </Link>
             </>
           )}

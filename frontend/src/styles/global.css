@@ -111,7 +111,7 @@ body {
 }
 
 .content {
-  max-width: 1200px;
+  max-width: 1440px; /* ← Увеличено с 1200 до 1440 как у Avito */
   margin: 24px auto;
   padding: 0 16px;
   width: 100%;
