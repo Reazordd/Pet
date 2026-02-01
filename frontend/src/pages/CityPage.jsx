@@ -2,29 +2,16 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import PetCard from '../components/PetCard';
-import SearchFilters from '../components/SearchFilters';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import api from '../utils/api';
 
 export default function CityPage() {
   const { citySlug, species } = useParams();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [pets, setPets] = useState([]);
   const [seo, setSeo] = useState({ title: '', description: '' });
   const [loading, setLoading] = useState(true);
-
-  const initialFilters = {
-    search: searchParams.get('search') || '',
-    city: citySlug.replace(/-/g, ' '), // ← автоматически подставляем город из URL
-    species: species || '',
-    breed: searchParams.get('breed') || '',
-    age_group: searchParams.get('age_group') || '',
-    minPrice: searchParams.get('min_price') || '',
-    maxPrice: searchParams.get('max_price') || '',
-  };
-
-  const [filters, setFilters] = useState(initialFilters);
 
   useEffect(() => {
     const loadPets = async () => {
@@ -35,11 +22,19 @@ export default function CityPage() {
           : `/city/${citySlug}/`;
 
         const params = new URLSearchParams();
-        if (filters.search) params.append('search', filters.search);
-        if (filters.breed) params.append('breed', filters.breed);
-        if (filters.age_group) params.append('age_group', filters.age_group);
-        if (filters.minPrice) params.append('min_price', filters.minPrice);
-        if (filters.maxPrice) params.append('max_price', filters.maxPrice);
+
+        // Все фильтры из URL
+        const q = searchParams.get('q');
+        const breed = searchParams.get('breed');
+        const age_group = searchParams.get('age_group');
+        const min_price = searchParams.get('min_price');
+        const max_price = searchParams.get('max_price');
+
+        if (q) params.append('search', q);
+        if (breed) params.append('breed', breed);
+        if (age_group) params.append('age_group', age_group);
+        if (min_price) params.append('min_price', min_price);
+        if (max_price) params.append('max_price', max_price);
 
         const queryString = params.toString() ? `?${params.toString()}` : '';
         const res = await api.get(`${url}${queryString}`);
@@ -74,24 +69,12 @@ export default function CityPage() {
       }
     };
     loadPets();
-  }, [citySlug, species, JSON.stringify(filters)]);
-
-  const handleFilter = (newFilters) => {
-    setFilters(newFilters);
-    const params = new URLSearchParams();
-    if (newFilters.search) params.append('search', newFilters.search);
-    if (newFilters.breed) params.append('breed', newFilters.breed);
-    if (newFilters.age_group) params.append('age_group', newFilters.age_group);
-    if (newFilters.minPrice) params.append('min_price', newFilters.minPrice);
-    if (newFilters.maxPrice) params.append('max_price', newFilters.maxPrice);
-    setSearchParams(params);
-  };
+  }, [citySlug, species, searchParams]); // ← зависимость от URL
 
   return (
     <div className="city-page max-w-6xl mx-auto p-4">
-      <div className="filters-section mb-6">
-        <SearchFilters onFilter={handleFilter} loading={loading} />
-      </div>
+      {/* ❌ УДАЛЕН БЛОК ФИЛЬТРОВ */}
+
       <h1 className="text-2xl font-bold mb-4">{seo.title || `Объявления в ${citySlug.replace('-', ' ')}`}</h1>
       <div className="pets-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {loading ? (

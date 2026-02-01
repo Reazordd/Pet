@@ -1,25 +1,20 @@
 // frontend/src/pages/Home.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
-import SearchFilters from '../components/SearchFilters';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import '../styles/Home.css';
 
 function Home() {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
   const [pets, setPets] = useState([]);
-  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filterLoading, setFilterLoading] = useState(false);
-  const [filters, setFilters] = useState({});
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  // 🔥 Получаем город пользователя
   const fetchUserLocation = async () => {
     try {
       const res = await api.get("/auth/profile/me/");
@@ -29,47 +24,36 @@ function Home() {
     }
   };
 
-  const initFilters = () => {
-    return {
-      search: searchParams.get('search') || '',
-      city: searchParams.get('city') || '',
-      species: searchParams.get('species') || '',
-      breed: searchParams.get('breed') || '',
-      age_group: searchParams.get('age_group') || '',
-      minPrice: searchParams.get('min_price') || '',
-      maxPrice: searchParams.get('max_price') || '',
-    };
-  };
-
-  const fetchData = useCallback(async (pageNum = 1, currentFilters = {}) => {
+  const fetchData = async (pageNum = 1) => {
     try {
-      const loadingSetter = pageNum === 1 ? setLoading : setFilterLoading;
-      loadingSetter(true);
-
+      setLoading(pageNum === 1);
       const params = new URLSearchParams({
         page: pageNum,
         page_size: 12,
       });
 
-      // Если нет фильтра по городу — используем город пользователя
-      let cityFilter = currentFilters.city || '';
-      if (!cityFilter && !currentFilters.search) {
-        const userLocation = await fetchUserLocation();
-        if (userLocation) {
-          cityFilter = userLocation;
-        }
-      }
+      const q = searchParams.get('q') || '';
+      const city = searchParams.get('city') || '';
+      const species = searchParams.get('species') || '';
+      const breed = searchParams.get('breed') || '';
+      const age_group = searchParams.get('age_group') || '';
+      const min_price = searchParams.get('min_price') || '';
+      const max_price = searchParams.get('max_price') || '';
 
-      Object.entries(currentFilters).forEach(([key, value]) => {
-        if (value !== '') {
-          const paramName = key === 'minPrice' ? 'min_price' : key === 'maxPrice' ? 'max_price' : key;
-          params.append(paramName, value);
-        }
-      });
+      if (q) params.append('search', q);
+      if (city) params.append('city', city);
+      if (species) params.append('species', species);
+      if (breed) params.append('breed', breed);
+      if (age_group) params.append('age_group', age_group);
+      if (min_price) params.append('min_price', min_price);
+      if (max_price) params.append('max_price', max_price);
 
-      if (cityFilter) {
-        params.append('city', cityFilter);
+      let finalCity = city;
+      if (!finalCity && !q) {
+        const userLoc = await fetchUserLocation();
+        if (userLoc) finalCity = userLoc;
       }
+      if (finalCity) params.append('city', finalCity);
 
       const response = await api.get(`/pets/?${params.toString()}`);
       const newPets = response.data.results || [];
@@ -83,44 +67,17 @@ function Home() {
       setHasMore(false);
     } finally {
       setLoading(false);
-      setFilterLoading(false);
     }
-  }, []);
+  };
 
-  const fetchCategories = useCallback(async () => {
-    try {
-      const response = await api.get('/categories/');
-      setCategories(response.data);
-    } catch (err) {
-      console.error('Ошибка при загрузке категорий:', err);
-      toast.error('Ошибка при загрузке категорий');
-      setCategories([]);
-    }
-  }, []);
-
+  // ✅ Реальное время: перезапрос при любом изменении URL
   useEffect(() => {
-    const initialFilters = initFilters();
-    setFilters(initialFilters);
-    fetchData(1, initialFilters);
-    fetchCategories();
-  }, [fetchData, fetchCategories]);
-
-  const handleFilter = useCallback((newFilters) => {
-    setFilters(newFilters);
-    const params = new URLSearchParams();
-    Object.entries(newFilters).forEach(([key, value]) => {
-      if (value) {
-        const paramName = key === 'minPrice' ? 'min_price' : key === 'maxPrice' ? 'max_price' : key;
-        params.set(paramName, value);
-      }
-    });
-    setSearchParams(params, { replace: true });
-    fetchData(1, newFilters);
-  }, [fetchData, setSearchParams]);
+    fetchData(1);
+  }, [searchParams]); // ← Это обеспечивает мгновенное обновление
 
   const loadMore = () => {
-    if (!filterLoading && hasMore) {
-      fetchData(page + 1, filters);
+    if (hasMore) {
+      fetchData(page + 1);
     }
   };
 
@@ -133,38 +90,15 @@ function Home() {
           <p>Тысячи объявлений о животных по всей России. Удобный поиск, честные продавцы, безопасные сделки.</p>
           <div className="hero-buttons">
             <Link to="/create" className="btn btn-primary">Разместить объявление</Link>
-            <Link to="/all" className="btn btn-outline">Посмотреть все</Link> {/* ← ИСПРАВЛЕНО */}
+            <Link to="/all" className="btn btn-outline">Посмотреть все</Link>
           </div>
-        </div>
-      </section>
-
-      {/* Filters */}
-      <div className="filters-section mb-6">
-        <SearchFilters onFilter={handleFilter} loading={filterLoading} />
-      </div>
-
-      {/* Categories */}
-      <section className="categories-section">
-        <h2>Популярные категории</h2>
-        <div className="categories-grid">
-          {categories.slice(0, 6).map((cat) => (
-            <Link
-              key={cat.id}
-              to={`/category/${cat.id}`}
-              className="category-card"
-            >
-              <div className="category-icon">{cat.icon || '🐾'}</div>
-              <div className="category-name">{cat.name}</div>
-              <div className="category-count">{cat.pet_count || 0} объявлений</div>
-            </Link>
-          ))}
         </div>
       </section>
 
       {/* Ads */}
       <section className="ads-section">
         <div className="ads-header">
-          <h2>Объявления в вашем городе</h2>
+          <h2>Объявления</h2>
           <span className="ads-count">{pets.length} найдено</span>
         </div>
 
@@ -180,16 +114,25 @@ function Home() {
             pets.map((pet) => <PetCard key={pet.id} pet={pet} />)
           ) : (
             <div className="no-results">
-              <h3>😿 Объявлений не найдено</h3>
-              <p>Попробуйте изменить фильтры или категорию.</p>
+              {searchParams.toString() ? (
+                <>
+                  <h3>Ничего не найдено</h3>
+                  <p>Попробуйте изменить запрос или сбросить фильтры.</p>
+                </>
+              ) : (
+                <>
+                  <h3>😿 Объявлений не найдено</h3>
+                  <p>Попробуйте изменить фильтры или категорию.</p>
+                </>
+              )}
             </div>
           )}
         </div>
 
         {hasMore && !loading && (
           <div className="load-more">
-            <button onClick={loadMore} disabled={filterLoading}>
-              {filterLoading ? 'Загрузка...' : 'Показать ещё'}
+            <button onClick={loadMore}>
+              Показать ещё
             </button>
           </div>
         )}

@@ -19,15 +19,19 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // 🛠 Исправление: всегда проверяем species как строку
   useEffect(() => {
-    if (!species || !isOpen) return;
+    if (!species || typeof species !== 'string' || species.trim() === '' || !isOpen) {
+      setOptions([]);
+      return;
+    }
 
     const fetchBreeds = async () => {
       setIsLoading(true);
       try {
         const params = new URLSearchParams();
-        if (inputValue) params.append('q', inputValue);
-        params.append('species', species);
+        if (inputValue.trim()) params.append('q', inputValue.trim());
+        params.append('species', species.trim());
         const res = await api.get(`/breeds/?${params.toString()}`);
         setOptions(res.data);
       } catch (err) {
@@ -46,7 +50,7 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
     const val = e.target.value;
     setInputValue(val);
     onChange(val);
-    if (val.trim() && species) {
+    if (val.trim() && species && typeof species === 'string') {
       setIsOpen(true);
     }
   };
@@ -58,15 +62,17 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
   };
 
   const handleFocus = () => {
-    // 🔥 Не открываем автокомплит, если не выбран вид
-    if (!species || species === '') {
-      setIsOpen(false);
-      return;
-    }
-    if (inputValue.trim()) {
+    if (species && typeof species === 'string' && species.trim() !== '') {
       setIsOpen(true);
     }
   };
+
+  // 🛠 КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: синхронизируем значение из пропсов
+  useEffect(() => {
+    if (value !== undefined && value !== inputValue) {
+      setInputValue(value || '');
+    }
+  }, [value]);
 
   return (
     <div className="relative" ref={wrapperRef}>
@@ -78,7 +84,7 @@ const BreedAutocomplete = ({ species, value, onChange, placeholder = "Пород
         placeholder={placeholder}
         className="w-full p-2 border rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         autoComplete="off"
-        disabled={!species || species === ''} // ← Делаем неактивным
+        disabled={!species || typeof species !== 'string' || species.trim() === ''}
       />
       {isOpen && (
         <ul className="absolute z-10 w-full bg-white border rounded shadow-lg mt-1 max-h-60 overflow-auto">

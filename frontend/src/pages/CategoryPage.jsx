@@ -1,6 +1,6 @@
 // frontend/src/pages/CategoryPage.jsx
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
@@ -19,6 +19,7 @@ const SPECIES_LABELS = {
 
 export default function CategoryPage() {
   const { id } = useParams(); // id = 'dog', 'cat' и т.д.
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [pets, setPets] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,7 +28,30 @@ export default function CategoryPage() {
 
   const fetchPets = async (pageNum = 1) => {
     try {
-      const response = await api.get(`/pets/?species=${id}&page=${pageNum}&page_size=12&ordering=-created_at`);
+      setLoading(pageNum === 1);
+      const params = new URLSearchParams({
+        species: id,
+        page: pageNum,
+        page_size: 12,
+        ordering: '-created_at',
+      });
+
+      // Добавляем остальные фильтры из URL
+      const q = searchParams.get('q');
+      const city = searchParams.get('city');
+      const breed = searchParams.get('breed');
+      const age_group = searchParams.get('age_group');
+      const min_price = searchParams.get('min_price');
+      const max_price = searchParams.get('max_price');
+
+      if (q) params.append('search', q);
+      if (city) params.append('city', city);
+      if (breed) params.append('breed', breed);
+      if (age_group) params.append('age_group', age_group);
+      if (min_price) params.append('min_price', min_price);
+      if (max_price) params.append('max_price', max_price);
+
+      const response = await api.get(`/pets/?${params.toString()}`);
       const newPets = response.data.results || [];
       setPets(prev => pageNum === 1 ? newPets : [...prev, ...newPets]);
       setHasMore(!!response.data.next);
@@ -45,7 +69,7 @@ export default function CategoryPage() {
     if (id) {
       fetchPets(1);
     }
-  }, [id]);
+  }, [id, searchParams]); // ← реагируем на изменения URL
 
   const loadMore = () => {
     if (hasMore) {

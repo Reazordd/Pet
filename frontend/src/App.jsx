@@ -5,10 +5,11 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 import Navbar from './components/Navbar';
+import CategoryStrip from './components/CategoryStrip'; // ← НОВЫЙ КОМПОНЕНТ
 import ProtectedRoute from './components/ProtectedRoute';
 import NotFound from './components/NotFound';
 
-// Компоненты страниц
+// Страницы
 import Home from './pages/Home';
 import PetDetail from './pages/PetDetail';
 import CreatePet from './pages/CreatePet';
@@ -20,23 +21,16 @@ import ProfilePage from './pages/ProfilePage';
 import Profile from './pages/Profile';
 import AdminAds from './pages/AdminAds';
 import CityPage from './pages/CityPage';
-
-// Новые страницы
 import ActivateAccount from './pages/ActivateAccount';
 import PasswordResetRequest from './pages/PasswordResetRequest';
 import PasswordResetConfirm from './pages/PasswordResetConfirm';
 import YandexCallback from './pages/YandexCallback';
-
 import MessagesPage from './pages/MessagesPage';
 import ChatPage from './pages/ChatPage';
 import NotificationsPage from './pages/NotificationsPage';
 import Reviews from './pages/Reviews';
-
-// Юридические страницы
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import TermsOfService from './pages/TermsOfService';
-
-// Страницы категорий
 import CategoryPage from './pages/CategoryPage';
 import AllAdsPage from './pages/AllAdsPage';
 
@@ -49,6 +43,7 @@ function App() {
       <FavoritesProvider>
         <div className="min-h-screen flex flex-col">
           <Navbar />
+          <CategoryStrip /> {/* ← Появляется на ВСЕХ страницах */}
           <main className="content flex-grow">
             <Routes>
               <Route path="/" element={<Home />} />
@@ -120,7 +115,6 @@ function App() {
             </Routes>
           </main>
 
-          {/* FOOTER */}
           <footer className="bg-white border-t mt-auto">
             <div className="max-w-6xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
               <a

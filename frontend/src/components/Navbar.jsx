@@ -1,17 +1,22 @@
 // frontend/src/components/Navbar.jsx
 import React, { useState, useEffect } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { checkToken, logout } from "../utils/auth";
 import { useTheme } from "../context/ThemeContext";
 import api from "../utils/api";
+import FiltersModal from "./FiltersModal";
 import "../styles/Navbar.css";
 
 function Navbar() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const isAuthenticated = checkToken();
   const { theme, toggleTheme } = useTheme();
   const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -37,12 +42,46 @@ function Navbar() {
     return () => clearInterval(interval);
   }, [isAuthenticated]);
 
+  useEffect(() => {
+    setSearchQuery(searchParams.get('q') || '');
+  }, [searchParams]);
+
+  // ✅ Реальный поиск: обновляем URL при каждом символе
+  const handleSearchInput = (e) => {
+    const q = e.target.value;
+    setSearchQuery(q);
+    if (q.trim() === '') {
+      navigate('/');
+    } else {
+      navigate(`/?q=${encodeURIComponent(q.trim())}`);
+    }
+  };
+
+  const openFilters = () => {
+    setIsFiltersOpen(true);
+  };
+
   return (
     <header className="nav-wrap dark:bg-gray-900 dark:text-white">
       <div className="nav-inner">
         <Link to="/" className="nav-brand">
           <span className="brand-logo">🐾 PetMarket</span>
         </Link>
+
+        {/* 🔥 Поиск в реальном времени */}
+        <div className="search-form">
+          <input
+            type="text"
+            placeholder="Что ищете? Например: щенок, кот..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onInput={handleSearchInput} // ✅ КЛЮЧЕВОЙ МОМЕНТ
+            className="search-input"
+          />
+          <button type="button" onClick={openFilters} className="filters-btn">
+            Фильтры
+          </button>
+        </div>
 
         <nav className="nav-links">
           <Link className={`nav-link ${location.pathname === "/" ? "active" : ""}`} to="/">
@@ -96,6 +135,11 @@ function Navbar() {
           </button>
         </div>
       </div>
+
+      <FiltersModal
+        isOpen={isFiltersOpen}
+        onClose={() => setIsFiltersOpen(false)}
+      />
     </header>
   );
 }
