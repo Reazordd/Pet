@@ -1,5 +1,6 @@
 // frontend/src/components/FiltersModal.jsx
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import BreedAutocomplete from './BreedAutocomplete';
 import '../styles/FiltersModal.css';
 
@@ -23,41 +24,48 @@ const AGE_OPTIONS = [
 ];
 
 export default function FiltersModal({ isOpen, onClose }) {
-  // ✅ Используем только локальное состояние — без хуков внутри
-  const [q, setQ] = useState('');
-  const [city, setCity] = useState('');
-  const [species, setSpecies] = useState('');
-  const [breed, setBreed] = useState('');
-  const [age_group, setAgeGroup] = useState('');
-  const [min_price, setMinPrice] = useState('');
-  const [max_price, setMaxPrice] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Синхронизируем при открытии (без хуков!)
+  // Инициализируем состояния из URL
+  const [q, setQ] = useState(searchParams.get('q') || '');
+  const [city, setCity] = useState(searchParams.get('city') || '');
+  const [species, setSpecies] = useState(searchParams.get('species') || '');
+  const [breed, setBreed] = useState(searchParams.get('breed') || '');
+  const [age_group, setAgeGroup] = useState(searchParams.get('age_group') || '');
+  const [min_price, setMinPrice] = useState(searchParams.get('min_price') || '');
+  const [max_price, setMaxPrice] = useState(searchParams.get('max_price') || '');
+
+  // Синхронизируем с URL при открытии
   useEffect(() => {
     if (isOpen) {
-      // Здесь можно было бы читать из URL, но для простоты — оставим пустым
-      // Если нужно — добавьте:
-      // const url = new URL(window.location.href);
-      // setQ(url.searchParams.get('q') || '');
+      setQ(searchParams.get('q') || '');
+      setCity(searchParams.get('city') || '');
+      setSpecies(searchParams.get('species') || '');
+      setBreed(searchParams.get('breed') || '');
+      setAgeGroup(searchParams.get('age_group') || '');
+      setMinPrice(searchParams.get('min_price') || '');
+      setMaxPrice(searchParams.get('max_price') || '');
     }
-  }, [isOpen]);
+  }, [isOpen, searchParams]);
 
   const handleApply = () => {
-    // Отправляем через window.location — чтобы не зависеть от useFilters
     const params = new URLSearchParams();
-    if (q) params.append('q', q);
-    if (city) params.append('city', city);
-    if (species) params.append('species', species);
-    if (breed) params.append('breed', breed);
-    if (age_group) params.append('age_group', age_group);
-    if (min_price) params.append('min_price', min_price);
-    if (max_price) params.append('max_price', max_price);
 
-    window.location.href = `/?${params.toString()}`;
+    // Сохраняем все текущие фильтры
+    if (q) params.set('q', q);
+    if (city) params.set('city', city);
+    if (species) params.set('species', species);
+    if (breed) params.set('breed', breed);
+    if (age_group) params.set('age_group', age_group);
+    if (min_price) params.set('min_price', min_price);
+    if (max_price) params.set('max_price', max_price);
+
+    setSearchParams(params, { replace: true });
     onClose();
   };
 
   const handleClear = () => {
+    setSearchParams({}, { replace: true });
     setQ('');
     setCity('');
     setSpecies('');
@@ -65,7 +73,6 @@ export default function FiltersModal({ isOpen, onClose }) {
     setAgeGroup('');
     setMinPrice('');
     setMaxPrice('');
-    window.location.href = '/';
     onClose();
   };
 
@@ -89,7 +96,6 @@ export default function FiltersModal({ isOpen, onClose }) {
               placeholder="Имя, описание, порода"
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              autoFocus // ← Добавлено для надёжности
             />
           </div>
 
@@ -105,10 +111,7 @@ export default function FiltersModal({ isOpen, onClose }) {
 
           <div className="filter-row">
             <label>Тип животного</label>
-            <select
-              value={species}
-              onChange={(e) => setSpecies(e.target.value)}
-            >
+            <select value={species} onChange={(e) => setSpecies(e.target.value)}>
               {SPECIES_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
@@ -127,10 +130,7 @@ export default function FiltersModal({ isOpen, onClose }) {
 
           <div className="filter-row">
             <label>Возраст</label>
-            <select
-              value={age_group}
-              onChange={(e) => setAgeGroup(e.target.value)}
-            >
+            <select value={age_group} onChange={(e) => setAgeGroup(e.target.value)}>
               {AGE_OPTIONS.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
