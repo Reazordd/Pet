@@ -98,7 +98,7 @@ function Home() {
       {/* Ads */}
       <section className="ads-section">
         <div className="ads-header">
-          <h2>Объявления</h2>
+          <h2>Объявления в вашем городе</h2>
           <span className="ads-count">{pets.length} найдено</span>
         </div>
 
