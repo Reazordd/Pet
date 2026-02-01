@@ -46,7 +46,6 @@ function Navbar() {
     setSearchQuery(searchParams.get('q') || '');
   }, [searchParams]);
 
-  // ✅ Реальный поиск: обновляем URL при каждом символе
   const handleSearchInput = (e) => {
     const q = e.target.value;
     setSearchQuery(q);
@@ -63,19 +62,19 @@ function Navbar() {
 
   return (
     <header className="nav-wrap dark:bg-gray-900 dark:text-white">
-      <div className="nav-inner">
+      {/* Десктопная навигация */}
+      <div className="nav-inner-desktop">
         <Link to="/" className="nav-brand">
           <span className="brand-logo">🐾 PetMarket</span>
         </Link>
 
-        {/* 🔥 Поиск в реальном времени */}
         <div className="search-form">
           <input
             type="text"
             placeholder="Что ищете? Например: щенок, кот..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            onInput={handleSearchInput} // ✅ КЛЮЧЕВОЙ МОМЕНТ
+            onInput={handleSearchInput}
             className="search-input"
           />
           <button type="button" onClick={openFilters} className="filters-btn">
@@ -133,6 +132,50 @@ function Navbar() {
           <button onClick={toggleTheme} aria-label="toggle theme">
             {theme === "light" ? "🌙" : "☀️"}
           </button>
+        </div>
+      </div>
+
+      {/* Мобильная навигация */}
+      <div className="nav-inner-mobile">
+        <div className="mobile-search-bar">
+          <input
+            type="text"
+            placeholder="Поиск питомцев..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onInput={handleSearchInput}
+            className="mobile-search-input"
+          />
+          <button type="button" onClick={openFilters} className="mobile-filters-btn">
+            🔍
+          </button>
+        </div>
+
+        <div className="mobile-nav-icons">
+          <Link to="/" className="mobile-nav-item">
+            <span>🏠</span>
+          </Link>
+          {isAuthenticated ? (
+            <>
+              <Link to="/favorites" className="mobile-nav-item">
+                <span>❤️</span>
+              </Link>
+              <Link to="/messages" className="mobile-nav-item">
+                <span>💬</span>
+              </Link>
+              <Link to="/notifications" className="mobile-nav-item">
+                <span>🔔</span>
+                {unreadCount > 0 && <span className="mobile-badge">{unreadCount}</span>}
+              </Link>
+              <Link to="/profile" className="mobile-nav-item">
+                <span>👤</span>
+              </Link>
+            </>
+          ) : (
+            <Link to="/login" className="mobile-nav-item">
+              <span>🔑</span>
+            </Link>
+          )}
         </div>
       </div>
 
