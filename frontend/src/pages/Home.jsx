@@ -70,15 +70,28 @@ function Home() {
     }
   };
 
-  // ✅ Реальное время: перезапрос при любом изменении URL
   useEffect(() => {
     fetchData(1);
-  }, [searchParams]); // ← Это обеспечивает мгновенное обновление
+  }, [searchParams]);
 
   const loadMore = () => {
     if (hasMore) {
       fetchData(page + 1);
     }
+  };
+
+  // 🔥 Динамический заголовок
+  const getHeaderTitle = () => {
+    const q = searchParams.get('q');
+    const city = searchParams.get('city');
+
+    if (q) {
+      return 'Результаты поиска';
+    }
+    if (city) {
+      return `Объявления в ${city}`;
+    }
+    return 'Объявления в вашем городе';
   };
 
   return (
@@ -98,7 +111,7 @@ function Home() {
       {/* Ads */}
       <section className="ads-section">
         <div className="ads-header">
-          <h2>Объявления в вашем городе</h2>
+          <h2>{getHeaderTitle()}</h2>
           <span className="ads-count">{pets.length} найдено</span>
         </div>
 
