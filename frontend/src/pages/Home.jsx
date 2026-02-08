@@ -15,13 +15,17 @@ function Home() {
   const [hasMore, setHasMore] = useState(true);
   const [page, setPage] = useState(1);
 
-  const fetchUserLocation = async () => {
-    try {
-      const res = await api.get("/auth/profile/me/");
-      return res.data.location || null;
-    } catch {
-      return null;
+  // 🔥 Убираем запрос профиля (он требует авторизации!)
+  const getDefaultCity = () => {
+    const paramsCity = searchParams.get('city');
+    if (paramsCity) return paramsCity;
+
+    // Если есть токен — можно запросить город, но необязательно
+    if (localStorage.getItem('access_token')) {
+      return null; // Будет запрошено позже, если нужно
     }
+
+    return ''; // Показываем все объявления для гостей
   };
 
   const fetchData = async (pageNum = 1) => {
@@ -48,12 +52,9 @@ function Home() {
       if (min_price) params.append('min_price', min_price);
       if (max_price) params.append('max_price', max_price);
 
-      let finalCity = city;
-      if (!finalCity && !q) {
-        const userLoc = await fetchUserLocation();
-        if (userLoc) finalCity = userLoc;
-      }
-      if (finalCity) params.append('city', finalCity);
+      // 🔥 Не запрашиваем город у профиля — показываем все
+      // const finalCity = city || getDefaultCity();
+      if (city) params.append('city', city);
 
       const response = await api.get(`/pets/?${params.toString()}`);
       const newPets = response.data.results || [];
@@ -101,8 +102,14 @@ function Home() {
         <div className="hero-content">
           <h1>Купите или найдите питомца вашей мечты 🐶🐱</h1>
           <p>Тысячи объявлений о животных по всей России. Удобный поиск, честные продавцы, безопасные сделки.</p>
+
           <div className="hero-buttons">
-            <Link to="/create" className="btn btn-primary">Разместить объявление</Link>
+            <Link
+              to={localStorage.getItem('access_token') ? "/create" : "/login"}
+              className="btn btn-primary"
+            >
+              {localStorage.getItem('access_token') ? "Разместить объявление" : "Войти для размещения"}
+            </Link>
             <Link to="/all" className="btn btn-outline">Посмотреть все</Link>
           </div>
         </div>

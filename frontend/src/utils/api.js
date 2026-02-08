@@ -54,6 +54,9 @@ api.interceptors.response.use(
         localStorage.removeItem("access_token");
         localStorage.removeItem("refresh_token");
         window.location.href = "/login";
+      } else {
+        // Для неавторизованных GET-запросов (например, получение объявлений) — не логаут
+        console.warn("Запрос не требует авторизации, но вернулся 401:", originalRequest.url);
       }
     }
     return Promise.reject(error);
