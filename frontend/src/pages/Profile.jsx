@@ -7,7 +7,6 @@ import { checkToken, logout } from "../utils/auth";
 import { buildImageUrl } from "../utils/image";
 import PetCard from "../components/PetCard";
 import MessagesList from "../components/MessagesList";
-import "../styles/Avatar.css";
 
 function Profile() {
   const navigate = useNavigate();
@@ -197,62 +196,69 @@ function Profile() {
     return 'отзывов';
   };
 
-  if (loading && !userData.username) return <div className="text-center mt-10">Загрузка...</div>;
+  if (loading && !userData.username) {
+    return (
+      <div className="content text-center mt-10">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Загрузка профиля...</p>
+      </div>
+    );
+  }
 
   const reviewCount = userData.review_count || 0;
   const myAds = userData.pets || [];
 
+  // Имя для отображения
+  const getDisplayName = (user) => {
+    if (user.first_name || user.last_name) {
+      return `${user.first_name} ${user.last_name}`.trim();
+    }
+    return user.username || 'Пользователь';
+  };
+
   return (
-    <div className="profile-container min-h-screen bg-gray-50 py-6">
-      <div className="max-w-6xl mx-auto px-4">
-        {/* Шапка профиля */}
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-6">
-          <div className="flex flex-col md:flex-row items-center">
-            <div className="mb-4 md:mb-0 md:mr-6">
-              {imagePreview ? (
-                <div className="avatar-lg-container">
-                  <img src={imagePreview} alt="Avatar" className="avatar-lg" />
-                </div>
-              ) : userData.avatar ? (
-                <div className="avatar-lg-container">
-                  <img
-                    src={buildImageUrl(userData.avatar)}
-                    alt={userData.username}
-                    className="avatar-lg"
-                  />
-                </div>
-              ) : (
-                <div className="avatar-lg bg-gray-200 flex items-center justify-center text-3xl font-bold text-gray-700">
-                  {userData.username?.[0]?.toUpperCase() || '?'}
-                </div>
-              )}
+    <div className="content">
+      {/* Заголовок профиля */}
+      <div className="profile-header">
+        <div className="avatar-lg-container">
+          {imagePreview ? (
+            <img src={imagePreview} alt="Preview" className="avatar-lg" />
+          ) : userData.avatar ? (
+            <img
+              src={buildImageUrl(userData.avatar)}
+              alt={getDisplayName(userData)}
+              className="avatar-lg"
+            />
+          ) : (
+            <div className="avatar-placeholder">
+              {getDisplayName(userData)?.[0]?.toUpperCase() || '?'}
             </div>
-            <div className="text-center md:text-left">
-              <h1 className="text-2xl font-bold text-gray-900">{userData.username}</h1>
-
-              {reviewCount > 0 && (
-                <div className="mt-2 flex items-center">
-                  <span className="text-lg font-bold text-gray-900">5.0</span>
-                  <span className="text-yellow-400 ml-1">★★★★★</span>
-                  <button
-                    onClick={() => setActiveTab("reviews")}
-                    className="text-blue-600 font-medium ml-2 hover:underline"
-                  >
-                    {reviewCount} {getReviewText(reviewCount)}
-                  </button>
-                </div>
-              )}
-
-              {userData.email && <p className="text-gray-600">{userData.email}</p>}
-              {userData.location && <p className="text-gray-600">📍 {userData.location}</p>}
-              {userData.bio && <p className="mt-2 text-gray-700 max-w-2xl">{userData.bio}</p>}
-            </div>
-          </div>
+          )}
         </div>
+        <div className="header-info">
+          <h1>{getDisplayName(userData)}</h1>
+          {/* ✅ Email УДАЛЁН */}
+          {userData.location && (
+            <p className="mt-1">
+              <i className="fas fa-map-marker-alt mr-2 text-gray-500"></i>
+              {userData.location}
+            </p>
+          )}
+          {userData.bio && <p className="mt-2">{userData.bio}</p>}
+        </div>
+      </div>
 
-        {/* Вкладки */}
-        <div className="bg-white rounded-t-xl shadow-sm">
-          <div className="flex overflow-x-auto px-2 border-b">
+      {/* Рейтинг */}
+      <div className="rating-stars mt-4 flex items-center">
+        <span className="text-xl font-bold text-gray-900">5.0</span>
+        <span className="text-yellow-500 ml-2 text-2xl">★★★★★</span>
+        <span className="text-gray-600 ml-2">{reviewCount} {getReviewText(reviewCount)}</span>
+      </div>
+
+      {/* Вкладки — исправлены для Avito-style */}
+      <div className="bg-white rounded-xl shadow-sm mt-6">
+        <div className="border-b border-gray-200 px-6">
+          <nav className="flex space-x-1">
             {[
               { id: "ads", label: "Мои объявления" },
               { id: "messages", label: "Сообщения" },
@@ -263,60 +269,77 @@ function Profile() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-3 font-medium whitespace-nowrap ${
+                className={`py-3 px-4 text-sm font-medium rounded-t-lg transition-colors ${
                   activeTab === tab.id
-                    ? "text-blue-600 border-b-2 border-blue-600"
-                    : "text-gray-600 hover:text-gray-900"
+                    ? 'bg-white text-brand-dark border-b-2 border-brand-dark'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
                 }`}
               >
                 {tab.label}
               </button>
             ))}
-          </div>
+          </nav>
         </div>
 
-        {/* Контент */}
-        <div className="bg-white rounded-b-xl shadow-sm p-6">
+        <div className="p-6">
+          {/* Контент вкладки */}
           {activeTab === "ads" && (
             <div>
+              {/* Статистика */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                {[
-                  { label: "Всего", value: stats.total_pets || 0, color: "bg-blue-50 text-blue-800" },
-                  { label: "Активные", value: stats.active_pets || 0, color: "bg-green-50 text-green-800" },
-                  { label: "Средняя цена", value: `${Math.round(stats.avg_price || 0)} ₽`, color: "bg-yellow-50 text-yellow-800" },
-                  { label: "Отзывов", value: stats.total_reviews || 0, color: "bg-purple-50 text-purple-800" }
-                ].map((stat, idx) => (
-                  <div key={idx} className={`${stat.color} p-4 rounded-lg text-center`}>
-                    <div className="text-lg font-bold">{stat.value}</div>
-                    <div className="text-sm text-gray-600">{stat.label}</div>
-                  </div>
-                ))}
+                <div className="stat-card">
+                  <div className="stat-value">{stats.total_pets || 0}</div>
+                  <div className="stat-label">Всего</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{stats.active_pets || 0}</div>
+                  <div className="stat-label">Активные</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{Math.round(stats.avg_price || 0)} ₽</div>
+                  <div className="stat-label">Средняя цена</div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-value">{stats.total_reviews || 0}</div>
+                  <div className="stat-label">Отзывов</div>
+                </div>
               </div>
 
-              {myAds.length ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Объявления */}
+              {myAds.length > 0 ? (
+                <div className="pets-grid">
                   {myAds.map((ad) => (
                     <PetCard key={ad.id} pet={ad} size="small" />
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-8">Нет объявлений</p>
+                <div className="empty-state py-8 text-center">
+                  <div className="text-gray-400 text-4xl mb-4">📋</div>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Нет объявлений</h3>
+                  <p className="text-gray-500 mb-4">Разместите первое объявление!</p>
+                  <button
+                    onClick={() => navigate('/create')}
+                    className="btn btn-primary"
+                  >
+                    Создать объявление
+                  </button>
+                </div>
               )}
             </div>
           )}
 
           {activeTab === "messages" && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Сообщения</h2>
+              <h2 className="text-xl font-bold mb-4">Сообщения</h2>
               <MessagesList />
             </div>
           )}
 
           {activeTab === "reviews" && (
             <div>
-              <h2 className="text-xl font-semibold mb-4">Отзывы</h2>
+              <h2 className="text-xl font-bold mb-4">Отзывы</h2>
 
-              <div className="flex border-b mb-4">
+              <div className="border-b mb-4 flex">
                 <button
                   className={`px-4 py-2 font-medium ${
                     activeReviewTab === 'received'
@@ -340,30 +363,29 @@ function Profile() {
               </div>
 
               {reviewsLoading ? (
-                <p>Загрузка отзывов...</p>
+                <p className="text-gray-500">Загрузка...</p>
               ) : activeReviewTab === 'received' ? (
                 receivedReviews.length > 0 ? (
                   <div className="space-y-4">
                     {receivedReviews.map((rev) => (
-                      <div key={rev.id} className="border-b pb-4">
-                        <div className="flex justify-between">
-                          <span className="font-medium">{rev.reviewer?.username || "Аноним"}</span>
-                          <div className="flex items-center">
-                            <span className="text-yellow-500">{"★".repeat(rev.rating)}</span>
-                            <span className="text-gray-500 text-sm ml-2">
-                              {new Date(rev.created_at).toLocaleDateString("ru-RU", {
-                                day: 'numeric',
-                                month: 'long'
-                              })}
-                            </span>
+                      <div key={rev.id} className="review-item">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                            {(rev.reviewer?.username && typeof rev.reviewer.username === 'string' && rev.reviewer.username.charAt(0).toUpperCase()) || '?'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">{rev.reviewer?.username || 'Аноним'}</span>
+                              <span className="text-yellow-500 text-lg">{'★'.repeat(rev.rating)}</span>
+                            </div>
+                            {rev.pet && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Сделка: {rev.pet.name}
+                              </p>
+                            )}
+                            <p className="mt-2 text-gray-800">{rev.comment}</p>
                           </div>
                         </div>
-                        {rev.pet && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            Сделка состоялась · {rev.pet.name || rev.pet.title}
-                          </p>
-                        )}
-                        <p className="mt-2 text-gray-800">{rev.comment}</p>
                       </div>
                     ))}
                   </div>
@@ -374,25 +396,24 @@ function Profile() {
                 givenReviews.length > 0 ? (
                   <div className="space-y-4">
                     {givenReviews.map((rev) => (
-                      <div key={rev.id} className="border-b pb-4">
-                        <div className="flex justify-between">
-                          <span className="font-medium">Для: {rev.reviewed?.username || "Аноним"}</span>
-                          <div className="flex items-center">
-                            <span className="text-yellow-500">{"★".repeat(rev.rating)}</span>
-                            <span className="text-gray-500 text-sm ml-2">
-                              {new Date(rev.created_at).toLocaleDateString("ru-RU", {
-                                day: 'numeric',
-                                month: 'long'
-                              })}
-                            </span>
+                      <div key={rev.id} className="review-item">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                            {(rev.reviewed?.username && typeof rev.reviewed.username === 'string' && rev.reviewed.username.charAt(0).toUpperCase()) || '?'}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-medium">Для: {rev.reviewed?.username || 'Аноним'}</span>
+                              <span className="text-yellow-500 text-lg">{'★'.repeat(rev.rating)}</span>
+                            </div>
+                            {rev.pet && (
+                              <p className="text-sm text-gray-600 mt-1">
+                                Сделка: {rev.pet.name}
+                              </p>
+                            )}
+                            <p className="mt-2 text-gray-800">{rev.comment}</p>
                           </div>
                         </div>
-                        {rev.pet && (
-                          <p className="text-sm text-gray-600 mt-1">
-                            Сделка состоялась · {rev.pet.name || rev.pet.title}
-                          </p>
-                        )}
-                        <p className="mt-2 text-gray-800">{rev.comment}</p>
                       </div>
                     ))}
                   </div>
@@ -409,20 +430,16 @@ function Profile() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Фото профиля</label>
                 <div className="flex items-center space-x-4">
                   {imagePreview ? (
-                    <div className="avatar-md">
-                      <img src={imagePreview} alt="Preview" className="avatar-md" />
-                    </div>
+                    <img src={imagePreview} alt="Preview" className="avatar-md" />
                   ) : userData.avatar ? (
-                    <div className="avatar-md">
-                      <img
-                        src={buildImageUrl(userData.avatar)}
-                        alt="Avatar"
-                        className="avatar-md"
-                      />
-                    </div>
+                    <img
+                      src={buildImageUrl(userData.avatar)}
+                      alt="Avatar"
+                      className="avatar-md"
+                    />
                   ) : (
-                    <div className="avatar-md bg-gray-200 flex items-center justify-center">
-                      <span className="text-gray-500">👤</span>
+                    <div className="avatar-placeholder">
+                      {getDisplayName(userData)?.[0]?.toUpperCase() || '?'}
                     </div>
                   )}
                   <input
@@ -456,7 +473,7 @@ function Profile() {
               </div>
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Логин</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Логин*</label>
                 <input
                   name="username"
                   value={userData.username || ""}
@@ -465,7 +482,8 @@ function Profile() {
                   required
                 />
               </div>
-              <div className="mb-4">
+              {/* ✅ Email скрыт — GDPR */}
+              {/* <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                 <input
                   name="email"
@@ -475,17 +493,17 @@ function Profile() {
                   className="w-full p-2 border border-gray-300 rounded"
                   required
                 />
-              </div>
+              </div> */}
 
               <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Телефон</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Телефон*</label>
                 <input
                   name="phone"
                   type="tel"
                   value={userData.phone || ""}
                   onChange={handlePhoneChange}
                   className="w-full p-2 border border-gray-300 rounded"
-                  placeholder="+380 99 123 45 67 или +7 999 123-45-67"
+                  placeholder="+7 999 123-45-67"
                 />
               </div>
 
@@ -514,7 +532,7 @@ function Profile() {
               <button
                 type="submit"
                 disabled={loading}
-                className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                className="btn btn-primary"
               >
                 {loading ? "Сохранение..." : "Сохранить изменения"}
               </button>
@@ -523,10 +541,10 @@ function Profile() {
 
           {activeTab === "security" && (
             <div className="max-w-md">
-              <h2 className="text-xl font-semibold mb-4">🔒 Смена пароля</h2>
+              <h2 className="text-xl font-bold mb-4">🔒 Смена пароля</h2>
               <form onSubmit={handlePasswordChange} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Старый пароль</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Старый пароль*</label>
                   <input
                     type="password"
                     value={passwords.old_password}
@@ -536,7 +554,7 @@ function Profile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Новый пароль</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Новый пароль*</label>
                   <input
                     type="password"
                     value={passwords.new_password}
@@ -546,7 +564,7 @@ function Profile() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Повторите новый пароль</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Повторите новый пароль*</label>
                   <input
                     type="password"
                     value={passwords.new_password2}
@@ -557,7 +575,7 @@ function Profile() {
                 </div>
                 <button
                   type="submit"
-                  className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition"
+                  className="btn btn-primary"
                 >
                   Изменить пароль
                 </button>

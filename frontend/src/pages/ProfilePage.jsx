@@ -1,4 +1,3 @@
-// frontend/src/pages/ProfilePage.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -6,9 +5,9 @@ import { jwtDecode } from 'jwt-decode';
 import api from '../utils/api';
 import PetCard from '../components/PetCard';
 import { buildImageUrl } from '../utils/image';
-import '../styles/Avatar.css';
+import '../styles/ProfilePage.css';
 
-// 🔥 Склонение месяцев в родительном падеже
+// Склонение месяцев
 const MONTHS_GENITIVE = [
   'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
   'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
@@ -25,7 +24,6 @@ function ProfilePage() {
   const { id: user_id_str } = useParams();
   const user_id = Number(user_id_str);
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -33,13 +31,12 @@ function ProfilePage() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [activeTab, setActiveTab] = useState('pets');
-
   const [reviews, setReviews] = useState([]);
   const [reviewStats, setReviewStats] = useState({ avg_rating: 0, total_reviews: 0 });
   const [reviewForm, setReviewForm] = useState({ rating: 5, comment: '' });
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [showReviews, setShowReviews] = useState(false);
-  const [reviewsLoaded, setReviewsLoaded] = useState(false); // ← отслеживаем, загружены ли отзывы
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   const [currentUserId, setCurrentUserId] = useState(null);
 
   useEffect(() => {
@@ -54,14 +51,13 @@ function ProfilePage() {
         console.warn("Invalid token");
       }
     }
-
     if (!user_id || isNaN(user_id) || user_id <= 0) {
       setError('Некорректный ID пользователя');
       setLoading(false);
       return;
     }
     fetchProfile();
-    fetchReviewStats(); // ← Загружаем статистику сразу
+    fetchReviewStats();
     if (activeTab === 'pets') {
       fetchPets();
     }
@@ -90,7 +86,6 @@ function ProfilePage() {
     }
   };
 
-  // 🔥 Загружаем ТОЛЬКО статистику (без списка отзывов)
   const fetchReviewStats = async () => {
     try {
       const res = await api.get(`/reviews/user/${user_id}/reviews/`);
@@ -100,7 +95,6 @@ function ProfilePage() {
     }
   };
 
-  // 🔥 Загружаем полный список отзывов (только при первом клике)
   const loadReviews = async () => {
     if (!reviewsLoaded) {
       try {
@@ -115,7 +109,7 @@ function ProfilePage() {
 
   const toggleReviews = () => {
     if (!showReviews && !reviewsLoaded) {
-      loadReviews(); // Грузим только при первом открытии
+      loadReviews();
     }
     setShowReviews(!showReviews);
   };
@@ -127,22 +121,18 @@ function ProfilePage() {
       navigate('/login');
       return;
     }
-
     try {
       const decoded = jwtDecode(token);
       const currentUserId = Number(decoded.user_id);
-
       if (currentUserId === user_id) {
         toast.warn('Нельзя написать самому себе');
         return;
       }
-
       const petId = pets.length > 0 ? pets[0].id : null;
       const res = await api.post('/chat/create/', {
         target_user_id: user_id,
         pet_id: petId
       });
-
       const chatId = res.data.id;
       navigate(`/chat/${chatId}`);
     } catch (err) {
@@ -159,7 +149,6 @@ function ProfilePage() {
       toast.success('Отзыв оставлен!');
       setShowReviewForm(false);
       setReviewForm({ rating: 5, comment: '' });
-      // Обновляем статистику после нового отзыва
       fetchReviewStats();
     } catch (err) {
       const errorMsg = err.response?.data?.error || 'Ошибка при создании отзыва';
@@ -167,12 +156,38 @@ function ProfilePage() {
     }
   };
 
-  if (loading) return <div className="max-w-4xl mx-auto p-4"><p className="text-center mt-10">Загрузка...</p></div>;
-  if (error) return <div className="max-w-4xl mx-auto p-4"><p className="text-center mt-10 text-red-500">{error}</p></div>;
+  if (loading) {
+    return (
+      <div className="content text-center mt-10">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Загрузка профиля...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="content text-center mt-10">
+        <div className="bg-white p-8 rounded-xl shadow-lg max-w-md text-center">
+          <div className="text-red-500 text-4xl mb-4">⚠️</div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Ошибка</h3>
+          <p className="text-gray-600">{error}</p>
+          <button
+            onClick={() => navigate('/')}
+            className="mt-4 btn btn-primary"
+          >
+            На главную
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) return null;
 
   const badges = user.badges || [];
   const reviewCount = reviewStats.total_reviews || 0;
+  const canLeaveReview = currentUserId && currentUserId !== user_id;
 
   const getReviewText = (count) => {
     if (count === 0) return 'отзывов';
@@ -180,8 +195,6 @@ function ProfilePage() {
     if (count % 10 >= 2 && count % 10 <= 4 && (count % 100 < 10 || count % 100 >= 20)) return 'отзыва';
     return 'отзывов';
   };
-
-  const canLeaveReview = currentUserId && currentUserId !== user_id;
 
   const getDisplayName = (user) => {
     if (user.first_name || user.last_name) {
@@ -193,10 +206,29 @@ function ProfilePage() {
     return user.username || 'Пользователь';
   };
 
+  // ✅ ИСПРАВЛЕНО: каждая звезда обёрнута в span с классом
+  const renderStars = (rating) => {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+    return (
+      <>
+        {Array(fullStars).fill(0).map((_, i) => (
+          <span key={`full-${i}`} className="star-filled">★</span>
+        ))}
+        {hasHalf && <span className="star-filled">★</span>}
+        {Array(emptyStars).fill(0).map((_, i) => (
+          <span key={`empty-${i}`} className="star-empty">☆</span>
+        ))}
+      </>
+    );
+  };
+
   return (
-    <div className="seller-profile max-w-4xl mx-auto p-4">
-      <div className="seller-header">
-        <div className="seller-avatar">
+    <div className="content">
+      {/* Header — градиентная шапка */}
+      <div className="profile-header">
+        <div className="avatar-lg-container">
           {user.avatar ? (
             <img
               src={buildImageUrl(user.avatar)}
@@ -209,83 +241,105 @@ function ProfilePage() {
             </div>
           )}
         </div>
-        <div className="seller-info">
+        <div className="header-info">
           <h1>{getDisplayName(user)}</h1>
+          {user.location && (
+            <p>
+              <i className="fas fa-map-marker-alt mr-2"></i>
+              {user.location}
+            </p>
+          )}
+          <p>
+            <i className="fas fa-calendar-alt mr-2"></i>
+            На PetMarket с {getRussianMonthYear(user.date_joined)}
+          </p>
+          {user.bio && <p className="bio">{user.bio}</p>}
+        </div>
+      </div>
 
-          <div className="mt-1 flex items-center">
-            {reviewCount > 0 ? (
-              <>
-                <span className="text-lg font-bold text-gray-900">
-                  {reviewStats.avg_rating.toFixed(1)}
-                </span>
-                <span className="text-yellow-400 ml-1">★★★★★</span>
-                {/* 🔥 КЛИКАБЕЛЬНАЯ ССЫЛКА */}
-                <button
-                  onClick={toggleReviews}
-                  className="text-blue-600 font-medium ml-2 hover:underline flex items-center"
-                >
-                  {reviewCount} {getReviewText(reviewCount)}
-                  <span className="ml-1">{showReviews ? '▲' : '▼'}</span>
-                </button>
-              </>
-            ) : (
-              <span className="text-gray-500">Пока нет отзывов</span>
-            )}
-            {canLeaveReview && (
-              <button
-                onClick={() => setShowReviewForm(!showReviewForm)}
-                className="text-blue-600 text-sm hover:underline ml-2"
-              >
-                {reviewCount > 0 ? 'Оставить отзыв' : 'Оставить первый отзыв'}
-              </button>
-            )}
+      {/* Рейтинг */}
+      <div className="rating-stars">
+        <span className="rating-value">{reviewStats.avg_rating.toFixed(1)}</span>
+        <div className="stars">{renderStars(reviewStats.avg_rating)}</div>
+        <button
+          onClick={toggleReviews}
+          className="review-count"
+        >
+          {reviewCount} {getReviewText(reviewCount)} {showReviews ? '▲' : '▼'}
+        </button>
+      </div>
+
+      {/* ✅ БЕЙДЖ "НАДЁЖНЫЙ ПРОДАВЕЦ" — только если true */}
+      {user.is_reliable_seller && (
+        <div className="reliable-seller-badge-wrapper">
+          <div className="reliable-seller-badge">
+            Надёжный продавец
           </div>
+        </div>
+      )}
 
-          <div className="mb-3">
+      {/* Кнопки и бейджи */}
+      <div className="profile-actions">
+        <div className="btn-group">
+          {user.is_owner && (
+            <button
+              onClick={() => navigate(`/profile/${user.id}`)}
+              className="btn btn-secondary btn-sm"
+            >
+              Мой профиль
+            </button>
+          )}
+          <button
+            onClick={handleSendMessage}
+            className="btn btn-primary btn-sm"
+          >
+            Написать
+          </button>
+          {canLeaveReview && (
+            <button
+              onClick={() => setShowReviewForm(!showReviewForm)}
+              className="btn btn-outline btn-sm"
+            >
+              {reviewCount > 0 ? 'Оставить отзыв' : 'Оставить первый отзыв'}
+            </button>
+          )}
+        </div>
+        {badges.length > 0 && (
+          <div className="badges">
             {badges.map((badge, idx) => (
-              <span key={idx} className="badge" style={{ backgroundColor: badge.bgColor, color: badge.textColor }}>
+              <span
+                key={idx}
+                className="badge"
+              >
                 {badge.title}
               </span>
             ))}
           </div>
-
-          {user.location && <p className="seller-location">📍 {user.location}</p>}
-
-          <p className="text-gray-600">
-            На PetMarket с {getRussianMonthYear(user.date_joined)}
-          </p>
-
-          {user.bio && <p className="seller-bio">{user.bio}</p>}
-
-          <div className="seller-contacts">
-            <button className="btn btn-primary" onClick={handleSendMessage}>
-              💬 Написать
-            </button>
-            <button className="btn btn-secondary">
-              📞 Позвонить
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Форма отзыва */}
       {showReviewForm && (
-        <div className="mt-4 p-4 bg-gray-50 rounded">
-          <h3 className="font-medium mb-2">
+        <div className="review-form-section">
+          <h2 className="review-form-title">
             {reviewCount > 0 ? 'Оставить отзыв' : 'Оставить первый отзыв'}
-          </h3>
-          <form onSubmit={handleCreateReview}>
-            <div className="mb-2">
-              <label className="block text-sm mb-1">Ваша оценка</label>
-              <div className="flex">
+          </h2>
+          <form onSubmit={handleCreateReview} className="review-form">
+            <div className="rating-input">
+              <label className="rating-label">Ваша оценка</label>
+              <div className="star-buttons">
                 {[5, 4, 3, 2, 1].map((star) => (
                   <button
                     key={star}
                     type="button"
-                    onClick={() => setReviewForm({...reviewForm, rating: star})}
-                    className="text-2xl"
+                    onClick={() => setReviewForm({ ...reviewForm, rating: star })}
+                    className="star-button"
                   >
-                    {reviewForm.rating >= star ? '★' : '☆'}
+                    {reviewForm.rating >= star ? (
+                      <span className="star-filled">★</span>
+                    ) : (
+                      <span className="star-empty">☆</span>
+                    )}
                   </button>
                 ))}
               </div>
@@ -293,18 +347,18 @@ function ProfilePage() {
             <textarea
               placeholder="Ваш комментарий..."
               value={reviewForm.comment}
-              onChange={(e) => setReviewForm({...reviewForm, comment: e.target.value})}
-              className="w-full p-2 border rounded mb-2"
+              onChange={(e) => setReviewForm({ ...reviewForm, comment: e.target.value })}
+              className="review-textarea"
               rows="3"
             />
-            <div className="flex gap-2">
-              <button type="submit" className="px-3 py-1 bg-blue-600 text-white rounded">
+            <div className="review-form-buttons">
+              <button type="submit" className="btn btn-primary">
                 Отправить
               </button>
               <button
                 type="button"
                 onClick={() => setShowReviewForm(false)}
-                className="px-3 py-1 bg-gray-200 rounded"
+                className="btn btn-secondary"
               >
                 Отмена
               </button>
@@ -313,88 +367,107 @@ function ProfilePage() {
         </div>
       )}
 
-      {/* Список отзывов — показывается только при showReviews и если загружены */}
+      {/* Список отзывов */}
       {showReviews && reviewsLoaded && reviews.length > 0 && (
-        <div className="mt-6">
-          <h3 className="font-bold text-lg mb-3">Отзывы о {getDisplayName(user)}</h3>
-          <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+        <div className="reviews-section">
+          <h2 className="reviews-title">Отзывы о {getDisplayName(user)}</h2>
+          <div className="reviews-list">
             {reviews.map((review) => (
-              <div key={review.id} className="p-3 border rounded">
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">{review.reviewer.username}</span>
-                  <span className="text-yellow-500">{'★'.repeat(review.rating)}</span>
+              <div key={review.id} className="review-item">
+                <div className="review-content">
+                  <div className="reviewer-info">
+                    <div className="reviewer-avatar">
+                      {review.reviewer?.username?.[0]?.toUpperCase() || '?'}
+                    </div>
+                    <div className="reviewer-details">
+                      <div className="reviewer-name-rating">
+                        <span className="reviewer-name">{review.reviewer?.username || 'Аноним'}</span>
+                        <span className="review-rating">{'★'.repeat(review.rating)}</span>
+                      </div>
+                      <span className="review-date">
+                        {new Date(review.created_at).toLocaleDateString('ru-RU')}
+                      </span>
+                    </div>
+                  </div>
+                  {review.pet && (
+                    <p className="review-pet">
+                      Сделка: <span className="pet-name">{review.pet.name}</span>
+                    </p>
+                  )}
+                  {review.comment && (
+                    <p className="review-comment">{review.comment}</p>
+                  )}
                 </div>
-                {review.comment && <p className="text-gray-700 mt-1">{review.comment}</p>}
-                <p className="text-xs text-gray-500 mt-1">
-                  {new Date(review.created_at).toLocaleDateString('ru-RU')}
-                </p>
               </div>
             ))}
           </div>
         </div>
       )}
 
-      <div className="profile-tabs mt-6 border-b border-gray-200">
-        <nav className="-mb-px flex space-x-8">
+      {/* Вкладки */}
+      <div className="profile-tabs-container">
+        <div className="profile-tabs-nav">
           <button
             onClick={() => setActiveTab('pets')}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === 'pets'
-                ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+            className={`profile-tab ${
+              activeTab === 'pets' ? 'profile-tab-active' : ''
             }`}
           >
-            Объявления
+            Объявления ({pets.length})
           </button>
-        </nav>
-      </div>
-
-      {activeTab === 'pets' && (
-        <div className="seller-pets mt-6">
-          <h2>Объявления пользователя</h2>
-          {pets.length > 0 ? (
-            <div className="pets-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {pets.map((pet) => (
-                <PetCard key={pet.id} pet={pet} size="small" />
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state py-8 text-center">
-              <p>У пользователя пока нет объявлений</p>
-            </div>
-          )}
-
-          {totalPages > 1 && (
-            <div className="pagination flex justify-center space-x-2 mt-6">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-3 py-1 rounded border hover:bg-gray-100 disabled:opacity-50"
-              >
-                &lt;
-              </button>
-              {[...Array(Math.min(5, totalPages))].map((_, i) => (
-                <button
-                  key={i + 1}
-                  onClick={() => setPage(i + 1)}
-                  className={`px-3 py-1 rounded border ${
-                    page === i + 1 ? 'bg-blue-100 border-blue-500' : 'hover:bg-gray-100'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                disabled={page === totalPages}
-                className="px-3 py-1 rounded border hover:bg-gray-100 disabled:opacity-50"
-              >
-                &gt;
-              </button>
+        </div>
+        <div className="profile-tabs-content">
+          {activeTab === 'pets' && (
+            <div>
+              {pets.length > 0 && (
+                <h3 className="pets-section-title">Объявления пользователя</h3>
+              )}
+              {pets.length > 0 ? (
+                <div className="pets-grid">
+                  {pets.map((pet) => (
+                    <PetCard key={pet.id} pet={pet} size="small" />
+                  ))}
+                </div>
+              ) : (
+                <div className="no-pets">
+                  <div className="no-pets-icon">🐾</div>
+                  <h3 className="no-pets-title">Нет объявлений</h3>
+                  <p className="no-pets-text">Пользователь пока не размещал объявления</p>
+                </div>
+              )}
+              {totalPages > 1 && (
+                <div className="pagination">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="pagination-btn pagination-prev"
+                  >
+                    &lt;
+                  </button>
+                  {[...Array(Math.min(5, totalPages))].map((_, i) => (
+                    <button
+                      key={i + 1}
+                      onClick={() => setPage(i + 1)}
+                      className={`pagination-btn ${
+                        page === i + 1 ? 'pagination-btn-active' : ''
+                      }`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="pagination-btn pagination-next"
+                  >
+                    &gt;
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }

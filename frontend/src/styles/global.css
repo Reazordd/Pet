@@ -12,9 +12,13 @@
   --text: #111827;
   --muted: #6b7280;
   --accent: #0b5ed7;
+  --brand-light: #4b9ce2;
+  --brand-dark: #1e3a8a;
   --danger: #dc2626;
   --success: #16a34a;
   --card-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+  /* 🔥 Фон под изображением в карточке — насыщенный серо-голубой */
+  --card-img-bg: #c0d6ed;
 }
 
 /* Темная тема */
@@ -24,9 +28,13 @@ html.dark {
   --text: #e6eef8;
   --muted: #9aa6b2;
   --accent: #60a5fa;
+  --brand-light: #3b82f6;
+  --brand-dark: #1d4ed8;
   --danger: #f87171;
   --success: #4ade80;
   --card-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+  /* В тёмной теме — тёмно-серый фон под фото */
+  --card-img-bg: #1e293b;
 }
 
 /* Основной body */
@@ -40,9 +48,7 @@ body {
   min-height: 100vh;
 }
 
-/* === СТИЛИ КАК НА AVITO === */
-
-/* Аватары — круглые, фиксированный размер */
+/* === АВАТАРЫ === */
 .avatar-xs {
   width: 20px;
   height: 20px;
@@ -71,7 +77,6 @@ body {
   object-fit: cover;
 }
 
-/* Заглушка аватара */
 .avatar-placeholder {
   width: 64px;
   height: 64px;
@@ -85,66 +90,21 @@ body {
   font-size: 24px;
 }
 
-/* Фото в детальной карточке */
-.pet-detail-image-main {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-/* Фото в чате */
-.chat-image {
-  max-height: 200px;
-  max-width: 100%;
-  height: auto;
-  width: auto;
-  object-fit: cover;
-  border-radius: 8px;
-  border: 1px solid #eee;
-}
-
-/* === Общая структура приложения === */
-.app {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.content {
-  max-width: 1440px; /* ← Увеличено с 1200 до 1440 как у Avito */
-  margin: 24px auto;
-  padding: 0 16px;
-  width: 100%;
-}
-
-/* Заголовки */
-h1 {
-  font-size: 1.8rem;
-  color: var(--text);
-  margin-bottom: 12px;
-}
-
-h2 {
-  font-size: 1.2rem;
-  color: var(--text);
-  margin-bottom: 12px;
-}
-
-/* Кнопки */
+/* === КНОПКИ === */
 .btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   border-radius: 8px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   font-weight: 600;
   cursor: pointer;
   border: 1px solid transparent;
   background: var(--panel);
   color: var(--text);
   box-shadow: var(--card-shadow);
-  transition: transform 0.06s ease, box-shadow 0.12s ease;
+  transition: all 0.2s ease;
 }
 
 .btn:active {
@@ -161,6 +121,85 @@ h2 {
   background: var(--panel);
   color: var(--text);
   border: 1px solid #ddd;
+}
+
+.btn-sm {
+  padding: 6px 12px;
+  font-size: 0.875rem;
+}
+
+/* 🔥 КНОПКА «ОТЛИЧНЫЙ СТИЛЬ»: outline с акцентом */
+.btn-outline {
+  background: transparent;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+}
+
+.btn-outline:hover {
+  background: rgba(11, 94, 215, 0.06);
+}
+
+/* === КАРТОЧКИ ОБЪЯВЛЕНИЙ === */
+.pet-card-profile {
+  background: var(--panel); /* ← основа: белая в light, тёмная в dark */
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: var(--card-shadow);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.pet-card-profile:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
+}
+
+.pet-card-profile img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+}
+
+.pet-card-profile .pet-info {
+  padding: 16px;
+}
+
+.pet-card-profile h3 {
+  font-size: 1.1rem;
+  margin: 0 0 4px 0;
+  color: var(--text);
+}
+
+.pet-card-profile .price {
+  font-weight: 700;
+  color: var(--accent);
+  font-size: 1.2rem;
+}
+
+/* === Общая структура приложения === */
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.content {
+  max-width: 1440px;
+  margin: 24px auto;
+  padding: 0 16px;
+  width: 100%;
+}
+
+/* Заголовки */
+h1 {
+  font-size: 1.8rem;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+
+h2 {
+  font-size: 1.2rem;
+  color: var(--text);
+  margin-bottom: 12px;
 }
 
 /* Поля ввода */
@@ -212,25 +251,6 @@ select:focus {
   text-decoration: underline;
 }
 
-/* Адаптивность */
-@media (max-width: 768px) {
-  .content {
-    padding: 0 12px;
-  }
-
-  h1 {
-    font-size: 1.4rem;
-  }
-
-  .pets-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .avatar-lg {
-    width: 56px;
-    height: 56px;
-  }
-}
 /* === Telegram Login Widget СТИЛИ === */
 .tgui_widget_login_button {
   display: inline-flex !important;
@@ -241,7 +261,6 @@ select:focus {
   margin: 0 auto !important;
 }
 
-/* Адаптивность для мобильных */
 @media (max-width: 768px) {
   .tgui_widget_login_button {
     width: 100% !important;
@@ -300,5 +319,29 @@ select:focus {
   }
   .category-icon {
     font-size: 1.2rem;
+  }
+}
+
+/* Золотой цвет для звёзд рейтинга */
+.text-yellow-500 {
+  color: #f59e0b;
+}
+
+/* === АДАПТИВНОСТЬ === */
+@media (max-width: 768px) {
+  .content {
+    padding: 0 12px;
+  }
+
+  h1 {
+    font-size: 1.4rem;
+  }
+
+  .pets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .stat-card {
+    padding: 12px;
   }
 }
