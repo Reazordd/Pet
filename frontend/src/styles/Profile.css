@@ -1,0 +1,599 @@
+/* === МЯГКИЙ ФОН ДЛЯ ВСЕЙ СТРАНИЦЫ === */
+.content {
+  background: #f9fafb !important; /* Более мягкий, чем #f8f9fb */
+}
+
+/* === ПРОФИЛЬ — ГРАДИЕНТНАЯ ШАПКА (обновленная высота) === */
+.profile-header {
+  position: relative;
+  padding: 0;
+  background: linear-gradient(135deg, var(--brand-light), var(--brand-dark)) !important;
+  border-radius: 16px 16px 0 0 !important;
+  overflow: hidden !important;
+  margin-bottom: 24px !important;
+  min-height: 210px; /* 🔥 Увеличено до высоты продавца */
+}
+
+.profile-header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100%;
+  background: radial-gradient(circle at 20% 30%, rgba(255,255,255,0.15) 0%, transparent 70%) !important;
+  z-index: 1 !important;
+}
+
+.profile-header .avatar-lg-container {
+  position: absolute !important;
+  top: 48px !important;
+  left: 24px !important;
+  z-index: 3 !important;
+}
+
+.profile-header .avatar-lg,
+.profile-header .avatar-placeholder {
+  width: 80px !important; /* 🔥 Снижено для лучшего соответствия */
+  height: 80px !important;
+  border-radius: 50% !important;
+  border: 3px solid white !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  background: white !important;
+}
+
+.profile-header .header-info {
+  padding: 64px 24px 24px 112px !important; /* 🔥 Отступ слева скорректирован */
+  color: white !important;
+  position: relative !important;
+  z-index: 2 !important;
+  min-height: 130px !important;
+}
+
+.profile-header h1 {
+  font-size: 1.9rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  color: white !important;
+}
+
+.profile-header p {
+  margin: 4px 0 !important;
+  color: rgba(255, 255, 255, 0.95) !important;
+  font-size: 0.95rem !important;
+}
+
+.profile-header p i {
+  margin-right: 6px !important;
+}
+
+.profile-header .bio {
+  margin-top: 8px !important;
+  opacity: 0.9 !important;
+  line-height: 1.4 !important;
+}
+
+/* === РЕЙТИНГ — ЗОЛОТЫЕ ЗВЁЗДЫ === */
+.rating-stars {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 0 24px !important;
+  margin-top: 8px !important;
+}
+
+.rating-stars .rating-value {
+  font-size: 1.8rem !important;
+  font-weight: 700 !important;
+  color: #f59e0b !important;
+}
+
+.rating-stars .stars {
+  font-size: 1.4rem !important;
+  color: #e5e7eb !important;
+}
+
+.star-filled {
+  color: #f59e0b !important;
+}
+
+.star-empty {
+  color: #e5e7eb !important;
+}
+
+html.dark .star-empty {
+  color: #4b5563 !important;
+}
+
+.rating-stars .review-count {
+  font-size: 0.95rem !important;
+  color: var(--text) !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  background: none !important;
+  border: none !important;
+  padding: 0 !important;
+  font-family: inherit !important;
+}
+
+/* === ВКЛАДКИ === */
+.profile-tabs-container {
+  background: #ffffff !important; /* Белый контент на мягком фоне */
+  border-radius: 16px !important;
+  box-shadow: 0 6px 24px rgba(11, 94, 215, 0.06) !important; /* Более мягкая тень */
+  margin-top: 24px !important;
+  overflow: hidden !important;
+}
+
+.profile-tabs-nav {
+  border-bottom: 1px solid #e5e7eb !important;
+  padding: 0 24px !important;
+}
+
+.profile-tab {
+  padding: 16px 24px !important;
+  font-weight: 600 !important;
+  color: var(--muted) !important;
+  background: none !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 1rem !important;
+  position: relative !important;
+  transition: all 0.2s !important;
+}
+
+.profile-tab:hover {
+  color: var(--text) !important;
+}
+
+.profile-tab-active {
+  color: var(--accent) !important;
+}
+
+.profile-tab-active::after {
+  content: '';
+  position: absolute !important;
+  bottom: -1px !important;
+  left: 24px !important;
+  right: 24px !important;
+  height: 3px !important;
+  background: var(--accent) !important;
+}
+
+.profile-tabs-content {
+  padding: 24px !important;
+  background: #fcfdff !important; /* Очень светлый, но не белый */
+}
+
+/* === ОТЗЫВЫ — СТИЛИЗОВАННЫЕ КНОПКИ (без изменения текста) === */
+.review-tabs {
+  display: flex !important;
+  gap: 8px !important; /* Расстояние между кнопками */
+  margin-bottom: 20px !important;
+  padding: 0 4px !important;
+}
+
+.review-tab {
+  flex: 1;
+  padding: 10px 16px !important;
+  font-weight: 600 !important;
+  color: var(--muted) !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 8px !important; /* Полностью закруглённые углы */
+  cursor: pointer !important;
+  font-size: 0.95rem !important;
+  transition: all 0.25s ease !important;
+  text-align: center;
+}
+
+.review-tab:hover {
+  color: var(--text) !important;
+  background: rgba(11, 94, 215, 0.08) !important;
+}
+
+.review-tab.active {
+  color: white !important;
+  background: var(--accent) !important; /* Синий фон для активной */
+  box-shadow: 0 2px 6px rgba(11, 94, 215, 0.2) !important;
+}
+
+/* === ОСТАЛЬНОЕ === */
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon {
+  font-size: 1.8rem;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 4px 0;
+}
+
+.stat-label {
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.review-item {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  transition: transform 0.2s;
+}
+
+.review-item:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.review-item .reviewer-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--text);
+  flex-shrink: 0;
+}
+
+.review-item .reviewer-info {
+  flex: 1;
+  margin-left: 12px;
+}
+
+.review-item .reviewer-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.review-item .rating {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  margin-top: 4px;
+}
+
+.review-item .pet-name {
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.review-item .comment {
+  margin: 8px 0 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+
+.review-item .date {
+  font-size: 0.85rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.profile-settings-form {
+  max-width: 600px;
+}
+
+.profile-settings-form .form-group {
+  margin-bottom: 20px;
+}
+
+.profile-settings-form label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.profile-settings-form input,
+.profile-settings-form textarea,
+.profile-settings-form select {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  color: var(--text);
+  font-size: 1rem;
+  transition: border-color 0.2s;
+}
+
+.profile-settings-form input:focus,
+.profile-settings-form textarea:focus,
+.profile-settings-form select:focus {
+  border-color: var(--accent);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.2);
+}
+
+.profile-settings-form .avatar-upload {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.profile-settings-form .avatar-preview {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+}
+
+.profile-settings-form .avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.profile-settings-form .avatar-placeholder {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #6b7280;
+  font-size: 20px;
+}
+
+.profile-settings-form .file-input-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.profile-settings-form .file-input-wrapper input[type="file"] {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.profile-settings-form .file-input-btn {
+  background: var(--panel);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.875rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.profile-settings-form .file-input-btn:hover {
+  background: #f9fafb;
+  color: var(--text);
+}
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: white;
+  border-radius: 12px;
+  margin-top: 24px;
+}
+
+.empty-state .icon {
+  font-size: 4rem;
+  color: #e5e7eb;
+  margin-bottom: 16px;
+}
+
+.empty-state h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.empty-state p {
+  color: var(--muted);
+  margin-bottom: 16px;
+}
+
+.profile-footer {
+  text-align: center;
+  margin-top: 40px;
+  padding-top: 24px;
+  border-top: 1px solid #e5e7eb;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.profile-footer a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.profile-footer a:hover {
+  text-decoration: underline;
+}
+
+/* === ТЁМНАЯ ТЕМА — ПОЛНАЯ АДАПТАЦИЯ === */
+html.dark {
+  --text: #e5e7eb;
+  --muted: #9ca3af;
+  --accent: #60a5fa;
+  --panel: #1f2937;
+  --brand-light: #1e40af;
+  --brand-dark: #1d4ed8;
+}
+
+html.dark .content {
+  background: #0f172a !important;
+}
+
+html.dark .profile-tabs-container {
+  background: #111827 !important;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4) !important;
+}
+
+html.dark .profile-tabs-content {
+  background: #111827 !important;
+}
+
+html.dark .stat-card,
+html.dark .review-item,
+html.dark .empty-state {
+  background: #1f2937 !important;
+}
+
+html.dark .stat-value,
+html.dark .review-item .reviewer-name,
+html.dark .review-item .comment,
+html.dark .review-item .reviewer-avatar {
+  color: var(--text) !important;
+}
+
+html.dark .stat-label,
+html.dark .review-item .date,
+html.dark .empty-state p,
+html.dark .profile-footer {
+  color: var(--muted) !important;
+}
+
+html.dark .review-item .reviewer-avatar {
+  background: #374151 !important;
+}
+
+html.dark .profile-tabs-nav {
+  border-bottom-color: #374151 !important;
+}
+
+html.dark .profile-tab {
+  color: var(--muted) !important;
+}
+
+html.dark .profile-tab:hover {
+  color: var(--text) !important;
+}
+
+html.dark .profile-tab-active {
+  color: var(--accent) !important;
+}
+
+html.dark .profile-tab-active::after {
+  background: var(--accent) !important;
+}
+
+html.dark .review-tab {
+  color: var(--muted) !important;
+  background: transparent !important;
+}
+
+html.dark .review-tab:hover {
+  color: var(--text) !important;
+  background: rgba(96, 165, 250, 0.15) !important;
+}
+
+html.dark .review-tab.active {
+  color: #0f172a !important;
+  background: var(--accent) !important;
+}
+
+html.dark .profile-settings-form input,
+html.dark .profile-settings-form textarea,
+html.dark .profile-settings-form select {
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  color: var(--text) !important;
+}
+
+html.dark .profile-settings-form .avatar-placeholder {
+  background: #374151 !important;
+  color: var(--text) !important;
+}
+
+html.dark .profile-settings-form .file-input-btn {
+  background: #1f2937 !important;
+  border-color: #374151 !important;
+  color: var(--muted) !important;
+}
+
+html.dark .profile-settings-form .file-input-btn:hover {
+  background: #374151 !important;
+  color: var(--text) !important;
+}
+
+@media (max-width: 768px) {
+  .profile-header .avatar-lg-container {
+    top: 32px;
+    left: 16px;
+  }
+
+  .profile-header .header-info {
+    padding: 48px 16px 16px 96px !important;
+    min-height: 100px !important;
+  }
+
+  .rating-stars {
+    padding: 0 16px;
+  }
+
+  .profile-tabs-nav {
+    padding: 0 16px;
+  }
+
+  .profile-tab {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+
+  .profile-tab-active::after {
+    left: 16px;
+    right: 16px;
+  }
+
+  .profile-tabs-content {
+    padding: 16px;
+  }
+
+  .stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-settings-form {
+    max-width: 100%;
+  }
+
+  .profile-settings-form .avatar-upload {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

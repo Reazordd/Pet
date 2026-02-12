@@ -141,7 +141,7 @@ body {
 
 /* === КАРТОЧКИ ОБЪЯВЛЕНИЙ === */
 .pet-card-profile {
-  background: var(--panel); /* ← основа: белая в light, тёмная в dark */
+  background: var(--panel);
   border-radius: 12px;
   overflow: hidden;
   box-shadow: var(--card-shadow);
@@ -339,9 +339,5 @@ select:focus {
 
   .pets-grid {
     grid-template-columns: 1fr;
-  }
-
-  .stat-card {
-    padding: 12px;
   }
 }

@@ -1,4 +1,3 @@
-// frontend/src/pages/Profile.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -7,6 +6,7 @@ import { checkToken, logout } from "../utils/auth";
 import { buildImageUrl } from "../utils/image";
 import PetCard from "../components/PetCard";
 import MessagesList from "../components/MessagesList";
+import "../styles/Profile.css";
 
 function Profile() {
   const navigate = useNavigate();
@@ -72,11 +72,13 @@ function Profile() {
     }
   };
 
+  // 🔥 ДОБАВЛЕНО: загрузка сообщений при активной вкладке
   useEffect(() => {
     if ((activeTab === "reviews" || activeTab === "messages") && userData.id) {
       if (activeTab === "reviews") {
         fetchReviews();
       }
+      // Для "messages" — MessagesList сам загружает данные
     }
   }, [activeTab, userData.id]);
 
@@ -153,7 +155,7 @@ function Profile() {
           toast.error("Ошибка обновления профиля");
         }
       } else {
-        toast.error("Ошибка обновления профиля");
+        toast.error("Ошибка обновения профиля");
       }
     } finally {
       setLoading(false);
@@ -196,6 +198,24 @@ function Profile() {
     return 'отзывов';
   };
 
+  // 🔥 ДОБАВЛЕНО: функция для золотых звёзд
+  const renderRatingStars = (rating = 5) => {
+    const fullStars = Math.floor(rating);
+    const hasHalf = rating % 1 >= 0.5;
+    const emptyStars = 5 - fullStars - (hasHalf ? 1 : 0);
+    return (
+      <>
+        {Array(fullStars).fill(0).map((_, i) => (
+          <span key={`full-${i}`} className="star-filled">★</span>
+        ))}
+        {hasHalf && <span className="star-filled">★</span>}
+        {Array(emptyStars).fill(0).map((_, i) => (
+          <span key={`empty-${i}`} className="star-empty">☆</span>
+        ))}
+      </>
+    );
+  };
+
   if (loading && !userData.username) {
     return (
       <div className="content text-center mt-10">
@@ -208,7 +228,6 @@ function Profile() {
   const reviewCount = userData.review_count || 0;
   const myAds = userData.pets || [];
 
-  // Имя для отображения
   const getDisplayName = (user) => {
     if (user.first_name || user.last_name) {
       return `${user.first_name} ${user.last_name}`.trim();
@@ -237,75 +256,71 @@ function Profile() {
         </div>
         <div className="header-info">
           <h1>{getDisplayName(userData)}</h1>
-          {/* ✅ Email УДАЛЁН */}
           {userData.location && (
-            <p className="mt-1">
-              <i className="fas fa-map-marker-alt mr-2 text-gray-500"></i>
+            <p>
+              <i className="fas fa-map-marker-alt mr-2"></i>
               {userData.location}
             </p>
           )}
-          {userData.bio && <p className="mt-2">{userData.bio}</p>}
+          {userData.bio && <p className="bio">{userData.bio}</p>}
         </div>
       </div>
 
-      {/* Рейтинг */}
-      <div className="rating-stars mt-4 flex items-center">
-        <span className="text-xl font-bold text-gray-900">5.0</span>
-        <span className="text-yellow-500 ml-2 text-2xl">★★★★★</span>
-        <span className="text-gray-600 ml-2">{reviewCount} {getReviewText(reviewCount)}</span>
+      {/* Рейтинг — ТЕПЕРЬ ЗОЛОТЫЕ ЗВЁЗДЫ */}
+      <div className="rating-stars">
+        <span className="rating-value">5.0</span>
+        <div className="stars">{renderRatingStars(5)}</div>
+        <span className="review-count">
+          {reviewCount} {getReviewText(reviewCount)}
+        </span>
       </div>
 
-      {/* Вкладки — исправлены для Avito-style */}
-      <div className="bg-white rounded-xl shadow-sm mt-6">
-        <div className="border-b border-gray-200 px-6">
-          <nav className="flex space-x-1">
-            {[
-              { id: "ads", label: "Мои объявления" },
-              { id: "messages", label: "Сообщения" },
-              { id: "reviews", label: `Отзывы (${reviewCount})` },
-              { id: "settings", label: "Настройки профиля" },
-              { id: "security", label: "Безопасность" }
-            ].map(tab => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`py-3 px-4 text-sm font-medium rounded-t-lg transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-white text-brand-dark border-b-2 border-brand-dark'
-                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
+      {/* Вкладки */}
+      <div className="profile-tabs-container">
+        <div className="profile-tabs-nav">
+          {[
+            { id: "ads", label: "Мои объявления" },
+            { id: "messages", label: "Сообщения" },
+            { id: "reviews", label: `Отзывы (${reviewCount})` },
+            { id: "settings", label: "Настройки профиля" },
+            { id: "security", label: "Безопасность" }
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`profile-tab ${activeTab === tab.id ? 'profile-tab-active' : ''}`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <div className="p-6">
-          {/* Контент вкладки */}
+        <div className="profile-tabs-content">
           {activeTab === "ads" && (
             <div>
-              {/* Статистика */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <div className="stat-grid">
                 <div className="stat-card">
+                  <div className="stat-icon">📋</div>
                   <div className="stat-value">{stats.total_pets || 0}</div>
                   <div className="stat-label">Всего</div>
                 </div>
                 <div className="stat-card">
+                  <div className="stat-icon">🟢</div>
                   <div className="stat-value">{stats.active_pets || 0}</div>
                   <div className="stat-label">Активные</div>
                 </div>
                 <div className="stat-card">
+                  <div className="stat-icon">💰</div>
                   <div className="stat-value">{Math.round(stats.avg_price || 0)} ₽</div>
                   <div className="stat-label">Средняя цена</div>
                 </div>
                 <div className="stat-card">
+                  <div className="stat-icon">⭐</div>
                   <div className="stat-value">{stats.total_reviews || 0}</div>
                   <div className="stat-label">Отзывов</div>
                 </div>
               </div>
 
-              {/* Объявления */}
               {myAds.length > 0 ? (
                 <div className="pets-grid">
                   {myAds.map((ad) => (
@@ -313,10 +328,10 @@ function Profile() {
                   ))}
                 </div>
               ) : (
-                <div className="empty-state py-8 text-center">
-                  <div className="text-gray-400 text-4xl mb-4">📋</div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Нет объявлений</h3>
-                  <p className="text-gray-500 mb-4">Разместите первое объявление!</p>
+                <div className="empty-state">
+                  <div className="icon">📋</div>
+                  <h3>Нет объявлений</h3>
+                  <p>Разместите первое объявление!</p>
                   <button
                     onClick={() => navigate('/create')}
                     className="btn btn-primary"
@@ -339,23 +354,15 @@ function Profile() {
             <div>
               <h2 className="text-xl font-bold mb-4">Отзывы</h2>
 
-              <div className="border-b mb-4 flex">
+              <div className="review-tabs">
                 <button
-                  className={`px-4 py-2 font-medium ${
-                    activeReviewTab === 'received'
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`review-tab ${activeReviewTab === 'received' ? 'active' : ''}`}
                   onClick={() => setActiveReviewTab('received')}
                 >
                   Полученные ({userData.review_count || 0})
                 </button>
                 <button
-                  className={`px-4 py-2 font-medium ${
-                    activeReviewTab === 'given'
-                      ? 'text-blue-600 border-b-2 border-blue-600'
-                      : 'text-gray-500 hover:text-gray-700'
-                  }`}
+                  className={`review-tab ${activeReviewTab === 'given' ? 'active' : ''}`}
                   onClick={() => setActiveReviewTab('given')}
                 >
                   Оставленные ({givenReviews.length})
@@ -370,20 +377,23 @@ function Profile() {
                     {receivedReviews.map((rev) => (
                       <div key={rev.id} className="review-item">
                         <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                          <div className="reviewer-avatar">
                             {(rev.reviewer?.username && typeof rev.reviewer.username === 'string' && rev.reviewer.username.charAt(0).toUpperCase()) || '?'}
                           </div>
-                          <div className="flex-1">
+                          <div className="reviewer-info">
                             <div className="flex items-center space-x-2">
-                              <span className="font-medium">{rev.reviewer?.username || 'Аноним'}</span>
-                              <span className="text-yellow-500 text-lg">{'★'.repeat(rev.rating)}</span>
+                              <span className="reviewer-name">{rev.reviewer?.username || 'Аноним'}</span>
+                              <span className="rating">{'★'.repeat(rev.rating)}</span>
                             </div>
                             {rev.pet && (
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="pet-name mt-1">
                                 Сделка: {rev.pet.name}
                               </p>
                             )}
-                            <p className="mt-2 text-gray-800">{rev.comment}</p>
+                            <p className="comment">{rev.comment}</p>
+                            <p className="date">
+                              {new Date(rev.created_at).toLocaleDateString('ru-RU')}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -398,20 +408,23 @@ function Profile() {
                     {givenReviews.map((rev) => (
                       <div key={rev.id} className="review-item">
                         <div className="flex items-start space-x-3">
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-sm font-bold">
+                          <div className="reviewer-avatar">
                             {(rev.reviewed?.username && typeof rev.reviewed.username === 'string' && rev.reviewed.username.charAt(0).toUpperCase()) || '?'}
                           </div>
-                          <div className="flex-1">
+                          <div className="reviewer-info">
                             <div className="flex items-center space-x-2">
-                              <span className="font-medium">Для: {rev.reviewed?.username || 'Аноним'}</span>
-                              <span className="text-yellow-500 text-lg">{'★'.repeat(rev.rating)}</span>
+                              <span className="reviewer-name">Для: {rev.reviewed?.username || 'Аноним'}</span>
+                              <span className="rating">{'★'.repeat(rev.rating)}</span>
                             </div>
                             {rev.pet && (
-                              <p className="text-sm text-gray-600 mt-1">
+                              <p className="pet-name mt-1">
                                 Сделка: {rev.pet.name}
                               </p>
                             )}
-                            <p className="mt-2 text-gray-800">{rev.comment}</p>
+                            <p className="comment">{rev.comment}</p>
+                            <p className="date">
+                              {new Date(rev.created_at).toLocaleDateString('ru-RU')}
+                            </p>
                           </div>
                         </div>
                       </div>
@@ -425,106 +438,92 @@ function Profile() {
           )}
 
           {activeTab === "settings" && (
-            <form onSubmit={handleSubmit} className="max-w-2xl">
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Фото профиля</label>
-                <div className="flex items-center space-x-4">
+            <form onSubmit={handleSubmit} className="profile-settings-form">
+              <div className="form-group">
+                <label>Фото профиля</label>
+                <div className="avatar-upload">
                   {imagePreview ? (
-                    <img src={imagePreview} alt="Preview" className="avatar-md" />
+                    <div className="avatar-preview">
+                      <img src={imagePreview} alt="Preview" />
+                    </div>
                   ) : userData.avatar ? (
-                    <img
-                      src={buildImageUrl(userData.avatar)}
-                      alt="Avatar"
-                      className="avatar-md"
-                    />
+                    <div className="avatar-preview">
+                      <img src={buildImageUrl(userData.avatar)} alt="Avatar" />
+                    </div>
                   ) : (
                     <div className="avatar-placeholder">
                       {getDisplayName(userData)?.[0]?.toUpperCase() || '?'}
                     </div>
                   )}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    className="text-sm text-gray-600"
-                  />
+                  <div className="file-input-wrapper">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                    />
+                    <div className="file-input-btn">
+                      Выбрать файл
+                    </div>
+                  </div>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Имя</label>
+                <div className="form-group">
+                  <label>Имя</label>
                   <input
                     name="first_name"
                     value={userData.first_name || ""}
                     onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded"
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
+                <div className="form-group">
+                  <label>Фамилия</label>
                   <input
                     name="last_name"
                     value={userData.last_name || ""}
                     onChange={handleChange}
-                    className="w-full p-2 border border-gray-300 rounded"
                   />
                 </div>
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Логин*</label>
+              <div className="form-group">
+                <label>Логин*</label>
                 <input
                   name="username"
                   value={userData.username || ""}
                   onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded"
                   required
                 />
               </div>
-              {/* ✅ Email скрыт — GDPR */}
-              {/* <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input
-                  name="email"
-                  type="email"
-                  value={userData.email || ""}
-                  onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded"
-                  required
-                />
-              </div> */}
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Телефон*</label>
+              <div className="form-group">
+                <label>Телефон*</label>
                 <input
                   name="phone"
                   type="tel"
                   value={userData.phone || ""}
                   onChange={handlePhoneChange}
-                  className="w-full p-2 border border-gray-300 rounded"
                   placeholder="+7 999 123-45-67"
                 />
               </div>
 
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Город *</label>
+              <div className="form-group">
+                <label>Город *</label>
                 <input
                   name="location"
                   value={userData.location || ""}
                   onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded"
                   required
                 />
               </div>
 
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-gray-700 mb-1">О себе</label>
+              <div className="form-group">
+                <label>О себе</label>
                 <textarea
                   name="bio"
                   value={userData.bio || ""}
                   onChange={handleChange}
-                  className="w-full p-2 border border-gray-300 rounded"
                   rows="3"
                 />
               </div>
@@ -543,33 +542,30 @@ function Profile() {
             <div className="max-w-md">
               <h2 className="text-xl font-bold mb-4">🔒 Смена пароля</h2>
               <form onSubmit={handlePasswordChange} className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Старый пароль*</label>
+                <div className="form-group">
+                  <label>Старый пароль*</label>
                   <input
                     type="password"
                     value={passwords.old_password}
                     onChange={(e) => setPasswords({ ...passwords, old_password: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Новый пароль*</label>
+                <div className="form-group">
+                  <label>Новый пароль*</label>
                   <input
                     type="password"
                     value={passwords.new_password}
                     onChange={(e) => setPasswords({ ...passwords, new_password: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded"
                     required
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Повторите новый пароль*</label>
+                <div className="form-group">
+                  <label>Повторите новый пароль*</label>
                   <input
                     type="password"
                     value={passwords.new_password2}
                     onChange={(e) => setPasswords({ ...passwords, new_password2: e.target.value })}
-                    className="w-full p-2 border border-gray-300 rounded"
                     required
                   />
                 </div>
@@ -583,6 +579,13 @@ function Profile() {
             </div>
           )}
         </div>
+      </div>
+
+      <div className="profile-footer">
+        <a href="/terms">Пользовательское соглашение</a>
+        <span> • </span>
+        <a href="/privacy">Политика конфиденциальности</a>
+        © {new Date().getFullYear()} PetMarket
       </div>
     </div>
   );
