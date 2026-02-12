@@ -1,4 +1,3 @@
-// frontend/src/components/Navbar.jsx
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { checkToken, logout } from "../utils/auth";
@@ -170,11 +169,29 @@ function Navbar() {
               <Link to="/profile" className="mobile-nav-item">
                 <span>👤</span>
               </Link>
+              {/* Кнопка переключения темы для авторизованных */}
+              <button
+                className="mobile-nav-item theme-toggle-mobile"
+                onClick={toggleTheme}
+                aria-label={`Переключить на ${theme === 'light' ? 'тёмную' : 'светлую'} тему`}
+              >
+                <span>{theme === 'light' ? '🌙' : '☀️'}</span>
+              </button>
             </>
           ) : (
-            <Link to="/login" className="mobile-nav-item">
-              <span>🔑</span>
-            </Link>
+            <>
+              <Link to="/login" className="mobile-nav-item">
+                <span>🔑</span>
+              </Link>
+              {/* Кнопка переключения темы для гостей */}
+              <button
+                className="mobile-nav-item theme-toggle-mobile"
+                onClick={toggleTheme}
+                aria-label={`Переключить на ${theme === 'light' ? 'тёмную' : 'светлую'} тему`}
+              >
+                <span>{theme === 'light' ? '🌙' : '☀️'}</span>
+              </button>
+            </>
           )}
         </div>
       </div>

@@ -97,6 +97,39 @@
   justify-content: center;
 }
 
+/* Кнопка темы в мобильном меню */
+.mobile-nav-item.theme-toggle-mobile {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  height: auto;
+}
+
+.mobile-nav-item.theme-toggle-mobile span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.mobile-nav-item.theme-toggle-mobile:hover span {
+  background: #f0f2f5;
+}
+
+[data-theme="dark"] .mobile-nav-item.theme-toggle-mobile span {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .mobile-nav-item.theme-toggle-mobile:hover span {
+  background: #333a45;
+}
+
 /* === Общие стили поиска (десктоп) === */
 .search-form {
   display: flex;
@@ -200,6 +233,33 @@
 /* === Тема === */
 .theme-toggle {
   margin-left: auto;
+}
+
+.theme-toggle button {
+  background: none;
+  border: none;
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: #2d3748;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.theme-toggle button:hover {
+  background: #f0f2f5;
+}
+
+[data-theme="dark"] .theme-toggle button {
+  color: #cbd5e1;
+}
+
+[data-theme="dark"] .theme-toggle button:hover {
+  background: #333a45;
 }
 
 /* === Медиа-запросы === */
