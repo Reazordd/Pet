@@ -237,6 +237,38 @@ select:focus {
   grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 
+/* === СЕТКА ДЛЯ СТРАНИЦЫ /all === */
+.ads-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 640px) {
+  .ads-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+}
+
+@media (min-width: 768px) {
+  .ads-grid {
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .ads-grid {
+    grid-template-columns: repeat(3, minmax(260px, 1fr));
+  }
+}
+
+@media (min-width: 1280px) {
+  .ads-grid {
+    grid-template-columns: repeat(4, minmax(260px, 1fr));
+  }
+}
+
 /* Утилиты */
 .text-center {
   text-align: center;
@@ -345,6 +377,10 @@ select:focus {
   }
 
   .pets-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ads-grid {
     grid-template-columns: 1fr;
   }
 }
