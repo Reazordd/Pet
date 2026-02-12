@@ -7,6 +7,7 @@
   --border-color: #e5e5e5;
   --primary-color: #0071f0;
   --secondary-color: #0059c9;
+  --card-img-bg: rgba(11, 94, 215, 0.1); /* ← светло-голубой фон вокруг фото */
 }
 
 [data-theme="dark"] {
@@ -16,6 +17,7 @@
   --border-color: #444;
   --primary-color: #1a73e8;
   --secondary-color: #5a9bff;
+  --card-img-bg: rgba(11, 94, 215, 0.15); /* ← чуть темнее в dark */
 }
 
 body {

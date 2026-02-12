@@ -1,24 +1,402 @@
-.pet-detail-image-container {
-  width: 100%;
-  height: 400px;
-  border-radius: 0.5rem;
+/* === PET DETAIL — ФИНАЛЬНАЯ ВЕРСИЯ === */
+.pet-detail {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 16px 32px;
+}
+
+/* Кнопка "назад" */
+.pet-detail-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--accent);
+  font-weight: 600;
+  margin-bottom: 24px;
+  text-decoration: none;
+  font-size: 1rem;
+  transition: opacity 0.2s;
+}
+
+.pet-detail-back:hover {
+  opacity: 0.9;
+  text-decoration: underline;
+}
+
+/* Основная карточка объявления */
+.pet-detail-card {
+  background: var(--panel);
+  border-radius: 16px;
   overflow: hidden;
-  background-color: #f3f4f6;
+  box-shadow: var(--card-shadow);
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .pet-detail-card {
+    flex-direction: row;
+  }
+}
+
+/* === ЛЕВАЯ ЧАСТЬ: ИЗОБРАЖЕНИЯ === */
+.pet-detail-image-section {
+  position: relative;
+  width: 100%;
+  /* ← НОВОЕ: фон вокруг фото = такой же, как в PetCard */
+  background: var(--card-img-bg);
+  display: flex;
+  flex-direction: column;
+  padding: 24px 24px 16px;
+}
+
+@media (min-width: 768px) {
+  .pet-detail-image-section {
+    width: 50%;
+    padding: 32px 32px 24px;
+  }
+}
+
+/* Главный контейнер изображения — теперь без фона, только рамка и закругление */
+.pet-detail-main-image-container {
+  height: 220px;
+  border-radius: 12px;
+  overflow: hidden;
   cursor: pointer;
-  margin-bottom: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  background: transparent;
+  /* Убран padding — он теперь внутри обёртки */
 }
 
-.pet-detail-image {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain; /* ← КЛЮЧЕВОЕ: БЕЗ ОБРЕЗКИ! */
-  display: block;
+@media (min-width: 768px) {
+  .pet-detail-main-image-container {
+    height: 300px;
+  }
 }
 
-.pet-detail-placeholder {
-  color: #9ca3af;
-  font-size: 2rem;
+/* ВНУТРЕННЯЯ ОБЁРТКА — даёт нужный фон ВОКРУГ ИЗОБРАЖЕНИЯ (как в карточках) */
+.pet-detail-image-wrapper {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--card-img-bg); /* ← ключевой элемент */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px; /* ← отступ от краёв обёртки, чтобы фото не прилипало */
+}
+
+.pet-detail-main-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: top center;
+  transition: transform 0.3s ease;
+}
+
+.pet-detail-main-image-container:hover .pet-detail-main-image {
+  transform: scale(1.02);
+}
+
+/* Миниатюры — оставляем как есть (они уже используют --panel) */
+.pet-detail-thumbnails {
+  display: flex;
+  gap: 10px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.pet-detail-thumbnail {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  background: var(--panel);
+  transition: all 0.2s ease;
+}
+
+.pet-detail-thumbnail:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
+.pet-detail-thumbnail img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* === ПРАВАЯ ЧАСТЬ: ИНФОРМАЦИЯ === */
+.pet-detail-info-section {
+  padding: 24px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (min-width: 768px) {
+  .pet-detail-info-section {
+    padding: 32px;
+  }
+}
+
+/* Заголовок */
+.pet-detail-title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text);
+  line-height: 1.2;
+}
+
+/* Вид животного — бейдж */
+.pet-detail-species-badge,
+.pet-detail-offer-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  backdrop-filter: blur(4px);
+  border: 1px solid transparent;
+}
+
+.pet-detail-species-badge {
+  background: rgba(11, 94, 215, 0.1);
+  color: var(--accent);
+  border-color: rgba(11, 94, 215, 0.2);
+}
+
+.pet-detail-offer-type {
+  background: rgba(22, 163, 74, 0.1);
+  color: var(--success);
+  padding: 6px 14px;
+  border-radius: 24px;
+  font-size: 0.9rem;
+  margin-bottom: 20px;
+  border-color: rgba(22, 163, 74, 0.2);
+}
+
+/* Порода */
+.pet-detail-breed {
+  color: var(--muted);
+  margin-bottom: 4px;
+  font-size: 1rem;
+}
+
+/* Дата рождения */
+.pet-detail-birth-date {
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-size: 0.95rem;
+}
+
+/* Цена */
+.pet-detail-price-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 20px;
+}
+
+.pet-detail-price {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+}
+
+/* Избранное */
+.pet-detail-favorite-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 1.5rem;
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+[data-theme='dark'] .pet-detail-favorite-btn {
+  background: rgba(30, 41, 59, 0.7);
+}
+
+.pet-detail-favorite-btn:hover {
+  background: var(--panel);
+}
+
+.pet-detail-favorite-btn.active {
+  color: #ff3b3b;
+}
+
+/* Город */
+.pet-detail-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-size: 1rem;
+}
+
+/* Описание */
+.pet-detail-description {
+  white-space: pre-line;
+  color: var(--text);
+  line-height: 1.6;
+  margin-bottom: 24px;
+  font-size: 1rem;
+}
+
+/* === БЛОК ДЕЙСТВИЙ === */
+.pet-detail-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 12px;
+  margin-top: auto;
+}
+
+.pet-detail-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  text-align: center;
+  min-height: 48px;
+  border: 1px solid rgba(107, 114, 128, 0.2);
+  background: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+}
+
+[data-theme='dark'] .pet-detail-action-btn {
+  background: rgba(30, 41, 59, 0.5);
+}
+
+.pet-detail-action-btn:hover {
+  background: var(--panel);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Цвета кнопок */
+.btn-report {
+  background: rgba(220, 38, 38, 0.1);
+  color: var(--danger);
+  border-color: rgba(220, 38, 38, 0.2);
+}
+.btn-report:hover {
+  background: rgba(220, 38, 38, 0.15);
+}
+
+.btn-message {
+  background: rgba(11, 94, 215, 0.1);
+  color: var(--accent);
+  border-color: rgba(11, 94, 215, 0.2);
+}
+.btn-message:hover {
+  background: rgba(11, 94, 215, 0.15);
+}
+
+.btn-profile,
+.btn-edit {
+  background: rgba(107, 114, 128, 0.08);
+  color: var(--muted);
+  border-color: rgba(107, 114, 128, 0.2);
+}
+.btn-profile:hover,
+.btn-edit:hover {
+  background: rgba(107, 114, 128, 0.15);
+}
+
+/* === УПРАВЛЕНИЕ ОБЪЯВЛЕНИЕМ === */
+.pet-management {
+  background: rgba(75, 156, 226, 0.05);
+  border-radius: 16px;
+  padding: 24px;
+  margin-top: 32px;
+}
+
+.pet-management h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: var(--text);
+}
+
+.pet-management-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.pet-management p {
+  color: var(--muted);
+  font-size: 0.9rem;
+  margin: 4px 0;
+}
+
+/* === ПОХОЖИЕ ОБЪЯВЛЕНИЯ === */
+.pet-detail-similar {
+  margin-top: 40px;
+}
+
+.pet-detail-similar h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+  .pet-detail-title {
+    font-size: 1.5rem;
+  }
+
+  .pet-detail-price {
+    font-size: 1.5rem;
+  }
+
+  .pet-detail-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .pet-detail-thumbnail {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+/* LIGHTBOX */
+.lightbox-close,
+.lightbox-nav {
+  background: rgba(30, 30, 30, 0.7) !important;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.lightbox-close:hover,
+.lightbox-nav:hover {
+  background: rgba(50, 50, 50, 0.9) !important;
 }

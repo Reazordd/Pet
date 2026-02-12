@@ -202,144 +202,135 @@ function PetDetail() {
   };
 
   return (
-    <div className="pet-detail max-w-4xl mx-auto p-4">
-      <button onClick={() => navigate(-1)} className="mb-6 text-blue-600 hover:underline font-medium">
+    <div className="pet-detail">
+      <Link to="#" onClick={(e) => { e.preventDefault(); navigate(-1); }} className="pet-detail-back">
         ← Назад к объявлениям
-      </button>
+      </Link>
 
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="flex flex-col md:flex-row">
-          <div className="md:w-1/2 p-6">
-            {images.length > 0 ? (
-              <div
-                onClick={() => openLightbox(buildImageUrl(images[0].image))}
-                className="pet-detail-image-container"
-              >
+      <div className="pet-detail-card">
+        {/* Левая часть: изображения */}
+        <div className="pet-detail-image-section">
+          {images.length > 0 ? (
+            <div
+              onClick={() => openLightbox(buildImageUrl(images[0].image))}
+              className="pet-detail-main-image-container"
+            >
+              {/* 🔥 КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: внутренняя обёртка */}
+              <div className="pet-detail-image-wrapper">
                 <img
                   src={buildImageUrl(images[0].image)}
                   alt={getPetName()}
-                  className="pet-detail-image"
+                  className="pet-detail-main-image"
                   onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
                 />
               </div>
-            ) : (
-              <div className="pet-detail-image-container">
-                <span className="pet-detail-placeholder">🖼️ Нет фото</span>
-              </div>
-            )}
+            </div>
+          ) : (
+            <div className="pet-detail-main-image-container">
+              <span className="pet-detail-placeholder">🖼️ Нет фото</span>
+            </div>
+          )}
 
-            {images.length > 1 && (
-              <div style={{ display: 'flex', gap: '8px', marginTop: '8px' }}>
-                {images.slice(1, 6).map((img, idx) => (
-                  <div
-                    key={'thumb-' + idx}
-                    style={{
-                      width: '60px',
-                      height: '60px',
-                      overflow: 'hidden',
-                      borderRadius: '4px',
-                      cursor: 'pointer'
-                    }}
-                    onClick={() => openLightbox(buildImageUrl(img.image))}
-                  >
-                    <img
-                      src={buildImageUrl(img.image)}
-                      alt={`Фото ${idx + 2}`}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                      onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
+          {images.length > 1 && (
+            <div className="pet-detail-thumbnails">
+              {images.slice(1, 6).map((img, idx) => (
+                <div
+                  key={'thumb-' + idx}
+                  className="pet-detail-thumbnail"
+                  onClick={() => openLightbox(buildImageUrl(img.image))}
+                >
+                  <img
+                    src={buildImageUrl(img.image)}
+                    alt={`Фото ${idx + 2}`}
+                    onError={(e) => (e.target.src = '/images/placeholder-pet.jpg')}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Правая часть: информация */}
+        <div className="pet-detail-info-section">
+          <h1 className="pet-detail-title">
+            {getPetName()}
+          </h1>
+          <div className="pet-detail-species-badge">
+            {SPECIES_LABELS[pet.species]}
           </div>
 
-          <div className="md:w-1/2 p-6 border-t md:border-t-0 md:border-l border-gray-200">
-            <h1 className="text-2xl font-bold mb-1">
-              {getPetName()} — {SPECIES_LABELS[pet.species]}
-            </h1>
-            {pet.breed && <p className="text-gray-600 mb-1">Порода: {pet.breed}</p>}
-            {pet.birth_date && (
-              <p className="text-gray-700">
-                Дата рождения: {new Date(pet.birth_date).toLocaleDateString('ru-RU')}
-              </p>
+          {pet.breed && <p className="pet-detail-breed">Порода: {pet.breed}</p>}
+          {pet.birth_date && (
+            <p className="pet-detail-birth-date">
+              Дата рождения: {new Date(pet.birth_date).toLocaleDateString('ru-RU')}
+            </p>
+          )}
+
+          <div className="pet-detail-price-container">
+            <p className="pet-detail-price">{formatPrice(pet.price)}</p>
+            <button
+              onClick={toggleFavorite}
+              className={`pet-detail-favorite-btn ${isFavorite ? 'active' : ''}`}
+              aria-label={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
+            >
+              {isFavorite ? '❤️' : '🤍'}
+            </button>
+          </div>
+
+          <p className="pet-detail-location">📍 {pet.city}</p>
+
+          <div className="pet-detail-offer-type">
+            {OFFER_LABELS[pet.offer_type]}
+          </div>
+
+          {pet.description && <p className="pet-detail-description">{pet.description}</p>}
+
+          <div className="pet-detail-actions">
+            {pet.offer_type !== 'search' && (
+              <>
+                <button
+                  onClick={handleReport}
+                  className="pet-detail-action-btn btn-report"
+                >
+                  🚩 Пожаловаться
+                </button>
+                <button
+                  onClick={handleSendMessage}
+                  className="pet-detail-action-btn btn-message"
+                >
+                  💬 Написать
+                </button>
+              </>
             )}
 
-            <div className="flex items-center justify-between my-2">
-              <p className="text-xl font-semibold">{formatPrice(pet.price)}</p>
-              <button
-                onClick={toggleFavorite}
-                className="p-2 rounded-full hover:bg-gray-100 transition"
-                aria-label={isFavorite ? "Удалить из избранного" : "Добавить в избранное"}
-              >
-                {isFavorite ? (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M5.293 12.293a1 1 0 011.414 0L10 15.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                  </svg>
-                )}
-              </button>
-            </div>
+            <Link
+              to={`/profile/${typeof pet.user === 'object' ? pet.user.id : pet.user}`}
+              className="pet-detail-action-btn btn-profile"
+            >
+              👤 Профиль
+            </Link>
 
-            <p className="text-gray-700 mb-2">📍 {pet.city}</p>
-            <div className="inline-block bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded mb-4">
-              {OFFER_LABELS[pet.offer_type]}
-            </div>
-            {pet.description && <p className="mt-2 text-gray-800 whitespace-pre-line">{pet.description}</p>}
-
-            <div className="mt-6 flex flex-wrap gap-3">
-              {pet.offer_type !== 'search' && (
-                <>
-                  <button
-                    onClick={handleReport}
-                    className="flex-1 min-w-[120px] px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 font-medium"
-                  >
-                    🚩 Пожаловаться
-                  </button>
-                  <button
-                    onClick={handleSendMessage}
-                    className="flex-1 min-w-[120px] px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
-                  >
-                    💬 Написать
-                  </button>
-                </>
-              )}
-
+            {isOwner && (
               <Link
-                to={`/profile/${typeof pet.user === 'object' ? pet.user.id : pet.user}`}
-                className="flex-1 min-w-[120px] px-4 py-2 bg-gray-100 text-gray-800 rounded-lg hover:bg-gray-200 font-medium text-center"
+                to={`/pets/${pet.id}/edit`}
+                className="pet-detail-action-btn btn-edit"
               >
-                👤 Профиль
+                ✏️ Редактировать
               </Link>
-
-              {isOwner && (
-                <Link
-                  to={`/pets/${pet.id}/edit`}
-                  className="flex-1 min-w-[120px] px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 font-medium text-center"
-                >
-                  ✏️ Редактировать
-                </Link>
-              )}
-            </div>
+            )}
           </div>
         </div>
       </div>
 
+      {/* Управление объявлением (только для владельца) */}
       {isOwner && (
-        <div className="pet-management bg-blue-50 p-4 rounded-lg mt-6">
-          <h3 className="font-bold text-lg mb-3">Управление объявлением</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="pet-management">
+          <h3>Управление объявлением</h3>
+          <div className="pet-management-grid">
             <button
               onClick={handleRaise}
               disabled={!pet.can_be_raised}
-              className={`px-4 py-2 rounded font-medium ${
-                pet.can_be_raised
-                  ? 'bg-green-600 text-white hover:bg-green-700'
-                  : 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              }`}
+              className={`pet-detail-action-btn ${pet.can_be_raised ? 'btn-message' : 'btn-profile'}`}
             >
               {pet.can_be_raised ? 'Поднять объявление' : 'Поднять можно позже'}
             </button>
@@ -347,14 +338,14 @@ function PetDetail() {
             {pet.is_active ? (
               <button
                 onClick={handleDeactivate}
-                className="px-4 py-2 bg-red-600 text-white rounded font-medium hover:bg-red-700"
+                className="pet-detail-action-btn btn-report"
               >
                 Снять с публикации
               </button>
             ) : (
               <button
                 onClick={handleActivate}
-                className="px-4 py-2 bg-yellow-600 text-white rounded font-medium hover:bg-yellow-700"
+                className="pet-detail-action-btn btn-message"
               >
                 Вернуть в публикацию
               </button>
@@ -362,12 +353,12 @@ function PetDetail() {
           </div>
 
           {pet.last_raised_at && (
-            <p className="text-sm text-gray-700 mt-2">
+            <p className="pet-detail-birth-date">
               Последнее поднятие: {new Date(pet.last_raised_at).toLocaleDateString('ru-RU')}
             </p>
           )}
           {!pet.can_be_raised && pet.next_raise_allowed_at && (
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="pet-detail-birth-date">
               Следующее поднятие: {new Date(pet.next_raise_allowed_at).toLocaleDateString('ru-RU')}
             </p>
           )}
@@ -376,6 +367,7 @@ function PetDetail() {
         </div>
       )}
 
+      {/* Lightbox */}
       {lightboxImage && (
         <Lightbox
           src={lightboxImage}
@@ -386,11 +378,11 @@ function PetDetail() {
         />
       )}
 
-      {/* 🔥 ИСПРАВЛЕНО: Похожие объявления */}
+      {/* Похожие объявления */}
       {similarPets.length > 0 && (
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold mb-4">Похожие объявления</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 justify-center">
+        <div className="pet-detail-similar">
+          <h2>Похожие объявления</h2>
+          <div className="pets-grid">
             {similarPets.map((pet) => (
               <PetCard key={pet.id} pet={pet} />
             ))}
