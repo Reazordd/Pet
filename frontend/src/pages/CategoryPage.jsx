@@ -69,7 +69,7 @@ export default function CategoryPage() {
     if (id) {
       fetchPets(1);
     }
-  }, [id, searchParams]); // ← реагируем на изменения URL
+  }, [id, searchParams]);
 
   const loadMore = () => {
     if (hasMore) {
@@ -81,35 +81,40 @@ export default function CategoryPage() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
+      {/* Кнопка "Назад" — стилизована */}
       <button
         onClick={() => navigate(-1)}
-        className="mb-4 text-blue-600 hover:underline"
+        className="mb-8 btn btn-outline flex items-center"
+        aria-label="Вернуться назад"
       >
         ← Назад
       </button>
 
-      <h1 className="text-2xl font-bold mb-6">{title}</h1>
+      <h1 className="text-2xl font-bold mb-6 text-center">{title}</h1>
 
-      <div className="ads-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {loading ? (
-          Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="pet-card">
-              <Skeleton height={200} />
-              <Skeleton count={3} />
-            </div>
-          ))
-        ) : pets.length > 0 ? (
-          pets.map(pet => <PetCard key={pet.id} pet={pet} />)
-        ) : (
-          <p className="text-gray-500 col-span-full text-center py-8">Объявлений нет</p>
-        )}
+      {/* Обёртка с фоном как на главной странице */}
+      <div className="ads-section">
+        <div className="ads-grid">
+          {loading ? (
+            Array.from({ length: 12 }).map((_, i) => (
+              <div key={i} className="pet-card">
+                <Skeleton height={200} />
+                <Skeleton count={3} />
+              </div>
+            ))
+          ) : pets.length > 0 ? (
+            pets.map(pet => <PetCard key={pet.id} pet={pet} />)
+          ) : (
+            <p className="text-gray-500 col-span-full text-center py-12">Объявлений нет</p>
+          )}
+        </div>
       </div>
 
       {hasMore && !loading && (
-        <div className="text-center mt-6">
+        <div className="text-center mt-8">
           <button
             onClick={loadMore}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+            className="btn btn-primary px-6 py-3 font-medium"
           >
             Показать ещё
           </button>

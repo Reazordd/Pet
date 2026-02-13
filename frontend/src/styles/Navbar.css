@@ -1,10 +1,11 @@
-/* Navbar (modern clean) */
+/* Navbar (modern clean & accessible) */
 .nav-wrap {
-  background: #ffffff;
-  border-bottom: 1px solid #e6e7ea;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border-color, #e5e5e5);
   position: sticky;
   top: 0;
   z-index: 60;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
 }
 
 /* === Десктопная навигация === */
@@ -15,15 +16,149 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
+  gap: 20px;
+}
+
+/* Логотип — градиент + иконка */
+.nav-brand {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.brand-logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  background: linear-gradient(90deg, var(--accent) 0%, var(--brand-light) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  letter-spacing: -0.5px;
+}
+
+/* Поиск — современный, с фильтрами */
+.search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  max-width: 600px;
+}
+
+.search-input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  font-size: 1rem;
+  outline: none;
+  background: var(--panel);
+  color: var(--text);
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.2);
+}
+
+.filters-btn {
+  background: rgba(11, 94, 215, 0.06);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text);
+  white-space: nowrap;
+  transition: all 0.2s;
+}
+
+.filters-btn:hover {
+  background: rgba(11, 94, 215, 0.12);
+  color: var(--accent);
+}
+
+/* Навигационные ссылки */
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.nav-link,
+.nav-logout,
+.nav-cta {
+  color: var(--text);
+  text-decoration: none;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-weight: 500;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+}
+
+.nav-link:hover,
+.nav-logout:hover {
+  background: rgba(11, 94, 215, 0.06);
+  color: var(--accent);
+}
+
+.nav-link.active {
+  background: rgba(11, 94, 215, 0.08);
+  color: var(--accent);
+  box-shadow: 0 1px 0 rgba(11, 94, 215, 0.15);
+}
+
+.nav-cta {
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  padding: 8px 20px;
+}
+
+.nav-logout {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  cursor: pointer;
+  color: var(--text);
+}
+
+/* Кнопка темы */
+.theme-toggle {
+  margin-left: auto;
+}
+
+.theme-toggle button {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid var(--border-color);
+  font-size: 1.4rem;
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  transition: all 0.2s;
+}
+
+.theme-toggle button:hover {
+  background: rgba(11, 94, 215, 0.1);
+  color: var(--accent);
 }
 
 /* === Мобильная навигация === */
 .nav-inner-mobile {
   display: none;
   padding: 12px 16px;
-  background: white;
-  border-bottom: 1px solid #e6e7ea;
+  background: var(--panel);
+  border-bottom: 1px solid var(--border-color);
 }
 
 .mobile-search-bar {
@@ -36,27 +171,29 @@
 .mobile-search-input {
   flex: 1;
   padding: 12px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
   font-size: 1rem;
   outline: none;
-  color: #111;
-  background: #f8f9fa;
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.06);
+  transition: all 0.2s;
 }
 
 .mobile-search-input::placeholder {
-  color: #999;
+  color: var(--muted);
 }
 
 .mobile-search-input:focus {
-  border-color: #0b5ed7;
-  box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.1);
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.15);
 }
 
 .mobile-filters-btn {
-  background: #f0f2f5;
-  border: 1px solid #ddd;
-  border-radius: 8px;
+  background: rgba(11, 94, 215, 0.06);
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
   width: 44px;
   height: 44px;
   font-size: 1.1rem;
@@ -64,12 +201,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.2s;
+}
+
+.mobile-filters-btn:hover {
+  background: rgba(11, 94, 215, 0.12);
 }
 
 .mobile-nav-icons {
   display: flex;
   justify-content: space-around;
   align-items: center;
+  gap: 16px;
 }
 
 .mobile-nav-item {
@@ -77,29 +220,38 @@
   flex-direction: column;
   align-items: center;
   text-decoration: none;
-  color: #2d3748;
+  color: var(--text);
   font-size: 1.2rem;
   position: relative;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.mobile-nav-item:hover {
+  background: rgba(11, 94, 215, 0.06);
+  color: var(--accent);
 }
 
 .mobile-badge {
   position: absolute;
   top: -6px;
   right: -6px;
-  background: #dc2626;
+  background: var(--danger);
   color: white;
   font-size: 0.6rem;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
 }
 
-/* Кнопка темы в мобильном меню */
+/* Тема в мобильном меню */
 .mobile-nav-item.theme-toggle-mobile {
-  background: none;
+  background: transparent;
   border: none;
   cursor: pointer;
   padding: 0;
@@ -114,169 +266,87 @@
   justify-content: center;
   width: 44px;
   height: 44px;
-  border-radius: 8px;
-  transition: background 0.2s;
+  border-radius: 10px;
+  transition: all 0.2s;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
 }
 
 .mobile-nav-item.theme-toggle-mobile:hover span {
-  background: #f0f2f5;
+  background: rgba(11, 94, 215, 0.1);
+  color: var(--accent);
 }
 
-[data-theme="dark"] .mobile-nav-item.theme-toggle-mobile span {
-  color: #cbd5e1;
-}
-
-[data-theme="dark"] .mobile-nav-item.theme-toggle-mobile:hover span {
-  background: #333a45;
-}
-
-/* === Общие стили поиска (десктоп) === */
-.search-form {
+/* === Категории (CategoryStrip) — обновлённые стили === */
+.category-strip {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  flex: 1;
-  max-width: 600px;
-}
-
-.search-input {
-  flex: 1;
-  padding: 10px 16px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  font-size: 1rem;
-  outline: none;
-}
-
-.search-input:focus {
-  border-color: #0b5ed7;
-  box-shadow: 0 0 0 3px rgba(11, 94, 215, 0.1);
-}
-
-.filters-btn {
-  background: #f0f2f5;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  padding: 10px 14px;
-  font-weight: 500;
-  cursor: pointer;
-  color: #2d3748;
-  white-space: nowrap;
-}
-
-.filters-btn:hover {
-  background: #e5e8eb;
-}
-
-/* === Стили навигации (десктоп) === */
-.nav-brand {
-  text-decoration: none;
-  display: flex;
-  align-items: center;
-}
-
-.brand-logo {
-  font-weight: 700;
-  font-size: 20px;
-  color: #0b5ed7;
-  background: linear-gradient(90deg, #0b5ed7 0%, #2ab0ff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-.nav-links {
-  display: flex;
-  align-items: center;
   gap: 12px;
+  padding: 12px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  background: var(--panel-faint);
+  border-bottom: 1px solid var(--border-color);
 }
 
-.nav-link,
-.nav-logout,
-.nav-cta {
-  color: #2d3748;
-  text-decoration: none;
-  padding: 8px 12px;
-  border-radius: 8px;
-  font-weight: 500;
-  transition: background 0.12s, color 0.12s;
+.category-strip::-webkit-scrollbar {
+  display: none;
+}
+
+.category-item {
+  flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.875rem;
+  min-width: 76px;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
 }
 
-.nav-link:hover,
-.nav-logout:hover {
-  background: #f4f6f8;
-  color: #0b5ed7;
+.category-item:hover {
+  background: rgba(11, 94, 215, 0.1);
+  color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(11, 94, 215, 0.08);
 }
 
-.nav-link.active {
-  background: #eef6ff;
-  color: #0b5ed7;
-  box-shadow: 0 1px 0 rgba(11, 94, 215, 0.08);
+.category-icon {
+  font-size: 1.5rem;
+  margin-bottom: 6px;
 }
 
-.nav-cta {
-  background: #0b5ed7;
-  color: white;
+.category-name {
   font-weight: 600;
 }
 
-.nav-logout {
-  background: transparent;
-  border: 1px solid #e6e7ea;
-  cursor: pointer;
-  color: #2d3748;
-}
-
-/* === Тема === */
-.theme-toggle {
-  margin-left: auto;
-}
-
-.theme-toggle button {
-  background: none;
-  border: none;
-  font-size: 1.4rem;
-  cursor: pointer;
-  color: #2d3748;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  transition: background 0.2s;
-}
-
-.theme-toggle button:hover {
-  background: #f0f2f5;
-}
-
-[data-theme="dark"] .theme-toggle button {
-  color: #cbd5e1;
-}
-
-[data-theme="dark"] .theme-toggle button:hover {
-  background: #333a45;
-}
-
-/* === Медиа-запросы === */
+/* Адаптивность */
 @media (max-width: 768px) {
-  /* Скрываем десктоп */
   .nav-inner-desktop {
     display: none;
   }
 
-  /* Показываем мобильную версию */
   .nav-inner-mobile {
     display: block;
   }
 
-  /* Категории под шапкой */
   .category-strip {
     padding: 8px 12px;
     margin-top: 0;
+  }
+
+  .category-item {
+    min-width: 68px;
+    padding: 8px 12px;
+  }
+
+  .category-icon {
+    font-size: 1.3rem;
   }
 }
