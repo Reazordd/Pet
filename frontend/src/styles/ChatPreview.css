@@ -1,0 +1,151 @@
+/* frontend/src/styles/ChatPreview.css */
+.chat-preview-item {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 12px;
+  background: var(--panel);
+  border: 1px solid var(--border-color, #e5e7eb);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.chat-preview-item:hover {
+  background: var(--panel-faint);
+}
+
+/* Изображение объявления */
+.chat-preview-image {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+}
+
+.chat-preview-image img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.chat-preview-placeholder {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  background: var(--panel-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: var(--muted);
+}
+
+/* Аватар */
+.chat-preview-avatar,
+.chat-preview-avatar-placeholder {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+}
+
+.chat-preview-avatar {
+  object-fit: cover;
+}
+
+.chat-preview-avatar-placeholder {
+  background: var(--panel-faint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  color: var(--muted);
+}
+
+/* Информация */
+.chat-preview-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.chat-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+}
+
+.chat-preview-username {
+  font-weight: 600;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-preview-delete {
+  color: var(--muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  font-size: 16px;
+}
+
+.chat-preview-pet-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chat-preview-price {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.chat-preview-last-message {
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Мета: время + unread */
+.chat-preview-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: 8px;
+}
+
+.chat-preview-time {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.chat-preview-unread-badge {
+  background: var(--accent);
+  color: white;
+  font-size: 10px;
+  font-weight: bold;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

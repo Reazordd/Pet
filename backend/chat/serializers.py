@@ -1,5 +1,6 @@
 # backend/chat/serializers.py
 from rest_framework import serializers
+from django.db.models import Q  # ← КЛЮЧЕВОЙ ИМПОРТ
 from .models import Chat, Message
 
 class MessageSerializer(serializers.ModelSerializer):
@@ -32,6 +33,7 @@ class ChatSerializer(serializers.ModelSerializer):
     pet_title = serializers.SerializerMethodField()
     pet_price = serializers.SerializerMethodField()
     pet_image = serializers.SerializerMethodField()
+    unread_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Chat
@@ -42,8 +44,20 @@ class ChatSerializer(serializers.ModelSerializer):
             'last_message_time',
             'pet_title',
             'pet_price',
-            'pet_image'
+            'pet_image',
+            'unread_count'
         ]
+
+    def get_unread_count(self, obj):
+        """Считает непрочитанные сообщения ОТ собеседника"""
+        request = self.context.get('request')
+        if not request or not request.user.is_authenticated:
+            return 0
+        # 🔥 ИСПРАВЛЕНО: используем ~Q(sender=request.user)
+        return obj.messages.filter(
+            ~Q(sender=request.user),
+            is_read=False
+        ).count()
 
     def get_other_user(self, obj):
         request = self.context.get('request')
@@ -80,7 +94,6 @@ class ChatSerializer(serializers.ModelSerializer):
         return last_msg.created_at.isoformat() if last_msg else None
 
     def get_pet_title(self, obj):
-        # ✅ ИСПРАВЛЕНО: используем 'name', а не 'title'
         return obj.pet.name if obj.pet else None
 
     def get_pet_price(self, obj):

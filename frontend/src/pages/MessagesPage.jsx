@@ -1,6 +1,7 @@
 // frontend/src/pages/MessagesPage.jsx
 import React from 'react';
 import MessagesList from '../components/MessagesList';
+import '../styles/ChatPreview.css'; // ← подключаем стили
 
 function MessagesPage() {
   return (

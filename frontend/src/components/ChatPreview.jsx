@@ -1,119 +1,45 @@
 // frontend/src/components/ChatPreview.jsx
 import React from 'react';
 import { buildImageUrl } from '../utils/image';
+import { formatRelativeDateTime } from '../utils/date';
 
 function ChatPreview({ chat, onClick, onDelete }) {
   const petImage = chat.pet_image ? buildImageUrl(chat.pet_image) : null;
   const avatar = chat.other_user?.avatar ? buildImageUrl(chat.other_user.avatar) : null;
   const username = chat.other_user?.username || 'Пользователь';
+  const unreadCount = chat.unread_count || 0;
 
   return (
-    <div
-      onClick={onClick}
-      className="chat-preview-item"
-      style={{
-        display: 'flex',
-        alignItems: 'start',
-        gap: '12px',
-        padding: '12px',
-        backgroundColor: '#fff',
-        border: '1px solid #e5e7eb',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        position: 'relative'
-      }}
-    >
+    <div onClick={onClick} className="chat-preview-item">
       {/* Превью объявления */}
-      <div style={{ position: 'relative', flexShrink: 0, width: '64px', height: '64px' }}>
+      <div className="chat-preview-image">
         {petImage ? (
-          <img
-            src={petImage}
-            alt="Объявление"
-            style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '12px',
-              objectFit: 'cover'
-            }}
-            onError={(e) => (e.target.style.display = 'none')}
-          />
+          <img src={petImage} alt="Объявление" onError={(e) => (e.target.style.display = 'none')} />
         ) : (
-          <div style={{
-            width: '100%',
-            height: '100%',
-            borderRadius: '12px',
-            backgroundColor: '#f3f4f6',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '24px',
-            color: '#9ca3af'
-          }}>
-            🐾
-          </div>
+          <div className="chat-preview-placeholder">🐾</div>
         )}
 
         {/* Аватар поверх */}
         {avatar ? (
-          <img
-            src={avatar}
-            alt="Аватар"
-            style={{
-              position: 'absolute',
-              bottom: 0,
-              right: 0,
-              width: '32px',
-              height: '32px',
-              borderRadius: '50%',
-              border: '2px solid white',
-              objectFit: 'cover'
-            }}
-          />
+          <img src={avatar} alt="Аватар" className="chat-preview-avatar" />
         ) : (
-          <div style={{
-            position: 'absolute',
-            bottom: 0,
-            right: 0,
-            width: '32px',
-            height: '32px',
-            borderRadius: '50%',
-            border: '2px solid white',
-            backgroundColor: '#e5e7eb',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '12px',
-            fontWeight: 'bold',
-            color: '#6b7280'
-          }}>
+          <div className="chat-preview-avatar-placeholder">
             {username[0]?.toUpperCase() || '?'}
           </div>
         )}
       </div>
 
       {/* Информация */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-          <h4 style={{
-            fontWeight: '600',
-            color: '#111827',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>{username}</h4>
+      <div className="chat-preview-info">
+        <div className="chat-preview-header">
+          <h4 className="chat-preview-username">{username}</h4>
           {onDelete && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
                 onDelete(chat.id);
               }}
-              style={{
-                color: '#9ca3af',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-                flexShrink: 0
-              }}
+              className="chat-preview-delete"
               title="Удалить чат"
             >
               🗑️
@@ -122,46 +48,31 @@ function ChatPreview({ chat, onClick, onDelete }) {
         </div>
 
         {chat.pet_title && (
-          <p style={{
-            fontSize: '14px',
-            fontWeight: '500',
-            color: '#1f2937',
-            marginTop: '4px',
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis'
-          }}>{chat.pet_title}</p>
+          <p className="chat-preview-pet-title">{chat.pet_title}</p>
         )}
 
-        <p style={{ fontSize: '12px', color: '#6b7280' }}>
+        <p className="chat-preview-price">
           {chat.pet_price
             ? `${new Intl.NumberFormat('ru-RU').format(parseFloat(chat.pet_price))} ₽`
             : 'Цена не указана'}
         </p>
 
-        <p style={{
-          fontSize: '14px',
-          color: '#6b7280',
-          marginTop: '4px',
-          whiteSpace: 'nowrap',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis'
-        }}>
+        <p className="chat-preview-last-message">
           {chat.last_message_preview || 'Нет сообщений'}
         </p>
       </div>
 
-      {chat.last_message_time && (
-        <span style={{
-          fontSize: '12px',
-          color: '#9ca3af',
-          whiteSpace: 'nowrap',
-          flexShrink: 0,
-          marginLeft: '8px'
-        }}>
-          {new Date(chat.last_message_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-        </span>
-      )}
+      {/* Правая колонка: время + unread badge */}
+      <div className="chat-preview-meta">
+        {chat.last_message_time && (
+          <span className="chat-preview-time">
+            {formatRelativeDateTime(new Date(chat.last_message_time))}
+          </span>
+        )}
+        {unreadCount > 0 && (
+          <span className="chat-preview-unread-badge">{unreadCount}</span>
+        )}
+      </div>
     </div>
   );
 }

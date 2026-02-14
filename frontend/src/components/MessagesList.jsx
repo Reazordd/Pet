@@ -14,7 +14,13 @@ function MessagesList() {
     const loadChats = async () => {
       try {
         const res = await api.get('/chat/list/');
-        setChats(res.data || []);
+        // 🔥 Сортировка по последнему сообщению (DESC)
+        const sorted = [...res.data].sort((a, b) => {
+          const timeA = a.last_message_time ? new Date(a.last_message_time) : new Date(0);
+          const timeB = b.last_message_time ? new Date(b.last_message_time) : new Date(0);
+          return timeB - timeA;
+        });
+        setChats(sorted);
       } catch (err) {
         console.error('Ошибка загрузки чатов:', err);
         toast.error('Не удалось загрузить сообщения');
@@ -36,10 +42,10 @@ function MessagesList() {
     }
   };
 
-  if (loading) return <p className="text-center mt-10">Загрузка...</p>;
+  if (loading) return <p className="text-center mt-10 text-muted">Загрузка...</p>;
 
   if (chats.length === 0) {
-    return <p className="text-gray-500">Нет активных диалогов</p>;
+    return <p className="text-muted text-center py-8">Нет активных диалогов</p>;
   }
 
   return (

@@ -7,7 +7,7 @@ User = settings.AUTH_USER_MODEL
 
 class Chat(models.Model):
     users = models.ManyToManyField(User, related_name='chats')
-    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, null=True, blank=True)  # ← новое поле
+    pet = models.ForeignKey(Pet, on_delete=models.CASCADE, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -23,6 +23,7 @@ class Message(models.Model):
     content = models.TextField(blank=True, null=True)
     file = models.FileField(upload_to='chat_files/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)  # ← ДОБАВЛЕНО!
 
     class Meta:
         ordering = ['created_at']

@@ -1,4 +1,4 @@
-// frontend/src/pages/ChatPage.jsx (обновлённая версия)
+// frontend/src/pages/ChatPage.jsx
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -42,14 +42,39 @@ const ChatPage = () => {
     }
   };
 
+  // 🔥 ИСПРАВЛЕНО: вызываем markAsRead ПОСЛЕ загрузки сообщений
+  const markAsRead = async () => {
+    try {
+      // Получаем актуальные сообщения из состояния
+      const currentMessages = messages.length > 0 ? messages : await api.get(`/chat/${chatId}/messages/`).then(res => res.data);
+      const hasUnread = currentMessages.some(msg => !msg.is_own && !msg.is_read);
+      if (hasUnread) {
+        await api.post(`/chat/${chatId}/mark-read/`);
+        // Обновляем локально
+        setMessages(prev => prev.map(m =>
+          !m.is_own ? { ...m, is_read: true } : m
+        ));
+      }
+    } catch (err) {
+      console.warn('Не удалось отметить как прочитанное', err);
+    }
+  };
+
   useEffect(() => {
     if (!id || isNaN(chatId) || chatId <= 0) {
       toast.error('Неверный ID чата');
       navigate('/messages');
       return;
     }
-    loadMessages();
-    fetchOtherUser();
+
+    // Загружаем и помечаем как прочитанное
+    const initChat = async () => {
+      await loadMessages();
+      await fetchOtherUser();
+      markAsRead(); // ← Теперь работает корректно
+    };
+
+    initChat();
     const interval = setInterval(loadMessages, 3000);
     return () => clearInterval(interval);
   }, [id]);
@@ -118,9 +143,6 @@ const ChatPage = () => {
   const closeLightbox = () => {
     setLightboxImage(null);
   };
-
-  // ⚠️ КРИТИЧЕСКИ ВАЖНО: убедимся, что никакой file-preview не рендерится
-  // В JSX ниже — НИКАКИХ div'ов с "Файл не выбран", НИКАКОГО label'а!
 
   return (
     <div className="chat-container">
@@ -211,10 +233,9 @@ const ChatPage = () => {
         />
       )}
 
-      {/* ✅ ТОЛЬКО: input + 📎 + → — без ВСЕГО ОСТАЛЬНОГО */}
+      {/* Форма ввода */}
       <div className="chat-input-area">
         <div className="chat-input-wrapper">
-          {/* 🔒 Input — теперь поддерживает многострочный ввод (но без переносов, как в WhatsApp) */}
           <textarea
             ref={inputRef}
             value={inputValue}
@@ -227,7 +248,7 @@ const ChatPage = () => {
             style={{
               resize: 'none',
               overflowY: 'hidden',
-              maxHeight: '120px', // чтобы не раздувался бесконечно
+              maxHeight: '120px',
             }}
           />
           <input
