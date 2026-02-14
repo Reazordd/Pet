@@ -1,120 +1,266 @@
 /* frontend/src/styles/Chat.css */
+:root {
+  --avito-bg: #0f172a;
+  --avito-bg-light: #1e293b;
+  --avito-bg-message-own: #0ea5e9;
+  --avito-bg-message-other: #334155;
+  --avito-text: #e2e8f0;
+  --avito-text-secondary: #94a3b8;
+  --avito-border: #334155;
+  --avito-input-bg: #1e293b;
+  --avito-input-border: #334155;
+  --avito-btn-send: #0ea5e9;
+  --avito-btn-send-hover: #0891b2;
+  --avito-btn-file: #334155;
+  --avito-btn-file-hover: #475569;
+  --avito-avatar-border: #334155;
+}
 
-.chat-page {
-  background: #f9fafb;
-  min-height: 100vh;
+.chat-container {
+  background-color: var(--avito-bg);
+  border-radius: 12px;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
+  max-width: 520px;
+  margin: 0 auto;
+  min-height: calc(100vh - 120px);
+}
+
+.chat-header {
+  padding: 16px;
+  background-color: var(--avito-bg-light);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--avito-border);
+}
+
+.chat-header .avatar-xs {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--avito-avatar-border);
+}
+
+.chat-header h2 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--avito-text);
+  margin: 0;
 }
 
 .chat-messages {
   flex: 1;
   padding: 16px;
   overflow-y: auto;
-  background: #f0f2f5;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  background-color: var(--avito-bg);
+  min-height: 0;
 }
 
 .message {
-  max-width: 75%;
-  padding: 10px 14px;
+  max-width: 80%;
+  padding: 12px 16px;
   border-radius: 18px;
-  line-height: 1.4;
+  line-height: 1.5;
   word-break: break-word;
   position: relative;
+  font-size: 0.95rem;
 }
 
 .message-own {
   align-self: flex-end;
-  background: #0084ff;
+  background-color: var(--avito-bg-message-own);
   color: white;
+  box-shadow: 0 2px 6px rgba(14, 165, 233, 0.2);
 }
 
 .message-other {
   align-self: flex-start;
-  background: #e4e6ea;
-  color: #000;
+  background-color: var(--avito-bg-message-other);
+  color: var(--avito-text);
+  box-shadow: 0 2px 6px rgba(51, 65, 85, 0.2);
 }
 
-.message-time {
-  font-size: 0.7rem;
-  margin-top: 4px;
-  text-align: right;
-  opacity: 0.8;
+.message-other .sender-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  margin-bottom: 6px;
+  color: var(--avito-text-secondary);
 }
 
-.chat-input {
-  display: flex;
-  padding: 12px;
-  background: white;
-  border-top: 1px solid #ddd;
-}
-
-.chat-input input {
-  flex: 1;
-  border: 1px solid #ddd;
-  border-radius: 24px;
-  padding: 10px 16px;
-  font-size: 1rem;
-  outline: none;
-}
-
-.chat-input button {
-  background: #0084ff;
-  color: white;
-  border: none;
+.message-other .sender-name img,
+.message-other .sender-name div {
+  width: 20px;
+  height: 20px;
   border-radius: 50%;
-  width: 42px;
-  height: 42px;
-  margin-left: 10px;
-  font-size: 1.2rem;
-  cursor: pointer;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.message-other .sender-name div {
+  background-color: #475569;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-size: 0.7rem;
+  font-weight: bold;
 }
 
-.chat-input button:disabled {
+.message-time {
+  font-size: 0.75rem;
+  margin-top: 6px;
+  opacity: 0.8;
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.message-other .message-time {
+  text-align: left;
+  justify-content: flex-start;
+}
+
+.message-time::after {
+  content: '';
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  margin-left: 6px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' width='14' height='14'%3E%3Cpath fill='%2394a3b8' d='M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L12 13.17l-3.59-3.59L7 8.17z'/%3E%3C/svg%3E") no-repeat center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.message-own .message-time::after {
+  opacity: 0.6;
+}
+
+.message-own.is-read .message-time::after {
+  opacity: 1;
+}
+
+.chat-image img {
+  max-width: 100%;
+  max-height: 240px;
+  width: auto;
+  height: auto;
+  border-radius: 12px;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
+}
+
+/* --- ОБЛАСТЬ ВВОДА СООБЩЕНИЯ --- */
+.chat-input-area {
+  padding: 16px;
+  background: var(--avito-bg-light);
+  border-top: 1px solid var(--avito-border);
+  flex-shrink: 0;
+}
+
+.chat-input-wrapper {
+  display: flex;
+  align-items: flex-end; /* чтобы кнопки не тянули textarea вниз */
+  gap: 8px;
+  background: var(--avito-input-bg);
+  border-radius: 24px;
+  padding: 4px 8px;
+  border: 1px solid var(--avito-input-border);
+}
+
+/* ✅ Поддержка многострочного ввода (в JSX используется <textarea>) */
+.chat-input-field {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--avito-text);
+  font-size: 1rem;
+  padding: 12px 16px;
+  min-height: 44px;
+  max-height: 120px;
+  line-height: 1.5;
+  border-radius: 24px;
+  resize: none;
+  overflow: hidden;
+  white-space: pre-wrap; /* позволяет переносить строки при Shift+Enter */
+  word-wrap: break-word;
+}
+
+.chat-input-field::placeholder {
+  color: var(--avito-text-secondary);
+}
+
+.attach-btn,
+.send-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--avito-text-secondary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s;
+}
+
+.attach-btn:hover {
+  background-color: var(--avito-btn-file-hover);
+}
+
+.send-btn {
+  background-color: var(--avito-btn-send);
+  color: white;
+}
+
+.send-btn:hover {
+  background-color: var(--avito-btn-send-hover);
+}
+
+.send-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  .chat-page {
-    padding: 0;
-  }
+/* 🔒 ГАРАНТИРОВАННО СКРЫВАЕМ ЛЮБОЙ ФАЙЛОВЫЙ ИНПУТ */
+.chat-input-area input[type="file"] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
 }
 
-/* Изображения в сообщениях */
-.chat-image {
-  max-height: 200px;
-  object-fit: cover;
-  width: auto;
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
+/* 🧹 УБИРАЕМ ВСЕ ПОТЕНЦИАЛЬНЫЕ ОСТАТКИ СТАРОГО UI */
+.file-preview,
+#file-preview,
+.file-upload-info,
+.upload-placeholder,
+label[for*="file"] {
+  display: none !important;
 }
 
-/* Аватарка в чате */
-.avatar-xs {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 1px solid #e0e0e0;
+/* Сброс глобальных стилей (оставляем только для этого компонента) */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
-.avatar-placeholder-xs {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #e0e0e0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 10px;
-  font-weight: bold;
-  color: #666;
+body {
+  margin: 0 !important;
+  padding: 0 !important;
 }

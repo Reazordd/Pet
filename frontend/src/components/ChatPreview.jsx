@@ -10,6 +10,7 @@ function ChatPreview({ chat, onClick, onDelete }) {
   return (
     <div
       onClick={onClick}
+      className="chat-preview-item"
       style={{
         display: 'flex',
         alignItems: 'start',
@@ -22,7 +23,7 @@ function ChatPreview({ chat, onClick, onDelete }) {
         position: 'relative'
       }}
     >
-      {/* Контейнер превью объявления */}
+      {/* Превью объявления */}
       <div style={{ position: 'relative', flexShrink: 0, width: '64px', height: '64px' }}>
         {petImage ? (
           <img
@@ -31,7 +32,7 @@ function ChatPreview({ chat, onClick, onDelete }) {
             style={{
               width: '100%',
               height: '100%',
-              borderRadius: '16px',
+              borderRadius: '12px',
               objectFit: 'cover'
             }}
             onError={(e) => (e.target.style.display = 'none')}
@@ -40,55 +41,54 @@ function ChatPreview({ chat, onClick, onDelete }) {
           <div style={{
             width: '100%',
             height: '100%',
-            borderRadius: '16px',
-            backgroundColor: '#e5e7eb',
+            borderRadius: '12px',
+            backgroundColor: '#f3f4f6',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontSize: '24px'
+            fontSize: '24px',
+            color: '#9ca3af'
           }}>
             🐾
           </div>
         )}
 
-        {/* Аватар собеседника поверх */}
-        <div style={{
-          position: 'absolute',
-          bottom: 0,
-          right: 0,
-          width: '32px',
-          height: '32px',
-          borderRadius: '50%',
-          border: '2px solid white',
-          backgroundColor: 'white',
-          overflow: 'hidden'
-        }}>
-          {avatar ? (
-            <img
-              src={avatar}
-              alt="Аватар"
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover'
-              }}
-            />
-          ) : (
-            <div style={{
-              width: '100%',
-              height: '100%',
-              backgroundColor: '#d1d5db',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '12px',
-              fontWeight: 'bold',
-              color: '#374151'
-            }}>
-              {username[0]?.toUpperCase() || '?'}
-            </div>
-          )}
-        </div>
+        {/* Аватар поверх */}
+        {avatar ? (
+          <img
+            src={avatar}
+            alt="Аватар"
+            style={{
+              position: 'absolute',
+              bottom: 0,
+              right: 0,
+              width: '32px',
+              height: '32px',
+              borderRadius: '50%',
+              border: '2px solid white',
+              objectFit: 'cover'
+            }}
+          />
+        ) : (
+          <div style={{
+            position: 'absolute',
+            bottom: 0,
+            right: 0,
+            width: '32px',
+            height: '32px',
+            borderRadius: '50%',
+            border: '2px solid white',
+            backgroundColor: '#e5e7eb',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '12px',
+            fontWeight: 'bold',
+            color: '#6b7280'
+          }}>
+            {username[0]?.toUpperCase() || '?'}
+          </div>
+        )}
       </div>
 
       {/* Информация */}

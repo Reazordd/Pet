@@ -1,4 +1,4 @@
-// frontend/src/pages/ChatPage.jsx
+// frontend/src/pages/ChatPage.jsx (обновлённая версия)
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { toast } from 'react-toastify';
@@ -20,6 +20,7 @@ const ChatPage = () => {
   const [lightboxImage, setLightboxImage] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const inputRef = useRef(null);
 
   const loadMessages = async () => {
     try {
@@ -53,10 +54,6 @@ const ChatPage = () => {
     return () => clearInterval(interval);
   }, [id]);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -72,8 +69,7 @@ const ChatPage = () => {
     }
   };
 
-  const handleSend = async (e) => {
-    e.preventDefault();
+  const handleSend = async () => {
     const content = inputValue.trim();
     const file = selectedFile;
 
@@ -104,13 +100,15 @@ const ChatPage = () => {
     }
   };
 
-  const handleFileClick = () => {
-    fileInputRef.current?.click();
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
-  const removeFile = () => {
-    setSelectedFile(null);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+  const handleFileClick = () => {
+    fileInputRef.current?.click();
   };
 
   const openLightbox = (src) => {
@@ -121,82 +119,81 @@ const ChatPage = () => {
     setLightboxImage(null);
   };
 
+  // ⚠️ КРИТИЧЕСКИ ВАЖНО: убедимся, что никакой file-preview не рендерится
+  // В JSX ниже — НИКАКИХ div'ов с "Файл не выбран", НИКАКОГО label'а!
+
   return (
-    <div className="max-w-2xl mx-auto p-4">
+    <div className="chat-container">
+      {/* Заголовок чата */}
       {otherUser && (
-        <div className="mb-3 text-center">
-          <Link
-            to={`/profile/${otherUser.id}`}
-            className="text-blue-600 hover:underline font-medium text-lg"
-          >
-            {otherUser.username}
-          </Link>
+        <div className="chat-header">
+          {otherUser.avatar ? (
+            <img
+              src={buildImageUrl(otherUser.avatar)}
+              alt={otherUser.username}
+              className="avatar-xs"
+            />
+          ) : (
+            <div className="avatar-xs bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
+              {otherUser.username?.[0]?.toUpperCase() || '?'}
+            </div>
+          )}
+          <h2>
+            <Link
+              to={`/profile/${otherUser.id}`}
+              className="text-blue-400 hover:text-blue-300"
+            >
+              {otherUser.username}
+            </Link>
+          </h2>
         </div>
       )}
 
-      <div className="mb-4 h-96 overflow-y-auto border rounded-lg p-3 bg-white">
+      {/* Сообщения */}
+      <div className="chat-messages">
         {messages.length === 0 ? (
-          <p className="text-gray-500 text-center py-10">Нет сообщений</p>
+          <p className="text-center text-gray-500 py-10">Нет сообщений</p>
         ) : (
           messages.map((msg) => (
             <div
               key={msg.id}
-              className={`mb-3 ${msg.is_own ? 'text-right' : 'text-left'}`}
+              className={`message ${msg.is_own ? 'message-own' : 'message-other'} ${
+                msg.is_own && msg.is_read ? 'is-read' : ''
+              }`}
             >
-              {/* Аватар + имя собеседника */}
               {!msg.is_own && otherUser && (
-                <Link
-                  to={`/profile/${otherUser.id}`}
-                  className="text-blue-600 hover:underline text-sm flex items-center gap-1 mb-1"
-                >
+                <div className="sender-name">
                   {otherUser.avatar ? (
                     <img
                       src={buildImageUrl(otherUser.avatar)}
                       alt={otherUser.username}
-                      className="avatar-xs" // ← КЛЮЧЕВОЕ: используем глобальный класс
+                      className="avatar-xs"
                     />
                   ) : (
-                    <div className="avatar-xs bg-gray-300 flex items-center justify-center text-xs font-bold">
+                    <div className="avatar-xs bg-gray-700 flex items-center justify-center text-xs font-bold text-white">
                       {otherUser.username?.[0]?.toUpperCase() || '?'}
                     </div>
                   )}
                   <span>{otherUser.username}</span>
-                </Link>
+                </div>
               )}
 
-              {/* Фото */}
-              {msg.file_url ? (
+              {msg.file_url && (
                 <div
-                  className={`inline-block max-w-xs cursor-pointer ${msg.is_own ? 'ml-auto' : 'mr-auto'}`}
+                  className="chat-image"
                   onClick={() => openLightbox(buildImageUrl(msg.file_url))}
                 >
                   <img
                     src={buildImageUrl(msg.file_url)}
                     alt="Фото"
-                    className="rounded-lg border chat-image"
+                    className="rounded-lg"
                   />
                 </div>
-              ) : null}
+              )}
 
-              {/* Текст */}
-              {msg.content ? (
-                <div
-                  className={`inline-block p-2 rounded-lg max-w-xs ${
-                    msg.is_own
-                      ? 'bg-blue-100 text-gray-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {msg.content}
-                </div>
-              ) : null}
+              {msg.content && <div>{msg.content}</div>}
 
-              {/* Время */}
-              <div
-                className={`text-xs text-gray-500 mt-1 ${
-                  msg.is_own ? 'text-right' : 'text-left'
-                }`}
-              >
+              <div className="message-time">
                 {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </div>
             </div>
@@ -205,6 +202,7 @@ const ChatPage = () => {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Лайтбокс */}
       {lightboxImage && (
         <Lightbox
           src={lightboxImage}
@@ -213,53 +211,52 @@ const ChatPage = () => {
         />
       )}
 
-      <form onSubmit={handleSend} className="flex flex-col gap-2">
-        {selectedFile && (
-          <div className="flex items-center gap-2 bg-gray-100 p-2 rounded">
-            <span className="text-sm truncate">{selectedFile.name}</span>
-            <button
-              type="button"
-              onClick={removeFile}
-              className="text-red-500 hover:text-red-700"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        <div className="flex gap-2">
-          <input
-            type="text"
+      {/* ✅ ТОЛЬКО: input + 📎 + → — без ВСЕГО ОСТАЛЬНОГО */}
+      <div className="chat-input-area">
+        <div className="chat-input-wrapper">
+          {/* 🔒 Input — теперь поддерживает многострочный ввод (но без переносов, как в WhatsApp) */}
+          <textarea
+            ref={inputRef}
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
             placeholder="Напишите сообщение..."
-            className="flex-1 border rounded px-3 py-2"
             disabled={loading}
+            className="chat-input-field"
+            rows="1"
+            style={{
+              resize: 'none',
+              overflowY: 'hidden',
+              maxHeight: '120px', // чтобы не раздувался бесконечно
+            }}
           />
           <input
             type="file"
             ref={fileInputRef}
             onChange={handleFileChange}
             accept="image/*"
-            className="hidden"
+            aria-hidden="true"
+            tabIndex="-1"
           />
           <button
             type="button"
             onClick={handleFileClick}
-            className="px-3 py-2 bg-gray-200 rounded hover:bg-gray-300"
             disabled={loading}
+            aria-label="Прикрепить файл"
+            className="attach-btn"
           >
             📎
           </button>
           <button
-            type="submit"
+            onClick={handleSend}
             disabled={loading || (!inputValue.trim() && !selectedFile)}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+            className="send-btn"
+            aria-label="Отправить"
           >
-            Отправить
+            →
           </button>
         </div>
-      </form>
+      </div>
     </div>
   );
 };
