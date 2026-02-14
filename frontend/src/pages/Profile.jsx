@@ -582,10 +582,7 @@ function Profile() {
       </div>
 
       <div className="profile-footer">
-        <a href="/terms">Пользовательское соглашение</a>
-        <span> • </span>
-        <a href="/privacy">Политика конфиденциальности</a>
-        © {new Date().getFullYear()} PetMarket
+
       </div>
     </div>
   );
