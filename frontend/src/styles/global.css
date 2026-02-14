@@ -122,7 +122,7 @@ body {
 .btn-secondary {
   background: var(--panel);
   color: var(--text);
-  border: 1px solid #ddd;
+  border: 1px solid var(--panel-faint);
 }
 
 .btn-sm {
@@ -216,11 +216,17 @@ select {
   font-size: 15px;
   padding: 10px 12px;
   border-radius: 8px;
-  border: 1px solid #e6e7ea;
+  border: 1px solid var(--panel-faint);
   background: var(--panel);
   color: var(--text);
   outline: none;
   width: 100%;
+}
+
+input::placeholder,
+textarea::placeholder,
+select::placeholder {
+  color: var(--muted);
 }
 
 input:focus,
@@ -315,7 +321,7 @@ select:focus {
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   background: var(--panel);
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--panel-faint);
 }
 
 .category-strip::-webkit-scrollbar {
@@ -330,8 +336,8 @@ select:focus {
   justify-content: center;
   padding: 8px 12px;
   border-radius: 8px;
-  background: #f8f9fa;
-  color: #444;
+  background: var(--panel-faint);
+  color: var(--text);
   text-decoration: none;
   font-size: 0.85rem;
   min-width: 72px;
@@ -339,13 +345,26 @@ select:focus {
 }
 
 .category-item:hover {
-  background: #eef2f7;
-  color: #0b5ed7;
+  background: var(--accent);
+  color: white;
 }
 
 .category-icon {
   font-size: 1.4rem;
   margin-bottom: 4px;
+  line-height: 1;
+}
+
+/* 🔽 Уменьшаем иконки ТОЛЬКО на десктопе */
+@media (min-width: 768px) {
+  .category-icon {
+    font-size: 1.15rem; /* ≈18–19px — идеально для десктопа */
+  }
+
+  .category-item {
+    min-width: 64px;
+    padding: 6px 10px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -357,7 +376,7 @@ select:focus {
     padding: 6px 8px;
   }
   .category-icon {
-    font-size: 1.2rem;
+    font-size: 1.25rem;
   }
 }
 
